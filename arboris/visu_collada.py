@@ -12,6 +12,7 @@ from datetime import datetime
 
 NS = 'http://www.collada.org/2005/11/COLLADASchema'
 SHAPES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'shapes.dae')
+SHAPES = r"file:///" + SHAPES.replace("\\", "/")
 
 def QN(tag):
     """Return the qualified version of a collada tag name.

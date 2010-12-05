@@ -1,7 +1,7 @@
 # coding=utf-8
 from abc import ABCMeta, abstractmethod, abstractproperty
 from numpy import eye
-from numpy.linalg import norm
+from numpy.linalg import norm, inv
 import arboris.core
 
 def hsv_to_rgb(hsv):
@@ -334,7 +334,7 @@ class Drawer(object):
             raise ValueError()
         elif isinstance(f1, arboris.core.SubFrame):
             if self._flat:
-                bd1_node = self._add_frame(self.ground_node,
+                bd1_node = self._add_frame(self._ground_node,
                         bd1.pose, False, bd1.name,
                         self._color_generator.get_color(bd1))
                 f1_node = self._add_frame(bd1_node,
