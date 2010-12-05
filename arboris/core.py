@@ -927,7 +927,7 @@ class World(NamedObject):
         admittance = dot(jac, dot(self._admittance, jac.T))
 
         k=0
-        while k < 20:
+        while k < 200:
         #TODO: change the break condition, it should be computed from the error
             k+=1
             for c in constraints:
