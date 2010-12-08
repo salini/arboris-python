@@ -207,7 +207,8 @@ class ColladaDriver(arboris._visu.DrawerDriver):
         node = self.create_transform(H, is_constant=True, name=name)
         scale = SubElement(node, QN('scale'))
         scale.text = "0. 0. {0}".format(vector_norm)
-        elem = SubElement(node, QN("instance_geometry"),
+        node_link = SubElement(node, QN("node"), {"id":"link"})
+        elem = SubElement(node_link, QN("instance_geometry"),
             {"url": self._shapes+"#line"})
         self._add_color(elem, color)
         return node
@@ -218,10 +219,7 @@ class ColladaDriver(arboris._visu.DrawerDriver):
     def create_box(self, half_extents, color, name=None):
         # instead of creating a new box, we use the #box and scale it
         # to the proper size
-        if name:
-            node = Element(QN("node"), {"id":name, "name":name})
-        else:
-            node = Element(QN("node"))
+        node = Element(QN("node"), {"id":"shape", "name":str(name)})
         scale = SubElement(node, QN('scale'))
         scale.text = "{0} {1} {2}".format(*half_extents)
         elem = SubElement(node, QN("instance_geometry"),
@@ -235,17 +233,15 @@ class ColladaDriver(arboris._visu.DrawerDriver):
         node = self.create_transform(H, is_constant=True, name=name)
         scale = SubElement(node, QN('scale'))
         scale.text = "{0} {1} 0.".format(*self._options["plane half extents"])
-        elem = SubElement(node, QN("instance_geometry"),
+        node_shape = SubElement(node, QN("node"), {"id":"shape"})
+        elem = SubElement(node_shape, QN("instance_geometry"),
                 {"url": self._shapes+"#plane"})
         self._add_color(elem, color)
         return node
 
     def _create_ellipsoid(self, radii, color, resolution, name=None):
         assert resolution in ('20', '80', '320')
-        if name:
-            node = Element(QN("node"), {"id":name, "name":name})
-        else:
-            node = Element(QN("node"))
+        node = Element(QN("node"), {"id":"shape", "name":str(name)})
         scale = SubElement(node, QN('scale'))
         scale.text = "{0} {1} {2}".format(*radii)
         elem = SubElement(node, QN("instance_geometry"),
@@ -263,10 +259,7 @@ class ColladaDriver(arboris._visu.DrawerDriver):
 
     def _create_cylinder(self, length, radius, color, resolution, name=None):
         assert resolution in ('8', '32')
-        if name:
-            node = Element(QN("node"), {"id":name, "name":name})
-        else:
-            node = Element(QN("node"))
+        node = Element(QN("node"), {"id":"shape", "name":str(name)})
         scale = SubElement(node, QN('scale'))
         scale.text = "{0} {0} {1}".format(radius, length)
         elem = SubElement(node, QN("instance_geometry"),
