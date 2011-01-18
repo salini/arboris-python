@@ -115,12 +115,14 @@ def find_by_id(root, id, tag=None):
     return None
 
 class ColladaDriver(arboris._visu.DrawerDriver):
-    def __init__(self, filename, shapes_file=None, scale=1., options=None):
+    def __init__(self, filename, shapes_file=None, scale=1., options=None, stand_alone=True):
         arboris._visu.DrawerDriver.__init__(self, scale, options)
         self._file = open(filename, 'w')
         self._colors = []
-        scene = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                'scene.dae')
+        if stand_alone:
+            scene = os.path.join(os.path.dirname(os.path.abspath(__file__)),'scene_stand_alone.dae')
+        else:
+            scene = os.path.join(os.path.dirname(os.path.abspath(__file__)),'scene.dae')
         self._tree = ET.parse(scene)
         frame_arrows = find_by_id(self._tree, 'frame_arrows', QN('node'))
         # fix the path to the shapes.dae file
@@ -128,11 +130,18 @@ class ColladaDriver(arboris._visu.DrawerDriver):
             self._shapes = SHAPES
         else:
             self._shapes = shapes_file
-        instance_node = frame_arrows.find('./{'+NS+'}instance_node')
-        instance_node.set('url', self._shapes + "#frame_arrows")
+
+        if stand_alone:
+            self._shapes = ""
+        else:
+            instance_node = frame_arrows.find('./{'+NS+'}instance_node')
+            instance_node.set('url', self._shapes + "#frame_arrows")
         # update the frame arrows scale
         scale = frame_arrows.find('./{'+NS+'}scale')
         scale.text = "{0} {0} {0}".format(self._options['frame arrows length'])
+        
+        
+        
 
     def init(self):
         pass
@@ -317,7 +326,7 @@ class ColladaDriver(arboris._visu.DrawerDriver):
         self._tree.write(self._file, "utf-8")
         self._file.close()
 
-def write_collada_scene(world, dae_filename, flat=False):
+def write_collada_scene(world, dae_filename, flat=False, stand_alone=True):
     """Write a visual description of the scene in a collada file.
 
     :param world: the world to convert
@@ -330,7 +339,7 @@ def write_collada_scene(world, dae_filename, flat=False):
 
     """
     assert isinstance(world, arboris.core.World)
-    drawer = arboris._visu.Drawer(ColladaDriver(dae_filename), flat)
+    drawer = arboris._visu.Drawer(ColladaDriver(dae_filename, stand_alone=stand_alone), flat)
     world.parse(drawer)
     drawer.finish()
 
