@@ -294,7 +294,7 @@ import socket
 import subprocess, shlex
 import time
 
-class DeanimCom(arboris.core.Observer):
+class DaenimCom(arboris.core.Observer):
     """
     """
     def __init__(self, arborisViewer, daefile, host="127.0.0.1", port=5000, options = "", precision=5):
