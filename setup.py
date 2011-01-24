@@ -73,7 +73,7 @@ setup(name='arboris',
       license='LGPL',
       packages=['arboris',
                 'arboris.robots'],
-      package_data={'arboris': ['shapes.dae', 'scene.dae']},
+      package_data={'arboris': ['shapes.dae', 'scene.dae', 'scene_stand_alone.dae']},
       classifiers=[
               'Development Status :: 4 - Beta',
               'Environment :: Console',
