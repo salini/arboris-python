@@ -287,3 +287,52 @@ class Hdf5Logger(arboris.core.Observer):
 
     def finish(self):
         self._file.close()
+
+
+
+import socket
+import subprocess, shlex
+import time
+
+class DeanimCom(arboris.core.Observer):
+    """
+    """
+    def __init__(self, arborisViewer, daefile, host="127.0.0.1", port=5000, options = "", precision=5):
+
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        for i in range(50):
+            try:
+                self.s.bind((host, port))
+                break
+            except socket.error:
+                port += 1
+                print "change port!!!"
+        self.app_call = [arborisViewer, daefile, "-socket", host, str(port)] + shlex.split(options)
+        self.precision = precision
+
+    def init(self,world, timline):
+        self.world = world
+        subprocess.Popen(self.app_call)
+        self.s.listen(1) #TODO: add a timeout to avoid any blocking
+        self.conn, self.addr = self.s.accept()
+        print 'Connected by', self.addr
+        time.sleep(1.)
+
+    def update(self,dt):
+        msg = ""
+        for b in self.world.getbodies():
+            H = b.pose
+            msg += b.name + " " + " ".join([str(round(val,self.precision)) for val in H[0:3,:].reshape(12)]) + "\n"
+        try:
+            self.conn.send(msg)
+        except socket.error:
+            print "connection lost"
+
+    def finish(self):
+        try:
+            self.conn.send("close connection")
+            self.s.close()
+        except socket.error:
+            pass
+
+
