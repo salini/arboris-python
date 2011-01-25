@@ -64,10 +64,9 @@ class DrawerDriver():
     __metaclass__ = ABCMeta
 
     def __init__(self, scale=1., options=None):
-        if options is None:
-            self._options = self.get_default_options(scale)
-        else:
-            self._options = options
+        self._options = self.get_default_options(scale)
+        if options is not None:
+            self._options.update(options)
 
     @staticmethod
     def get_default_options(scale=1.):

@@ -362,7 +362,7 @@
 		</geometry>
 	</library_geometries>
 	<library_nodes>
-		<node id="frame_arrows">
+		<node id="unitary_frame_arrows">
 			<instance_geometry url="#frame_arrows_geometry">
 				<bind_material>
 					<technique_common>

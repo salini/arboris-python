@@ -12,7 +12,7 @@ from datetime import datetime
 
 NS = 'http://www.collada.org/2005/11/COLLADASchema'
 SHAPES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'shapes.dae')
-SHAPES = r"file:///" + SHAPES.replace("\\", "/")
+
 
 def QN(tag):
     """Return the qualified version of a collada tag name.
@@ -114,34 +114,46 @@ def find_by_id(root, id, tag=None):
             return(e)
     return None
 
+
+def get_collada_default_options():
+    options = {
+               "stand alone": True,
+              }
+    return options
+
+
+def copy_collada_libraries(from_tree, to_tree, lib_name, elements_to_copy=None):
+    from_lib = from_tree.find(QN(lib_name))
+    to_lib   = to_tree.find(QN(lib_name))
+    if from_lib is None:
+        print "WARNING: cannot copy "+n+", doesn't exist in reference file"
+    if to_lib is None:
+        to_lib = SubElement(to_tree.getroot(), QN(n))
+    if elements_to_copy is None:
+        to_copy = list(from_lib.getchildren())
+    else:
+        elements_to_copy = list(elements_to_copy)
+        children = from_lib.getchildren()
+        to_copy = [c for c in children if c.get('id') in elements_to_copy]
+    for e in to_copy:
+        to_lib.append(e)
+
 class ColladaDriver(arboris._visu.DrawerDriver):
-    def __init__(self, filename, shapes_file=None, scale=1., options=None, stand_alone=True):
-        arboris._visu.DrawerDriver.__init__(self, scale, options)
+    def __init__(self, filename, scale=1., options=None):
+        arboris._visu.DrawerDriver.__init__(self, scale, get_collada_default_options())
+        if options is not None:
+            self._options.update(options)
         self._file = open(filename, 'w')
         self._colors = []
-        if stand_alone:
-            scene = os.path.join(os.path.dirname(os.path.abspath(__file__)),'scene_stand_alone.dae')
-        else:
-            scene = os.path.join(os.path.dirname(os.path.abspath(__file__)),'scene.dae')
+        self._shapes = "" if self._options["stand alone"] else r"file:///"+SHAPES.replace("\\", "/")
+        scene = os.path.join(os.path.dirname(os.path.abspath(__file__)),'scene.dae')
         self._tree = ET.parse(scene)
         frame_arrows = find_by_id(self._tree, 'frame_arrows', QN('node'))
-        # fix the path to the shapes.dae file
-        if shapes_file is None:
-            self._shapes = SHAPES
-        else:
-            self._shapes = shapes_file
-
-        if stand_alone:
-            self._shapes = ""
-        else:
-            instance_node = frame_arrows.find('./{'+NS+'}instance_node')
-            instance_node.set('url', self._shapes + "#frame_arrows")
+        instance_node = frame_arrows.find('./{'+NS+'}instance_node')
+        instance_node.set('url', self._shapes + "#unitary_frame_arrows")
         # update the frame arrows scale
         scale = frame_arrows.find('./{'+NS+'}scale')
         scale.text = "{0} {0} {0}".format(self._options['frame arrows length'])
-        
-        
-        
 
     def init(self):
         pass
@@ -200,10 +212,10 @@ class ColladaDriver(arboris._visu.DrawerDriver):
             rotz, roty, rotx = rotzyx_angles(pose)
             coeff = 180./pi
             matrix = SubElement(node, QN("matrix"), {'sid':"matrix"})
-            matrix.text = str(pose.reshape(16))[1:-1]
+            matrix.text = " ".join([str(round(val,6)) for val in pose.flatten()])
         elif not (pose == eye(4)).all():
             matrix = SubElement(node, QN("matrix"), {'sid':'matrix'})
-            matrix.text = str(pose.reshape(-1)).strip('[]')
+            matrix.text = " ".join([str(round(val,6)) for val in pose.flatten()])
         return node
 
     def create_line(self, start, end, color, name=None):
@@ -320,26 +332,54 @@ class ColladaDriver(arboris._visu.DrawerDriver):
 
     def finish(self):
         # write to  file
+        if self._options["stand alone"]:
+            copy_collada_libraries(ET.parse(SHAPES), self._tree, "library_materials")
+            copy_collada_libraries(ET.parse(SHAPES), self._tree, "library_effects")
+            copy_collada_libraries(ET.parse(SHAPES), self._tree, "library_geometries")
+            copy_collada_libraries(ET.parse(SHAPES), self._tree, "library_nodes")
         self._write_colors()
         indent(self._tree)
         fix_namespace(self._tree)
         self._tree.write(self._file, "utf-8")
         self._file.close()
 
-def write_collada_scene(world, dae_filename, flat=False, stand_alone=True):
+
+def use_custom_shapes(dae_filename, mapping, stand_alone=False):
+    tree = ET.parse(dae_filename)
+    for node in tree.getiterator(QN("node")):
+        node_id = node.get('id')
+        if node_id in mapping.iterkeys():
+            custom_shape = mapping[node_id]
+            if stand_alone:
+                custom_shape_file, custom_shape = custom_shape.split("#")
+                copy_collada_libraries(ET.parse(custom_shape_file), tree, "library_geometries", [custom_shape])
+                custom_shape = "#"+ custom_shape
+
+            shape_node = SubElement(node, QN("node"), {"id":"shape"})
+            SubElement(shape_node, QN("instance_geometry"), {"url": custom_shape}) #TODO: inst_geo or inst_node?
+    fix_namespace(tree)
+    tree.write(dae_filename, "utf-8")
+
+
+
+def write_collada_scene(world, dae_filename, scale=1., options=None, flat=False):
     """Write a visual description of the scene in a collada file.
 
     :param world: the world to convert
     :type world: :class:`arboris.core.World` instance
     :param dae_filename: path of the output collada scene file
     :type dae_filename: str
+    :param scale: the scale of the world
+    :type scale: float
+    :param options: the options to set the world building
+    :type options: dict
     :param flat: if True, each body is a child of the ground. Otherwise
                  the hierarchy is copied from arboris
     :type flat: bool
 
     """
     assert isinstance(world, arboris.core.World)
-    drawer = arboris._visu.Drawer(ColladaDriver(dae_filename, stand_alone=stand_alone), flat)
+    drawer = arboris._visu.Drawer(ColladaDriver(dae_filename, scale, options), flat)
     world.parse(drawer)
     drawer.finish()
 

@@ -9,10 +9,12 @@
 	</library_materials>
 	<library_effects>
 	</library_effects>
+	<library_geometries>
+	</library_geometries>
 	<library_nodes>
 		<node id="frame_arrows">
 			<scale>1 1 1</scale>
-			<instance_node url="shapes.dae#frame_arrows"/>
+			<instance_node url="shapes.dae#unitary_frame_arrows"/>
 		</node>
 		<node id="ground">
 		</node>
