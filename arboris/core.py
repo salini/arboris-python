@@ -817,7 +817,7 @@ class World(NamedObject):
             self._impedance -= impedance
         self._admittance = numpy.linalg.inv(self._impedance)
 
-    def update_constraints(self, dt):
+    def update_constraints(self, dt, maxiters=500, tol=1e-3):
         r"""
         In accordance with the integration scheme, we assume the following
         first order model between generalized velocities and generalized
@@ -926,13 +926,15 @@ class World(NamedObject):
                            dot(self._mass, self._gvel/dt) + gforce))
         admittance = dot(jac, dot(self._admittance, jac.T))
 
-        k=0
-        while k < 200:
-        #TODO: change the break condition, it should be computed from the error
-            k+=1
+        previous_vel = vel.copy()
+        for k in range(maxiters):
             for c in constraints:
                 dforce = c.solve(vel[c._dol], admittance[c._dol,c._dol], dt)
                 vel += dot(admittance[:, c._dol], dforce)
+            error = numpy.linalg.norm(vel - previous_vel)
+            if k > 0 and error < tol:
+                break
+            previous_vel = vel.copy()
         for c in constraints:
             self._gforce += c.gforce
 
