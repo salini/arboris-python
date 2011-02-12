@@ -358,7 +358,9 @@ def use_custom_shapes(dae_filename, mapping, stand_alone=False):
             shape_node = SubElement(node, QN("node"), {"id":"shape"})
             SubElement(shape_node, QN("instance_geometry"), {"url": custom_shape}) #TODO: inst_geo or inst_node?
     fix_namespace(tree)
-    tree.write(dae_filename, "utf-8")
+    _file = open(dae_filename, 'w')
+    tree.write(_file, "utf-8")
+    _file.close()
 
 
 
