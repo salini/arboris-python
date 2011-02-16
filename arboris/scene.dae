@@ -17,6 +17,7 @@
 			<instance_node url="shapes.dae#unitary_frame_arrows"/>
 		</node>
 		<node id="ground">
+			<instance_node url="#frame_arrows" />
 		</node>
 	</library_nodes>
 	<library_visual_scenes>
