@@ -259,7 +259,7 @@ class Hdf5Logger(arboris.core.Observer):
     def update(self, dt):
         """Save the current data (state...).
         """
-	assert self._current_step <= self._nb_steps
+        assert self._current_step <= self._nb_steps
         self._root["timeline"][self._current_step] = self._world._current_time
         if self._save_state:
             for j in self._world.getjoints():
@@ -294,12 +294,12 @@ import socket
 import subprocess, shlex
 import time
 
-class DaenimCom(arboris.core.Observer):
+class SocketCom(arboris.core.Observer):
     """
     """
-    def __init__(self, arborisViewer, daefile, host="127.0.0.1", port=5000, options = "", precision=5):
-
+    def __init__(self, host="127.0.0.1", port=5000, timeout=3):
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.s.settimeout(timeout)
         for i in range(50):
             try:
                 self.s.bind((host, port))
@@ -307,32 +307,61 @@ class DaenimCom(arboris.core.Observer):
             except socket.error:
                 port += 1
                 print "change port!!!"
-        self.app_call = [arborisViewer, daefile, "-socket", host, str(port)] + shlex.split(options)
-        self.precision = precision
+        self.host = host
+        self.port = port
 
-    def init(self,world, timline):
-        self.world = world
-        subprocess.Popen(self.app_call)
-        self.s.listen(1) #TODO: add a timeout to avoid any blocking
-        self.conn, self.addr = self.s.accept()
-        print 'Connected by', self.addr
-        time.sleep(1.)
-
-    def update(self,dt):
-        msg = ""
-        for b in self.world.getbodies():
-            H = b.pose
-            msg += b.name + " " + " ".join([str(round(val,self.precision)) for val in H[0:3,:].reshape(12)]) + "\n"
+    def init(self, world, timeline):
+        self.s.listen(1)
         try:
-            self.conn.send(msg)
-        except socket.error:
-            print "connection lost"
+            self.conn, self.addr = self.s.accept()
+            print 'Connected by', self.addr
+        except:
+            print "Connection error: no connection occurs"
 
     def finish(self):
         try:
             self.conn.send("close connection")
             self.s.close()
-        except socket.error:
+        except:
             pass
+
+
+class DaenimCom(SocketCom):
+    """
+    """
+    def __init__(self, arborisViewer, daefile, host="127.0.0.1", port=5000, options = "", precision=5, flat=True):
+        """
+        """
+        SocketCom.__init__(self, host, port)
+        self.app_call = [arborisViewer, daefile, "-socket", self.host, str(self.port)] + shlex.split(options)
+        self.precision = precision
+        self.flat = flat
+
+    def init(self,world, timeline):
+        """
+        """
+        self.world = world
+        subprocess.Popen(self.app_call)
+        SocketCom.init(self, world, timeline)
+        time.sleep(1.)
+
+    def update(self,dt):
+        """
+        """
+        from arboris.homogeneousmatrix import inv
+        msg = ""
+        for b in self.world.getbodies()[1:]:
+            if self.flat:
+                H = b.pose
+            else:
+                j = list(b.iter_ancestor_joints())[0]
+                H = dot(inv(j._frame0.pose), b.pose)
+            msg += b.name + " " + " ".join([str(round(val,self.precision)) for val in H[0:3,:].reshape(12)]) + "\n"
+        try:
+            self.conn.send(msg)
+        except:
+            print "connection lost"
+
+
 
 
