@@ -223,6 +223,7 @@ class Hdf5Logger(arboris.core.Observer):
             self._gpositions = self._root.require_group('gpositions')
             self._gvelocities = self._root.require_group('gvelocities')
             for j in self._world.getjoints():
+                if j.name is None: j.name = "joint_"+str(id(j))
                 self._gpositions.require_dataset(j.name,
                         (self._nb_steps,) + j.gpos.shape[:])
                 self._gvelocities.require_dataset(j.name,
@@ -232,11 +233,14 @@ class Hdf5Logger(arboris.core.Observer):
             self._transforms = self._root.require_group('transforms')
             if self._flat:
                 for b in self._world.iterbodies():
+                    if b.name is None: b.name = "body_"+str(id(b))
                     self._arb_transforms[b.name] = b
             else:
                 for j in  self._world.getjoints():
+                    if j.frames[1].name is None: j.frames[1].name = "joint_frame_"+str(id(j.frames[1]))
                     self._arb_transforms[j.frames[1].name] = j
             for f in self._world.itermovingsubframes():
+                if f.name is None: f.name = "frame_"+str(id(f))
                 self._arb_transforms[f.name] = f
             for k in self._arb_transforms.iterkeys():
                 d = self._transforms.require_dataset(k,
@@ -329,7 +333,7 @@ class SocketCom(arboris.core.Observer):
 class DaenimCom(SocketCom):
     """
     """
-    def __init__(self, arborisViewer, daefile, host="127.0.0.1", port=5000, options = "", precision=5, flat=True):
+    def __init__(self, arborisViewer, daefile, host="127.0.0.1", port=5000, options = "", precision=5, flat=False):
         """
         """
         SocketCom.__init__(self, host, port)
