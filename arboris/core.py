@@ -378,6 +378,10 @@ class World(NamedObject):
         for obj in self._constraints:
             yield obj
 
+    def getconstraints(self):
+        """Returns a NamedObjectsList of the world constraints"""
+        return NamedObjectsList(self._constraints)
+
     def itersubframes(self):
         """Iterate over all subframes."""
         for obj in self._subframes:
@@ -665,6 +669,10 @@ class World(NamedObject):
     @property
     def gforce(self):
         return self._gforce.copy()
+
+    @property
+    def admittance(self):
+        return self._admittance.copy()
 
     def update_geometric(self):
         """Compute the forward geometric model.

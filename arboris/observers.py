@@ -225,9 +225,9 @@ class Hdf5Logger(arboris.core.Observer):
             for j in self._world.getjoints():
                 if j.name is None: j.name = "joint_"+str(id(j))
                 self._gpositions.require_dataset(j.name,
-                        (self._nb_steps,) + j.gpos.shape[:])
+                        (self._nb_steps,) + j.gpos.shape[:], 'f8')
                 self._gvelocities.require_dataset(j.name,
-                        (self._nb_steps, j.ndof))
+                        (self._nb_steps, j.ndof), 'f8')
         if self._save_transforms:
             self._arb_transforms = {}
             self._transforms = self._root.require_group('transforms')
@@ -363,7 +363,7 @@ class DaenimCom(SocketCom):
             msg += b.name + " " + " ".join([str(round(val,self.precision)) for val in H[0:3,:].reshape(12)]) + "\n"
         try:
             self.conn.send(msg)
-        except:
+        except socket.error:
             print "connection lost"
 
 
