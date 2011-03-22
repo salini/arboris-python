@@ -384,7 +384,7 @@
 	<library_visual_scenes>
 		<visual_scene id="test_scene">
 			<node>
-				<instance_node url="#frame_arrows"/>
+				<instance_node url="#unitary_frame_arrows"/>
 			</node>
 			<node>
 				<translate>2. 0. 0.</translate>

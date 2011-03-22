@@ -84,15 +84,13 @@ class DrawerDriver():
             #'display names': False,
             'display inertias': True,
             'display shapes': True,
+
             'frame arrows length': 0.08 * scale,
-            #'frame arrows radius': 0.005 * scale,
-            #'frame arrows alpha': 1.,
-            #'link radius': 0.004 * scale,
             'point radius': 0.008 * scale,
             'plane half extents': (1. * scale, 1. * scale),
+            'inertia factor': 5. * scale,
             #'text size': 0.1 * scale,
-            #'center of interest': (0., 0., 0.),
-            #'camera position': (3.,3.,3.),
+
             'force length': 0.1 * scale,
             'force radius': 0.002 * scale}
         return options

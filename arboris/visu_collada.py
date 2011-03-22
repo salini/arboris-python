@@ -128,6 +128,12 @@ def require_SubElement(root_node, tag, attrib={}):
     else:
         return children[0]
 
+def _add_osg_description(node, description):
+    extra = require_SubElement(node, "extra", {"type":"Node"})
+    technique = require_SubElement(extra, "technique",  {"profile":"OpenSceneGraph"})
+    descriptions = require_SubElement(technique, "Descriptions")
+    SubElement(descriptions, "Description").text = description
+
 
 def get_collada_default_options():
     options = {
@@ -135,22 +141,6 @@ def get_collada_default_options():
               }
     return options
 
-
-def copy_collada_libraries(from_tree, to_tree, lib_name, elements_to_copy=None):
-    from_lib = from_tree.find(QN(lib_name))
-    to_lib   = to_tree.find(QN(lib_name))
-    if from_lib is None:
-        print "WARNING: cannot copy "+n+", doesn't exist in reference file"
-    if to_lib is None:
-        to_lib = SubElement(to_tree.getroot(), QN(n))
-    if elements_to_copy is None:
-        to_copy = list(from_lib.getchildren())
-    else:
-        elements_to_copy = list(elements_to_copy)
-        children = from_lib.getchildren()
-        to_copy = [c for c in children if c.get('id') in elements_to_copy]
-    for e in to_copy:
-        to_lib.append(e)
 
 class ColladaDriver(arboris._visu.DrawerDriver):
     def __init__(self, filename, scale=1., options=None):
@@ -160,6 +150,7 @@ class ColladaDriver(arboris._visu.DrawerDriver):
         self._file = open(filename, 'w')
         self._colors = []
         self._shapes = "" if self._options["stand alone"] else r"file:///"+SHAPES.replace("\\", "/")
+        self._used_shapes = set(["frame_arrows_geometry"])
         scene = os.path.join(os.path.dirname(os.path.abspath(__file__)),'scene.dae')
         self._tree = ET.parse(scene)
         frame_arrows = find_by_id(self._tree, 'frame_arrows', QN('node'))
@@ -237,20 +228,25 @@ class ColladaDriver(arboris._visu.DrawerDriver):
         node_link = SubElement(node, QN("node"))
         elem = SubElement(node_link, QN("instance_geometry"),{"url": self._shapes+"#line"})
         self._add_color(elem, color)
-        self._add_osg_description(node, "link")
+        _add_osg_description(node, "link")
+        self._used_shapes.add('line')
         return node
 
     def create_inertia(self, inertia, color, name=None):
         """Generate a representation of inertia as an ellipsoid."""
         H = principalframe(inertia)
         M = transport(inertia, H)
-        node = Element(QN("node"))
+        attr = {"name":name} if name else {}
+        node = Element(QN("node"), attr)
         matrix = SubElement(node, QN("matrix"), {'sid':'matrix'}) #
         matrix.text = str(H.reshape(-1)).strip('[]')
         scale = SubElement(node, QN('scale')) #
-        scale.text = "{0} {1} {2}".format(M[0,0], M[1,1], M[2,2])
-        elem = SubElement(node, QN("instance_geometry"), {"url": SHAPES+"#sphere_80"}) #
-        self._add_osg_description(node, "inertia")
+        f = self._options['inertia factor']
+        scale.text = "{0} {1} {2}".format(M[0,0]*f, M[1,1]*f, M[2,2]*f)
+        elem = SubElement(node, QN("instance_geometry"), {"url": self._shapes+"#sphere_80"}) #
+        self._add_color(elem, color)
+        _add_osg_description(node, "inertia")
+        self._used_shapes.add('sphere_80')
         return node
 
     def create_frame_arrows(self):
@@ -263,7 +259,8 @@ class ColladaDriver(arboris._visu.DrawerDriver):
         scale.text = "{0} {1} {2}".format(*half_extents)
         elem = SubElement(node, QN("instance_geometry"),{"url": self._shapes+"#box"})
         self._add_color(elem, color)
-        self._add_osg_description(node, "shape")
+        _add_osg_description(node, "shape")
+        self._used_shapes.add('box')
         return node
 
     def create_plane(self, coeffs, color, name=None):
@@ -275,7 +272,8 @@ class ColladaDriver(arboris._visu.DrawerDriver):
         node_shape = SubElement(node, QN("node"))
         elem = SubElement(node_shape, QN("instance_geometry"),{"url": self._shapes+"#plane"})
         self._add_color(elem, color)
-        self._add_osg_description(node, "shape")
+        _add_osg_description(node, "shape")
+        self._used_shapes.add('plane')
         return node
 
     def _create_ellipsoid(self, radii, color, resolution, name=None):
@@ -286,7 +284,8 @@ class ColladaDriver(arboris._visu.DrawerDriver):
         scale.text = "{0} {1} {2}".format(*radii)
         elem = SubElement(node, QN("instance_geometry"),{"url": self._shapes+"#sphere_"+resolution})
         self._add_color(elem, color)
-        self._add_osg_description(node, "shape")
+        _add_osg_description(node, "shape")
+        self._used_shapes.add('sphere_'+resolution)
         return node
 
     def create_ellipsoid(self, radii, color, name=None):
@@ -304,7 +303,8 @@ class ColladaDriver(arboris._visu.DrawerDriver):
         scale.text = "{0} {0} {1}".format(radius, length)
         elem = SubElement(node, QN("instance_geometry"),{"url": self._shapes+"#cylinder_"+resolution})
         self._add_color(elem, color)
-        self._add_osg_description(node, "shape")
+        _add_osg_description(node, "shape")
+        self._used_shapes.add('cylinder_'+resolution)
         return node
 
     def create_cylinder(self, length, radius, color, name=None):
@@ -349,21 +349,18 @@ class ColladaDriver(arboris._visu.DrawerDriver):
             </effect>
             """.format(color_id, *c, NS=NS)))
 
-    def _add_osg_description(self, node, description):
-        """
-        """
-        extra = require_SubElement(node, "extra", {"type":"Node"})
-        technique = require_SubElement(extra, "technique",  {"profile":"OpenSceneGraph"})
-        descriptions = require_SubElement(technique, "Descriptions")
-        SubElement(descriptions, "Description").text = description
-
     def finish(self):
         # write to  file
-        if self._options["stand alone"]: #TODO: IMPROVE!!!!!!!
-            copy_collada_libraries(ET.parse(SHAPES), self._tree, "library_materials")
-            copy_collada_libraries(ET.parse(SHAPES), self._tree, "library_effects")
-            copy_collada_libraries(ET.parse(SHAPES), self._tree, "library_geometries")
-            copy_collada_libraries(ET.parse(SHAPES), self._tree, "library_nodes")
+        if self._options["stand alone"]:
+            src_root = ET.parse(SHAPES).getroot()
+            to_root =  self._tree.getroot()
+            for lib_name in ["library_materials", "library_effects", "library_nodes"]:
+                src_lib = src_root.find(QN(lib_name))
+                to_root.append(src_lib)
+            src_lib = src_root.find(QN("library_geometries"))
+            to_lib = require_SubElement(to_root, QN("library_geometries"))
+            for elem in self._used_shapes:
+                to_lib.append(find_by_id(src_lib, elem))
         self._write_colors()
         indent(self._tree)
         fix_namespace(self._tree)
@@ -373,17 +370,20 @@ class ColladaDriver(arboris._visu.DrawerDriver):
 
 def use_custom_shapes(dae_filename, mapping, stand_alone=False):
     tree = ET.parse(dae_filename)
-    for node in tree.getiterator(QN("node")):
+    for node in tree.iter(QN("node")):
         node_id = node.get('id')
         if node_id in mapping.iterkeys():
             custom_shape = mapping[node_id]
             if stand_alone:
                 custom_shape_file, custom_shape = custom_shape.split("#")
-                copy_collada_libraries(ET.parse(custom_shape_file), tree, "library_geometries", [custom_shape])
+                src_lib = ET.parse(custom_shape_file).find(QN("library_geometries"))
+                to_lib = require_SubElement(tree.getroot(), QN("library_geometries"))
+                to_lib.append(find_by_id(src_lib, custom_shape))
                 custom_shape = "#"+ custom_shape
-
-            shape_node = SubElement(node, QN("node"), {"id":"shape"})
+            #TODO: the choice of the lib where to put the elem should be more accurate
+            shape_node = SubElement(node, QN("node"))
             SubElement(shape_node, QN("instance_geometry"), {"url": custom_shape}) #TODO: inst_geo or inst_node?
+            _add_osg_description(shape_node, "shape")
     fix_namespace(tree)
     _file = open(dae_filename, 'w')
     tree.write(_file, "utf-8")
