@@ -115,6 +115,19 @@ def find_by_id(root, id, tag=None):
             return(e)
     return None
 
+def require_SubElement(root_node, tag, attrib={}):
+    """
+    """
+    children = [e for e in list(root_node) if e.tag == tag]
+    for c in children:
+        for k, v in attrib.iteritems():
+            if c.get(k) != v:
+                children.pop(c)
+    if len(children)==0: #No subElement Found, return one
+        return SubElement(root_node, tag, attrib)
+    else:
+        return children[0]
+
 
 def get_collada_default_options():
     options = {
@@ -203,20 +216,12 @@ class ColladaDriver(arboris._visu.DrawerDriver):
         if category is None or self._options['display '+plural(category)]:
             parent.append(child)
 
-    def create_transform(self, pose, is_constant, name=None):
+    def create_transform(self, pose, is_constant, name=None): #TODO: is_constant is not useful
         """Generate the node corresponding to the pose."""
-        if name:
-            node = Element(QN("node"), {"id":name, "name":name})
-        else:
-            node = Element(QN("node"))
-        if not is_constant:
-            rotz, roty, rotx = rotzyx_angles(pose)
-            coeff = 180./pi
-            matrix = SubElement(node, QN("matrix"), {'sid':"matrix"})
-            matrix.text = " ".join([str(round(val,6)) for val in pose.flatten()])
-        elif not (pose == eye(4)).all():
-            matrix = SubElement(node, QN("matrix"), {'sid':'matrix'})
-            matrix.text = " ".join([str(round(val,6)) for val in pose.flatten()])
+        attr = {"id":name, "name":name} if name else {}
+        node = Element(QN("node"), attr)
+        matrix = SubElement(node, QN("matrix"), {'sid':'matrix'})
+        matrix.text = " ".join([str(round(val,6)) for val in pose.flatten()])
         return node
 
     def create_line(self, start, end, color, name=None):
@@ -229,10 +234,10 @@ class ColladaDriver(arboris._visu.DrawerDriver):
         node = self.create_transform(H, is_constant=True, name=name)
         scale = SubElement(node, QN('scale'))
         scale.text = "0. 0. {0}".format(vector_norm)
-        node_link = SubElement(node, QN("node"), {"id":"link"})
-        elem = SubElement(node_link, QN("instance_geometry"),
-            {"url": self._shapes+"#line"})
+        node_link = SubElement(node, QN("node"))
+        elem = SubElement(node_link, QN("instance_geometry"),{"url": self._shapes+"#line"})
         self._add_color(elem, color)
+        self._add_osg_description(node, "link")
         return node
 
     def create_inertia(self, inertia, color, name=None):
@@ -255,14 +260,13 @@ class ColladaDriver(arboris._visu.DrawerDriver):
         return Element(QN("instance_node"), {"url": "#frame_arrows"})
 
     def create_box(self, half_extents, color, name=None):
-        # instead of creating a new box, we use the #box and scale it
-        # to the proper size
-        node = Element(QN("node"), {"id":"shape", "name":str(name)})
+        attr = {"name":name} if name else {}
+        node = Element(QN("node"), attr)
         scale = SubElement(node, QN('scale'))
         scale.text = "{0} {1} {2}".format(*half_extents)
-        elem = SubElement(node, QN("instance_geometry"),
-                          {"url": self._shapes+"#box"})
+        elem = SubElement(node, QN("instance_geometry"),{"url": self._shapes+"#box"})
         self._add_color(elem, color)
+        self._add_osg_description(node, "shape")
         return node
 
     def create_plane(self, coeffs, color, name=None):
@@ -271,20 +275,21 @@ class ColladaDriver(arboris._visu.DrawerDriver):
         node = self.create_transform(H, is_constant=True, name=name)
         scale = SubElement(node, QN('scale'))
         scale.text = "{0} {1} 0.".format(*self._options["plane half extents"])
-        node_shape = SubElement(node, QN("node"), {"id":"shape"})
-        elem = SubElement(node_shape, QN("instance_geometry"),
-                {"url": self._shapes+"#plane"})
+        node_shape = SubElement(node, QN("node"))
+        elem = SubElement(node_shape, QN("instance_geometry"),{"url": self._shapes+"#plane"})
         self._add_color(elem, color)
+        self._add_osg_description(node, "shape")
         return node
 
     def _create_ellipsoid(self, radii, color, resolution, name=None):
         assert resolution in ('20', '80', '320')
-        node = Element(QN("node"), {"id":"shape", "name":str(name)})
+        attr = {"name":name} if name else {}
+        node = Element(QN("node"), attr)
         scale = SubElement(node, QN('scale'))
         scale.text = "{0} {1} {2}".format(*radii)
-        elem = SubElement(node, QN("instance_geometry"),
-                          {"url": self._shapes+"#sphere_"+resolution})
+        elem = SubElement(node, QN("instance_geometry"),{"url": self._shapes+"#sphere_"+resolution})
         self._add_color(elem, color)
+        self._add_osg_description(node, "shape")
         return node
 
     def create_ellipsoid(self, radii, color, name=None):
@@ -297,12 +302,13 @@ class ColladaDriver(arboris._visu.DrawerDriver):
 
     def _create_cylinder(self, length, radius, color, resolution, name=None):
         assert resolution in ('8', '32')
-        node = Element(QN("node"), {"id":"shape", "name":str(name)})
+        attr = {"name":name} if name else {}
+        node = Element(QN("node"), attr)
         scale = SubElement(node, QN('scale'))
         scale.text = "{0} {0} {1}".format(radius, length)
-        elem = SubElement(node, QN("instance_geometry"),
-                          {"url": self._shapes+"#cylinder_"+resolution})
+        elem = SubElement(node, QN("instance_geometry"),{"url": self._shapes+"#cylinder_"+resolution})
         self._add_color(elem, color)
+        self._add_osg_description(node, "shape")
         return node
 
     def create_cylinder(self, length, radius, color, name=None):
@@ -347,9 +353,18 @@ class ColladaDriver(arboris._visu.DrawerDriver):
             </effect>
             """.format(color_id, *c, NS=NS)))
 
+    def _add_osg_description(self, node, description):
+        """
+        """
+        extra = require_SubElement(node, "extra", {"type":"Node"})
+        technique = require_SubElement(extra, "technique",  {"profile":"OpenSceneGraph"})
+        descriptions = require_SubElement(technique, "Descriptions")
+        SubElement(descriptions, "Description").text = description
+
+
     def finish(self):
         # write to  file
-        if self._options["stand alone"]:
+        if self._options["stand alone"]: #TODO: IMPROVE!!!!!!!
             copy_collada_libraries(ET.parse(SHAPES), self._tree, "library_materials")
             copy_collada_libraries(ET.parse(SHAPES), self._tree, "library_effects")
             copy_collada_libraries(ET.parse(SHAPES), self._tree, "library_geometries")

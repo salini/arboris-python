@@ -372,6 +372,13 @@
 					</technique_common>
 				</bind_material>
 			</instance_geometry>
+			<extra type="Node">
+				<technique profile="OpenSceneGraph">
+					<Descriptions>
+						<Description>frame</Description>
+					</Descriptions>
+				</technique>
+			</extra>
 		</node>
 	</library_nodes>
 	<library_visual_scenes>
