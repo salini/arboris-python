@@ -576,7 +576,10 @@ class World(NamedObject):
 
         """
         def _register_frame_and_children(frame):
-            """register a frame and its children (except joints)"""
+            """register a frame and its children (except joints).
+
+            Register the principal frame and its subframes and shapes.
+            """
             if not frame in registered:
                 registered.add(frame)
                 target.register(frame)

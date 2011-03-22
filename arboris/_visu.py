@@ -82,7 +82,7 @@ class DrawerDriver():
             'display frame arrows': True,
             'display links': True,
             #'display names': False,
-            #'display inertia ellipsoids': False,
+            'display inertias': True,
             'display shapes': True,
             'frame arrows length': 0.08 * scale,
             #'frame arrows radius': 0.005 * scale,
@@ -111,6 +111,10 @@ class DrawerDriver():
 
     @abstractmethod
     def create_transform(self, pose, is_constant, name=None):
+        pass
+
+    @abstractmethod
+    def create_inertia(self, inertia, color, name=None):
         pass
 
     @abstractmethod
@@ -352,6 +356,12 @@ class Drawer(object):
             self.transform_nodes[j] = f1_node
 
     def register(self, obj):
+        if isinstance(obj, arboris.core.Body):
+            color = self._color_generator.get_color(obj)
+            print norm(obj.mass)
+            if norm(obj.mass)>10e-8:
+                node = self._driver.create_inertia(obj.mass, color, obj.name)
+                self._driver.add_child(self.frame_nodes[obj], node, 'inertia')
         if isinstance(obj, arboris.core.SubFrame) and \
                 not(obj in self.frame_nodes):
             color = self._color_generator.get_color(obj)

@@ -3,6 +3,7 @@ import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import XML, Element, SubElement
 from numpy import eye, zeros, all, array, ndarray, linspace, pi, linalg
 from arboris.homogeneousmatrix import inv, rotzyx_angles, zaligned
+from arboris.massmatrix import principalframe, transport
 import arboris.core
 import arboris._visu
 import subprocess
@@ -192,7 +193,7 @@ class ColladaDriver(arboris._visu.DrawerDriver):
 
 
     def add_child(self, parent, child, category=None):
-        assert category in (None, 'frame arrows', 'shape', 'link')
+        assert category in (None, 'frame arrows', 'shape', 'link', 'inertia')
         def plural(noun):
             """Return the plural of a noun"""
             if noun[-1] is 's':
@@ -232,6 +233,22 @@ class ColladaDriver(arboris._visu.DrawerDriver):
         elem = SubElement(node_link, QN("instance_geometry"),
             {"url": self._shapes+"#line"})
         self._add_color(elem, color)
+        return node
+
+    def create_inertia(self, inertia, color, name=None):
+        """Generate a representation of inertia as an ellipsoid."""
+        H = principalframe(inertia)
+        M = transport(inertia, H)
+        if name:
+            node = Element(QN("node"), {"id":name, "name":name})
+        else:
+            node = Element(QN("node"))
+        node_inertia = SubElement(node, QN("node"), {"id":"inertia"})
+        matrix = SubElement(node_inertia, QN("matrix"), {'sid':'matrix'})
+        matrix.text = str(H.reshape(-1)).strip('[]')
+        scale = SubElement(node_inertia, QN('scale'))
+        scale.text = "{0} {1} {2}".format(M[0,0], M[1,1], M[2,2])
+        elem = SubElement(node_inertia, QN("instance_geometry"), {"url": SHAPES+"#sphere_80"})
         return node
 
     def create_frame_arrows(self):
