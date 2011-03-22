@@ -2,8 +2,8 @@
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import XML, Element, SubElement
 from numpy import eye, zeros, all, array, ndarray, linspace, pi, linalg
-from arboris.homogeneousmatrix import inv, rotzyx_angles, zaligned
 from arboris.massmatrix import principalframe, transport
+from arboris.homogeneousmatrix import inv, rotzyx_angles, zaligned
 import arboris.core
 import arboris._visu
 import subprocess
@@ -244,16 +244,13 @@ class ColladaDriver(arboris._visu.DrawerDriver):
         """Generate a representation of inertia as an ellipsoid."""
         H = principalframe(inertia)
         M = transport(inertia, H)
-        if name:
-            node = Element(QN("node"), {"id":name, "name":name})
-        else:
-            node = Element(QN("node"))
-        node_inertia = SubElement(node, QN("node"), {"id":"inertia"})
-        matrix = SubElement(node_inertia, QN("matrix"), {'sid':'matrix'})
+        node = Element(QN("node"))
+        matrix = SubElement(node, QN("matrix"), {'sid':'matrix'}) #
         matrix.text = str(H.reshape(-1)).strip('[]')
-        scale = SubElement(node_inertia, QN('scale'))
+        scale = SubElement(node, QN('scale')) #
         scale.text = "{0} {1} {2}".format(M[0,0], M[1,1], M[2,2])
-        elem = SubElement(node_inertia, QN("instance_geometry"), {"url": SHAPES+"#sphere_80"})
+        elem = SubElement(node, QN("instance_geometry"), {"url": SHAPES+"#sphere_80"}) #
+        self._add_osg_description(node, "inertia")
         return node
 
     def create_frame_arrows(self):
@@ -293,8 +290,7 @@ class ColladaDriver(arboris._visu.DrawerDriver):
         return node
 
     def create_ellipsoid(self, radii, color, name=None):
-         return self._create_ellipsoid(radii, color, resolution='320',
-                 name=name)
+         return self._create_ellipsoid(radii, color, resolution='320',name=name)
 
     def create_point(self, color, name=None):
         radii = (self._options['point radius'],) * 3
@@ -360,7 +356,6 @@ class ColladaDriver(arboris._visu.DrawerDriver):
         technique = require_SubElement(extra, "technique",  {"profile":"OpenSceneGraph"})
         descriptions = require_SubElement(technique, "Descriptions")
         SubElement(descriptions, "Description").text = description
-
 
     def finish(self):
         # write to  file

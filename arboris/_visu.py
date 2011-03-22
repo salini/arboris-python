@@ -358,7 +358,6 @@ class Drawer(object):
     def register(self, obj):
         if isinstance(obj, arboris.core.Body):
             color = self._color_generator.get_color(obj)
-            print norm(obj.mass)
             if norm(obj.mass)>10e-8:
                 node = self._driver.create_inertia(obj.mass, color, obj.name)
                 self._driver.add_child(self.frame_nodes[obj], node, 'inertia')
