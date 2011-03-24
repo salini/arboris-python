@@ -354,13 +354,20 @@ class DaenimCom(SocketCom):
         """
         from arboris.homogeneousmatrix import inv
         msg = ""
-        for b in self.world.getbodies()[1:]:
-            if self.flat:
+        if self.flat:
+            for b in self.world.getbodies():
                 H = b.pose
+                msg += b.name + " " + " ".join([str(round(val,self.precision)) for val in H[0:3,:].reshape(12)]) + "\n"
+        else:
+            for j in self.world.getjoints():
+                H = j.pose
+                msg += j.frames[1].name + " " + " ".join([str(round(val,self.precision)) for val in H[0:3,:].reshape(12)]) + "\n"
+        for f in self.world.itermovingsubframes():
+            if self.flat:
+                H = f.pose
             else:
-                j = list(b.iter_ancestor_joints())[0]
-                H = dot(inv(j._frame0.pose), b.pose)
-            msg += b.name + " " + " ".join([str(round(val,self.precision)) for val in H[0:3,:].reshape(12)]) + "\n"
+                H = f.bpose
+            msg += f.name + " " + " ".join([str(round(val,self.precision)) for val in H[0:3,:].reshape(12)]) + "\n"
         try:
             self.conn.send(msg)
         except socket.error:
