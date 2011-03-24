@@ -1,6 +1,6 @@
 # coding=utf-8
 import xml.etree.ElementTree as ET
-from xml.etree.ElementTree import XML, Element, SubElement
+from xml.etree.ElementTree import XML, Element, SubElement,  tostring
 from numpy import eye, zeros, all, array, ndarray, linspace, pi, linalg
 from arboris.massmatrix import principalframe, transport
 from arboris.homogeneousmatrix import inv, rotzyx_angles, zaligned
@@ -115,16 +115,16 @@ def find_by_id(root, id, tag=None):
             return(e)
     return None
 
-def require_SubElement(root_node, tag, attrib={}):
-    """
-    """
+def require_SubElement(root_node, tag, attrib={}, position=-1):
     children = [e for e in list(root_node) if e.tag == tag]
     for c in children:
         for k, v in attrib.iteritems():
             if c.get(k) != v:
                 children.pop(c)
     if len(children)==0: #No subElement Found, return one
-        return SubElement(root_node, tag, attrib)
+            elem = Element(tag, attrib)
+            root_node.insert(position, elem)
+            return elem
     else:
         return children[0]
 
@@ -147,8 +147,8 @@ class ColladaDriver(arboris._visu.DrawerDriver):
         arboris._visu.DrawerDriver.__init__(self, scale, get_collada_default_options())
         if options is not None:
             self._options.update(options)
-        self._file = open(filename, 'w')
         self._colors = []
+        self._filename = filename
         self._shapes = "" if self._options["stand alone"] else r"file:///"+SHAPES.replace("\\", "/")
         self._used_shapes = set(["frame_arrows_geometry"])
         scene = os.path.join(os.path.dirname(os.path.abspath(__file__)),'scene.dae')
@@ -325,8 +325,8 @@ class ColladaDriver(arboris._visu.DrawerDriver):
         """.format(self._color_id(color), NS=NS)))
 
     def _write_colors(self):
-        lib_materials = self._tree.find('{'+NS+'}library_materials')
-        lib_effects = self._tree.find('{'+NS+'}library_effects')
+        lib_materials = require_SubElement(self._tree.getroot(), QN('library_materials'))
+        lib_effects = require_SubElement(self._tree.getroot(), QN('library_effects'))
         for c in self._colors:
             color_id = self._color_id(c)
             lib_materials.append(XML("""
@@ -351,9 +351,10 @@ class ColladaDriver(arboris._visu.DrawerDriver):
 
     def finish(self):
         # write to  file
+        self._write_colors()
+        src_root = ET.parse(SHAPES).getroot()
+        to_root =  self._tree.getroot()
         if self._options["stand alone"]:
-            src_root = ET.parse(SHAPES).getroot()
-            to_root =  self._tree.getroot()
             for lib_name in ["library_materials", "library_effects", "library_nodes"]:
                 src_lib = src_root.find(QN(lib_name))
                 to_root.append(src_lib)
@@ -361,33 +362,87 @@ class ColladaDriver(arboris._visu.DrawerDriver):
             to_lib = require_SubElement(to_root, QN("library_geometries"))
             for elem in self._used_shapes:
                 to_lib.append(find_by_id(src_lib, elem))
-        self._write_colors()
+        for lib_name in ["library_materials", "library_effects", "library_nodes", "library_geometries"]:
+            to_lib = require_SubElement(to_root, QN(lib_name))
+            if len(to_lib.getchildren())==0:
+                to_root.remove(to_lib)
         indent(self._tree)
         fix_namespace(self._tree)
-        self._tree.write(self._file, "utf-8")
-        self._file.close()
+        with open(self._filename, 'w') as _file:
+            _file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+            _file.write(tostring(self._tree.getroot(), encoding='utf-8'))
+
+
+
+
+def depth_copy_node(src_root, to_root, node_url): #TODO: may be improved
+    node_file, node_id = node_url.split("#")
+    if node_file:
+        depth_copy_node(ET.parse(node_file).getroot(), to_root, node_id)
+    else:
+        root_node = find_by_id(src_root, node_id)
+        to_root_lib_node = require_SubElement(to_root, QN("library_nodes"))
+        to_root_lib_node.append(root_node)
+        subnode = root_node.findall(QN("instance_node"))
+        for sn in subnode:
+            sn_url = sn.get("url")
+            depth_copy_node(src_root, to_root, sn_url)
+            sn_url_file, sn_url_id = sn_url.split("#")
+            sn.set("url", "#"+sn_url_id)
+        subgeo = root_node.findall(QN("instance_geometry"))
+        for sg in subgeo:
+            sg_url =sg.get("url")
+            sg_url_file, sg_url_id = sg_url.split("#")
+            if sg_url_file:
+                geom = find_by_id(ET.parse(sg_url_file).getroot(), sg_url_id)
+            else:
+                geom = find_by_id(src_root, sg_url_id)
+            to_root_lib_geo = require_SubElement(to_root, QN("library_geometries"), position=1)
+            to_root_lib_geo.append(geom)
+            sg.set("url", "#"+sg_url_id)
+        submat = root_node.getiterator(QN("instance_material"))
+        for sm in submat:
+            sm_url =sm.get("target")
+            sm_url_file, sm_url_id = sm_url.split("#")
+            if sm_url_file:
+                material = find_by_id(ET.parse(sm_url_file).getroot(), sm_url_id)
+            else:
+                material = find_by_id(src_root, sm_url_id)
+            to_root_lib_mat = require_SubElement(to_root, QN("library_materials"))
+            if material.get("id") not in [e.get("id") for e in to_root_lib_mat.getchildren()]:
+                to_root_lib_mat.append(material)
+            sm.set("target", "#"+sm_url_id)
+            subfx = material.getiterator(QN("instance_effect"))
+            for sf in subfx:
+                sf_url = sf.get("url")
+                sf_url_file, sf_url_id = sf_url.split("#")
+                if sf_url_file:
+                    effect= find_by_id(ET.parse(sf_url_file).getroot(), sf_url_id)
+                else:
+                    effect = find_by_id(src_root, sf_url_id)
+                to_root_lib_fx = require_SubElement(to_root, QN("library_effects"))
+                if effect.get("id") not in [e.get("id") for e in to_root_lib_fx.getchildren()]:
+                    to_root_lib_fx.append(effect)
+                sf.set("url", "#"+sf_url_id)
 
 
 def use_custom_shapes(dae_filename, mapping, stand_alone=False):
     tree = ET.parse(dae_filename)
-    for node in tree.iter(QN("node")):
+    for node in tree.getiterator(QN("node")):
         node_id = node.get('id')
         if node_id in mapping.iterkeys():
             custom_shape = mapping[node_id]
             if stand_alone:
-                custom_shape_file, custom_shape = custom_shape.split("#")
-                src_lib = ET.parse(custom_shape_file).find(QN("library_geometries"))
-                to_lib = require_SubElement(tree.getroot(), QN("library_geometries"))
-                to_lib.append(find_by_id(src_lib, custom_shape))
-                custom_shape = "#"+ custom_shape
-            #TODO: the choice of the lib where to put the elem should be more accurate
+                custom_node_file, custom_node_id = custom_shape.split("#")
+                depth_copy_node(ET.parse(custom_node_file).getroot(), tree.getroot(), "#"+custom_node_id)
+                custom_shape = "#"+custom_node_id
             shape_node = SubElement(node, QN("node"))
-            SubElement(shape_node, QN("instance_geometry"), {"url": custom_shape}) #TODO: inst_geo or inst_node?
+            SubElement(shape_node, QN("instance_node"), {"url": custom_shape})
             _add_osg_description(shape_node, "shape")
     fix_namespace(tree)
-    _file = open(dae_filename, 'w')
-    tree.write(_file, "utf-8")
-    _file.close()
+    with open(dae_filename, 'w') as _file:
+        _file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+        _file.write(tostring(tree.getroot(), encoding='utf-8'))
 
 
 
