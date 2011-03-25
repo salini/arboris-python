@@ -15,7 +15,7 @@ def run_simulation(is_fixed=False, with_weight=True):
     lengths = [1., .9, .8 , .7 , .6, .5, .4 , .3, .2]
     masses = [1., .9, .8 , .7 , .6, .5, .4 , .3, .2]
     gpos = [0, 3.14159/4., 0, 0, 0, 0, 0, 0, 0]
-    gvel = gvel=[2.]*njoints
+    gvel = [2.]*njoints
     add_snake(world, njoints, lengths=lengths, masses=masses, gpos=gpos,
               gvel=gvel, is_fixed=False)
     if with_weight:

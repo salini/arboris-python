@@ -247,7 +247,7 @@ class Hdf5Logger(arboris.core.Observer):
                                                     (self._nb_steps, 4,4),
                                                     'f8')
         if self._save_model:
-            self._model = self._root.require_group('transforms')
+            self._model = self._root.require_group('model')
             ndof = self._world.ndof
             self._model.require_dataset("gvel",
                     (self._nb_steps, ndof), 'f8')
