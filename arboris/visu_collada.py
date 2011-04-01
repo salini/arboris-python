@@ -115,15 +115,18 @@ def find_by_id(root, id, tag=None):
             return(e)
     return None
 
-def require_SubElement(root_node, tag, attrib={}, position=-1):
-    children = [e for e in list(root_node) if e.tag == tag]
+def require_SubElement(root_node, tag, attrib={}, position=None):
+    children = [e for e in list(root_node) if tag in e.tag]
     for c in children:
         for k, v in attrib.iteritems():
             if c.get(k) != v:
                 children.pop(c)
     if len(children)==0: #No subElement Found, return one
             elem = Element(tag, attrib)
-            root_node.insert(position, elem)
+            if position is None:
+                root_node.append(elem)
+            else:
+                root_node.insert(position, elem)
             return elem
     else:
         return children[0]
@@ -325,8 +328,8 @@ class ColladaDriver(arboris._visu.DrawerDriver):
         """.format(self._color_id(color), NS=NS)))
 
     def _write_colors(self):
-        lib_materials = require_SubElement(self._tree.getroot(), QN('library_materials'))
-        lib_effects = require_SubElement(self._tree.getroot(), QN('library_effects'))
+        lib_materials = require_SubElement(self._tree.getroot(), 'library_materials')
+        lib_effects = require_SubElement(self._tree.getroot(), 'library_effects')
         for c in self._colors:
             color_id = self._color_id(c)
             lib_materials.append(XML("""
@@ -349,15 +352,18 @@ class ColladaDriver(arboris._visu.DrawerDriver):
             </effect>
             """.format(color_id, *c, NS=NS)))
 
+
     def finish(self):
-        # write to  file
+        # write to file
         self._write_colors()
         src_root = ET.parse(SHAPES).getroot()
         to_root =  self._tree.getroot()
         if self._options["stand alone"]:
             for lib_name in ["library_materials", "library_effects", "library_nodes"]:
                 src_lib = src_root.find(QN(lib_name))
-                to_root.append(src_lib)
+                to_lib = require_SubElement(to_root, QN(lib_name))
+                for elem in list(src_lib):
+                    to_lib.append(elem)
             src_lib = src_root.find(QN("library_geometries"))
             to_lib = require_SubElement(to_root, QN("library_geometries"))
             for elem in self._used_shapes:
@@ -408,7 +414,7 @@ def depth_copy_node(src_root, to_root, node_url): #TODO: may be improved
                 material = find_by_id(ET.parse(sm_url_file).getroot(), sm_url_id)
             else:
                 material = find_by_id(src_root, sm_url_id)
-            to_root_lib_mat = require_SubElement(to_root, QN("library_materials"))
+            to_root_lib_mat = require_SubElement(to_root, QN("library_materials"), position=1)
             if material.get("id") not in [e.get("id") for e in to_root_lib_mat.getchildren()]:
                 to_root_lib_mat.append(material)
             sm.set("target", "#"+sm_url_id)
@@ -420,7 +426,7 @@ def depth_copy_node(src_root, to_root, node_url): #TODO: may be improved
                     effect= find_by_id(ET.parse(sf_url_file).getroot(), sf_url_id)
                 else:
                     effect = find_by_id(src_root, sf_url_id)
-                to_root_lib_fx = require_SubElement(to_root, QN("library_effects"))
+                to_root_lib_fx = require_SubElement(to_root, QN("library_effects"),  position=1)
                 if effect.get("id") not in [e.get("id") for e in to_root_lib_fx.getchildren()]:
                     to_root_lib_fx.append(effect)
                 sf.set("url", "#"+sf_url_id)
@@ -430,17 +436,25 @@ def use_custom_shapes(dae_filename, mapping, stand_alone=False):
     tree = ET.parse(dae_filename)
     for node in tree.getiterator(QN("node")):
         node_id = node.get('id')
-        if node_id in mapping.iterkeys():
+        if node_id in mapping:
             custom_shape = mapping[node_id]
+            custom_node_file, custom_node_id = custom_shape.split("#")
+            custom_node = find_by_id(ET.parse(custom_node_file).getroot(), custom_node_id)
+            custom_node_tag = 'node' if 'node' in custom_node.tag else 'geometry'
             if stand_alone:
-                custom_node_file, custom_node_id = custom_shape.split("#")
-                depth_copy_node(ET.parse(custom_node_file).getroot(), tree.getroot(), "#"+custom_node_id)
+                if custom_node_tag is 'node':
+                    depth_copy_node(ET.parse(custom_node_file).getroot(), tree.getroot(), "#"+custom_node_id)
+                else:
+                    geo_to_copy = find_by_id(ET.parse(custom_node_file).getroot(), custom_node_id)
+                    to_lib_geo = require_SubElement(tree.getroot(), QN("library_geometries"), position=1)
+                    to_lib_geo.append(geo_to_copy)
                 custom_shape = "#"+custom_node_id
             shape_node = SubElement(node, QN("node"))
-            SubElement(shape_node, QN("instance_node"), {"url": custom_shape})
+            SubElement(shape_node, QN("instance_"+custom_node_tag), {"url": custom_shape})
             _add_osg_description(shape_node, "shape")
-    fix_namespace(tree)
     with open(dae_filename, 'w') as _file:
+        indent(tree)
+        fix_namespace(tree)
         _file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
         _file.write(tostring(tree.getroot(), encoding='utf-8'))
 
