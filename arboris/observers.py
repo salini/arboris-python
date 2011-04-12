@@ -348,6 +348,15 @@ class DaenimCom(SocketCom):
         subprocess.Popen(self.app_call)
         SocketCom.init(self, world, timeline)
         time.sleep(1.)
+        if self.flat:
+            for b in self.world.getbodies():
+                if b.name is None: b.name = "body_"+str(id(b))
+        else:
+            for j in self.world.getjoints():
+                if j.frames[1].name is None: j.frames[1].name = "joint_frame_"+str(id(j.frames[1]))
+        for f in self.world.itermovingsubframes():
+            if f.name is None: f.name = "frame_"+str(id(f))
+        
 
     def update(self,dt):
         """
