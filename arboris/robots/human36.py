@@ -103,7 +103,7 @@ def anat_lengths_from_height(height):
         ``descr`` is discarded for now.
 
         """
-        name = unicode(name)
+        name = str(name)
         lengths[name] = float(value)
 
     yfoot =  0.0222 * height

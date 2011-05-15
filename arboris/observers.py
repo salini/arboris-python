@@ -1,7 +1,7 @@
 #coding=utf-8
 """A set of Observers.
 """
-__author__ = (u"Sébastien BARTHÉLEMY <barthelemy@crans.org>",
+__author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>",
               "Joseph SALINI <joseph.salini@gmail.com>")
 import arboris.core
 from abc import ABCMeta, abstractmethod, abstractproperty
@@ -242,7 +242,7 @@ class Hdf5Logger(arboris.core.Observer):
             for f in self._world.itermovingsubframes():
                 if f.name is None: f.name = "frame_"+str(id(f))
                 self._arb_transforms[f.name] = f
-            for k in self._arb_transforms.iterkeys():
+            for k in self._arb_transforms.keys():
                 d = self._transforms.require_dataset(k,
                                                     (self._nb_steps, 4,4),
                                                     'f8')
@@ -270,7 +270,7 @@ class Hdf5Logger(arboris.core.Observer):
                 self._gpositions[j.name][self._current_step] = j.gpos
                 self._gvelocities[j.name][self._current_step] = j.gvel
         if self._save_transforms:
-            for k, v in self._arb_transforms.iteritems():
+            for k, v in self._arb_transforms.items():
                 if isinstance(v, arboris.core.MovingSubFrame):
                     if self._flat:
                         pose = v.pose
@@ -310,7 +310,7 @@ class SocketCom(arboris.core.Observer):
                 break
             except socket.error:
                 port += 1
-                print "change port!!!"
+                print("change port!!!")
         self.host = host
         self.port = port
 
@@ -318,9 +318,9 @@ class SocketCom(arboris.core.Observer):
         self.s.listen(1)
         try:
             self.conn, self.addr = self.s.accept()
-            print 'Connected by', self.addr
+            print('Connected by', self.addr)
         except:
-            print "Connection error: no connection occurs"
+            print("Connection error: no connection occurs")
 
     def finish(self):
         try:
@@ -380,7 +380,7 @@ class DaenimCom(SocketCom):
         try:
             self.conn.send(msg)
         except socket.error:
-            print "connection lost"
+            print("connection lost")
 
 
 

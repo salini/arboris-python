@@ -62,7 +62,7 @@ def get_joint_limits(in_radian=True):
             'r_ankle_roll'    : (-24, 24),
             }
     if in_radian:
-        for k, val in lims.iteritems():
+        for k, val in lims.items():
             lims[k] = (val[0]*pi/180, val[1]*pi/180)
     return lims
 
@@ -279,7 +279,7 @@ def add(w, is_fixed=False):
 
     ## bodies creation
     bodies = {}
-    for name, data in bodies_data.iteritems():
+    for name, data in bodies_data.items():
         bodies[name] = Body(name=name)
         mass = zeros((6,6))
         for dims, m, H in data: # extract dimensions, mass and transformation form data
@@ -302,14 +302,14 @@ def add(w, is_fixed=False):
         w.add_link(w.ground, FreeJoint(name='root'), bodies['waist'])
 
     ## joints creation
-    for name, data in joints_data.iteritems():
+    for name, data in joints_data.items():
         parent, Hp_l, child = data
         w.add_link(SubFrame(bodies[parent], Hp_l), RzJoint(name=name), bodies[child])
 
 
 
     ## body shapes creations
-    for name, data in bodies_data.iteritems():
+    for name, data in bodies_data.items():
         for dims, m, H in data: # extract dimensions, mass and transformation form data
             sf = SubFrame(bodies[name], H)
             if len(dims) == 3: # check the type of shape: len =1:sphere, =2:cylinder, =3: box
@@ -324,7 +324,7 @@ def add(w, is_fixed=False):
 
 
     ## user shapes creation
-    for name, data in shapes_data.iteritems():
+    for name, data in shapes_data.items():
         parent, dims, Hpf = data
         sf = SubFrame(bodies[parent], Hpf, name=name)
         if len(dims) == 3: # check the type of shape: len =1:sphere, =2:cylinder, =3: box

@@ -1,6 +1,6 @@
 # coding=utf-8
 
-__author__ = (u"Sébastien BARTHÉLEMY <barthelemy@crans.org>")
+__author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 
 from numpy import dot
 import arboris.homogeneousmatrix as Hg

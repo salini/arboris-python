@@ -118,7 +118,7 @@ def find_by_id(root, id, tag=None):
 def require_SubElement(root_node, tag, attrib={}, position=None):
     children = [e for e in list(root_node) if tag in e.tag]
     for c in children:
-        for k, v in attrib.iteritems():
+        for k, v in attrib.items():
             if c.get(k) != v:
                 children.pop(c)
     if len(children)==0: #No subElement Found, return one

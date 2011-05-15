@@ -20,9 +20,9 @@ One or more frames (instances of the :class:`SubFrame` class) can be associated
 to bodies and serve as anchor points to the joints.
 
 """
-__author__ = (u"Sébastien BARTHÉLEMY <barthelemy@crans.org>")
+__author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 
-from numpy import array, zeros, eye, dot
+from numpy import array, zeros, eye, dot, arange
 import numpy
 import arboris.homogeneousmatrix as Hg
 from abc import ABCMeta, abstractmethod, abstractproperty
@@ -97,7 +97,7 @@ class NamedObjectsList(list):
         return result
 
     def __getitem__(self, index):
-        if isinstance(index, str) or isinstance(index, unicode):
+        if isinstance(index, str):
             # returns the first item whose name is matching
             for obj in self:
                 if isinstance(obj, NamedObject) and (obj.name == index):
@@ -257,10 +257,10 @@ class JointsList(NamedObjectsList):
                         self._dof = slice(self._dof.start, obj.dof.stop)
                     else:
                         # otherwise, self._dof is converted into a sequence
-                        self._dof = range(self._dof.start, self._dof.stop)
-                        self._dof.extend(range(obj.dof.start, obj.dof.stop))
+                        self._dof = arange(self._dof.start, self._dof.stop)
+                        self._dof.extend(arange(obj.dof.start, obj.dof.stop))
                 else:
-                    self._dof.extend(range(obj.dof.start, obj.dof.stop))
+                    self._dof.extend(arange(obj.dof.start, obj.dof.stop))
 
     @property
     def dof(self):
@@ -296,7 +296,7 @@ class Constraint(NamedObject):
 
     @abstractproperty
     def ndol(self):
-        u"""Number of degrees of "liaison"
+        """Number of degrees of "liaison"
 
         In french: *nombre de degrés de liaison*. This is equal to (6 - ndof).
         """
@@ -938,7 +938,7 @@ class World(NamedObject):
         admittance = dot(jac, dot(self._admittance, jac.T))
 
         previous_vel = vel.copy()
-        for k in range(maxiters):
+        for k in arange(maxiters):
             for c in constraints:
                 dforce = c.solve(vel[c._dol], admittance[c._dol,c._dol], dt)
                 vel += dot(admittance[:, c._dol], dforce)

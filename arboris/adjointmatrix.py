@@ -7,7 +7,7 @@ H = [ R p
 Ad(H) = [  R   0
           pxR  R ]
 """
-__author__ = (u"Sébastien BARTHÉLEMY <barthelemy@crans.org>")
+__author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 
 
 import numpy as np

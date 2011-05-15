@@ -4,7 +4,7 @@
 
 This is meant for interactive use.
 """
-__author__ = (u"Sébastien BARTHÉLEMY <barthelemy@crans.org>")
+__author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 
 #pylint: disable-msg=W0611
 #pylint: disable-msg=W0614

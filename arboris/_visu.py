@@ -195,7 +195,7 @@ class ColorGenerator(object):
         # init the mapping betwen objects and colors
         self._map = {}
         if map:
-            for k, v in map.iteritems():
+            for k, v in map.items():
                 self.set_color(k, v)
 
     def set_color(self, key, color):
@@ -387,7 +387,7 @@ class Drawer(object):
                 node = self._driver.create_box(obj.half_extents, color,
                         obj.name)
             else:
-                raise(ValueError('Unknown shape'))
+                raise ValueError('Unknown shape')
             self._driver.add_child(self.frame_nodes[obj.frame], node, 'shape')
 
     def finish(self):

@@ -1,5 +1,5 @@
 # coding=utf-8
-__author__ = (u"Sébastien BARTHÉLEMY <barthelemy@crans.org>")
+__author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 
 from arboris.core import Controller, World
 from numpy import array, zeros, dot, ix_
@@ -34,8 +34,7 @@ class WeightController(Controller):
 
     def init(self, world):
         assert isinstance(world, World)
-        self._bodies = filter(lambda x: norm(x.mass>0.),
-                world.ground.iter_descendant_bodies())
+        self._bodies = [x for x in world.ground.iter_descendant_bodies() if norm(x.mass>0.)]
         self._wndof = world.ndof
         self._gravity_dtwist = zeros(6)
         self._gravity_dtwist[3:6] = float(self.gravity)*world.up
@@ -106,7 +105,7 @@ class ProportionalDerivativeController(Controller):
                         'LinearConfigurationSpaceJoint instances')
             else:
                 self._cndof += j.ndof
-                dof_map.extend(range(j.dof.start, j.dof.stop))
+                dof_map.extend(list(range(j.dof.start, j.dof.stop)))
         self._dof_map = array(dof_map)
         self.joints = joints
         self._wndof = None
@@ -135,7 +134,7 @@ class ProportionalDerivativeController(Controller):
         self._wndof = world.ndof
         dof_map = []
         for j in self.joints:
-            dof_map.extend(range(j.dof.start, j.dof.stop))
+            dof_map.extend(list(range(j.dof.start, j.dof.stop)))
         self._dof_map = array(dof_map)
 
     def update(self, dt):
