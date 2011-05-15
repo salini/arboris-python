@@ -382,3 +382,81 @@ class TxTyTzJoint(LinearConfigurationSpaceJoint):
              [  0. , 0. , 0. ],
              [  0. , 0. , 0. ],
              [  0. , 0. , 0. ]])
+
+
+class TzJoint(LinearConfigurationSpaceJoint):
+    """Prismatic (1-dof) with axis in the z-direction
+    """
+    @property
+    def ndof(self):
+        return 1
+
+    @property
+    def pose(self):
+        return transl(0., 0., self.gpos[0])
+    
+    @property
+    def ipose(self):
+        return transl(0., 0., -self.gpos[0])
+    
+    @property
+    def jacobian(self):
+        return array([[0.], [0.], [0.], [0.], [0.], [1.]])
+    
+    @property
+    def djacobian(self):
+        return zeros((6,1))
+
+
+
+class TyJoint(LinearConfigurationSpaceJoint):
+    """Prismatic (1-dof) with axis in the y-direction
+    """
+    @property
+    def ndof(self):
+        return 1
+
+    @property
+    def pose(self):
+        return transl(0., self.gpos[0], 0.)
+    
+    @property
+    def ipose(self):
+        return transl(0., -self.gpos[0], 0.)
+    
+    @property
+    def jacobian(self):
+        return array([[0.], [0.], [0.], [0.], [1.], [0.]])
+    
+    @property
+    def djacobian(self):
+        return zeros((6,1))
+
+
+
+class TxJoint(LinearConfigurationSpaceJoint):
+    """Prismatic (1-dof) with axis in the x-direction
+    """
+    @property
+    def ndof(self):
+        return 1
+
+    @property
+    def pose(self):
+        return transl(self.gpos[0], 0., 0.)
+    
+    @property
+    def ipose(self):
+        return transl(-self.gpos[0], 0., 0.)
+    
+    @property
+    def jacobian(self):
+        return array([[0.], [0.], [0.], [1.], [0.], [0.]])
+    
+    @property
+    def djacobian(self):
+        return zeros((6,1))
+
+
+
+
