@@ -393,11 +393,11 @@ class TzJoint(LinearConfigurationSpaceJoint):
 
     @property
     def pose(self):
-        return transl(0., 0., self.gpos[0])
+        return arboris.homogeneousmatrix.transl(0., 0., self.gpos[0])
     
     @property
     def ipose(self):
-        return transl(0., 0., -self.gpos[0])
+        return arboris.homogeneousmatrix.transl(0., 0., -self.gpos[0])
     
     @property
     def jacobian(self):
@@ -418,11 +418,11 @@ class TyJoint(LinearConfigurationSpaceJoint):
 
     @property
     def pose(self):
-        return transl(0., self.gpos[0], 0.)
+        return arboris.homogeneousmatrix.transl(0., self.gpos[0], 0.)
     
     @property
     def ipose(self):
-        return transl(0., -self.gpos[0], 0.)
+        return arboris.homogeneousmatrix.transl(0., -self.gpos[0], 0.)
     
     @property
     def jacobian(self):
@@ -443,11 +443,11 @@ class TxJoint(LinearConfigurationSpaceJoint):
 
     @property
     def pose(self):
-        return transl(self.gpos[0], 0., 0.)
+        return arboris.homogeneousmatrix.transl(self.gpos[0], 0., 0.)
     
     @property
     def ipose(self):
-        return transl(-self.gpos[0], 0., 0.)
+        return arboris.homogeneousmatrix.transl(-self.gpos[0], 0., 0.)
     
     @property
     def jacobian(self):
