@@ -324,6 +324,29 @@ def iadjoint(H):
     """
     return adjoint(inv(H))
 
+def dAdjoint(Ad, T):
+    """Return the derivative of an Adjoint with respect to time
+
+    definition from arboris-matlab
+    if H is defined as follow:
+    x{a} = H * x{b}
+    Ad = adjoint( H )
+    T  = velocity of {b} relative to {a} expressed in {b}
+
+    inputs:
+    Ad: a 6x6 adjoint matrix
+    T: twist vectors(6)
+
+    return a 6x6 dAdjoint matrix
+    """
+    MT = array([[0., -T[2], T[1], 0., 0., 0.],
+                [T[2], 0., -T[0], 0., 0., 0.],
+                [-T[1], T[0], 0., 0., 0., 0.],
+                [0., -T[5], T[4], 0., -T[2], T[1]],
+                [T[5], 0., -T[3], T[2], 0., -T[0]],
+                [-T[4], T[3], 0., -T[1], T[0], 0.]])
+    return dot(Ad, MT)
+
 def rotzyx_angles(H):
     """Returns the angles such that `H[0:3, 0:3] = R_z(a_z) R_y(a_y) R_x(a_x)`
 
