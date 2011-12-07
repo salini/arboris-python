@@ -1,5 +1,5 @@
 # coding: utf-8
-__author__ = (u"Sébastien BARTHÉLEMY <barthelemy@crans.org>")
+__author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 
 from distutils.core import setup
 import os.path
@@ -64,7 +64,7 @@ except ImportError:
 readme = open('README.txt', 'r')
 setup(name='arboris',
       version=get_version(),
-      maintainer=u'Sébastien BARTHÉLEMY',
+      maintainer='Sébastien BARTHÉLEMY',
       maintainer_email='barthelemy@crans.org',
       url='http://chronos.isir.upmc.fr/~barthelemy/arboris',
       description=

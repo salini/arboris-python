@@ -42,15 +42,15 @@ w.register(WeightController())
 ## OBSERVERS
 ########################################################
 from arboris.visu_collada import write_collada_scene
-write_collada_scene(w, "current_scene.dae", flat=True)
+write_collada_scene(w, "scene.dae", flat=True)
 
 from arboris.observers import PerfMonitor, Hdf5Logger, DaenimCom
 obs = []
 obs.append(PerfMonitor(True))
 
-obs.append(Hdf5Logger("current_anim.h5", mode="w", flat=True))
+obs.append(Hdf5Logger("sim.h5", mode="w", flat=True))
 #obs.append(DaenimCom(r"C:\Program Files\daenim\daenim.exe", "current_scene.dae")) #for Windows
-obs.append(DaenimCom(r"daenim", "current_scene.dae")) #for Linux
+obs.append(DaenimCom(r"daenim", "scene.dae", flat=True)) #for Linux
 
 
 ########################################################
@@ -72,5 +72,6 @@ simulate(w, arange(0, 2., dt), obs)
 
 print obs[0].get_summary()
 
-
+from arboris.visu_collada import write_collada_animation
+write_collada_animation("anim.dae", "scene.dae", "sim.h5")
 

@@ -313,11 +313,11 @@ def add(w, is_fixed=False):
         for dims, m, H in data: # extract dimensions, mass and transformation form data
             sf = SubFrame(bodies[name], H)
             if len(dims) == 3: # check the type of shape: len =1:sphere, =2:cylinder, =3: box
-                sh = Box(sf, dims)
+                sh = Box(sf, dims, name)
             elif len(dims) == 2:
-                sh = Cylinder(sf, dims[0], dims[1])
+                sh = Cylinder(sf, dims[0], dims[1], name)
             elif len(dims) == 1:
-                sh = Sphere(sf, dims[0])
+                sh = Sphere(sf, dims[0], name)
             else:
                 raise ValueError
             w.register(sh)

@@ -828,7 +828,7 @@ class World(NamedObject):
             self._impedance -= impedance
         self._admittance = numpy.linalg.inv(self._impedance)
 
-    def update_constraints(self, dt, maxiters=500, tol=1e-3):
+    def update_constraints(self, dt, maxiters=1000, tol=1e-4):
         r"""
         In accordance with the integration scheme, we assume the following
         first order model between generalized velocities and generalized
