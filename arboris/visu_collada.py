@@ -482,7 +482,7 @@ def write_collada_scene(world, dae_filename, scale=1., options=None, flat=False)
     drawer.finish()
 
 def write_collada_animation(collada_animation, collada_scene, hdf5_file,
-                            hdf5_group="/"):
+                            hdf5_group="/", h5toanimpath=None):
     """Combine a collada scene and an HDF5 file into a collada animation.
 
     :param collada_animation: path of the output collada animation file
@@ -498,7 +498,16 @@ def write_collada_animation(collada_animation, collada_scene, hdf5_file,
     which should be installed for this function to work.
 
     """
-    subprocess.check_call(('h5toanim',
+    if h5toanimpath is None:
+        if os.name == 'posix':
+            h5toanimpath = 'h5toanim'
+        elif os.name == 'nt':
+            h5toanimpath = 'C:/Program Files/ColladaTools/h5toanim.exe'
+        else:
+            print "May not work on this os. h5toanim path should be specified manually"
+            h5toanimpath = 'h5toanim'
+
+    subprocess.check_call((h5toanimpath,
             '--hdf5-file', hdf5_file,
             '--hdf5-group', hdf5_group,
             '--scene-file', collada_scene,

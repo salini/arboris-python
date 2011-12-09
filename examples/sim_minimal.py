@@ -49,7 +49,7 @@ obs = []
 obs.append(PerfMonitor(True))
 
 obs.append(Hdf5Logger("sim.h5", mode="w", flat=True))
-#obs.append(DaenimCom(r"C:\Program Files\daenim\daenim.exe", "current_scene.dae")) #for Windows
+#obs.append(DaenimCom(r"C:\Program Files\daenim\daenim.exe", "scene.dae", flat=True)) #for Windows
 obs.append(DaenimCom(r"daenim", "scene.dae", flat=True)) #for Linux
 
 
