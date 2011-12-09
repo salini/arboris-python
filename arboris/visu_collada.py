@@ -477,6 +477,7 @@ def write_collada_scene(world, dae_filename, scale=1., options=None, flat=False)
 
     """
     assert isinstance(world, arboris.core.World)
+    world.update_geometric()
     drawer = arboris._visu.Drawer(ColladaDriver(dae_filename, scale, options), flat)
     world.parse(drawer)
     drawer.finish()
@@ -502,7 +503,7 @@ def write_collada_animation(collada_animation, collada_scene, hdf5_file,
         if os.name == 'posix':
             h5toanimpath = 'h5toanim'
         elif os.name == 'nt':
-            h5toanimpath = 'C:/Program Files/ColladaTools/h5toanim.exe'
+            h5toanimpath = 'C:/Program Files/ArborisTools/ColladaTools/h5toanim.exe'
         else:
             print "May not work on this os. h5toanim path should be specified manually"
             h5toanimpath = 'h5toanim'
@@ -513,7 +514,7 @@ def write_collada_animation(collada_animation, collada_scene, hdf5_file,
             '--scene-file', collada_scene,
             '--output', collada_animation))
 
-def view(collada_file, hdf5_file=None, hdf5_group="/"):
+def view(collada_file, hdf5_file=None, hdf5_group="/", daenimpath=None):
     """Display a collada file, generating the animation if necessary.
 
     Usage::
@@ -529,10 +530,19 @@ def view(collada_file, hdf5_file=None, hdf5_group="/"):
     commands. Tey should both be installed for the function to work.
 
     """
+    if daenimpath is None:
+        if os.name == 'posix':
+            daenimpath = 'h5toanim'
+        elif os.name == 'nt':
+            daenimpath = 'C:/Program Files/ArborisTools/daenim/hdaenim.exe'
+        else:
+            print "May not work on this os. h5toanim path should be specified manually"
+            h5toanimpath = 'daenim'
+
     if hdf5_file is None:
-        subprocess.check_call(('daenim', collada_file))
+        subprocess.check_call((daenimpath, collada_file))
     else:
         anim_file = tempfile.mkstemp(suffix='anim.dae', text=True)[1]
         write_collada_animation(anim_file, collada_file, hdf5_file, hdf5_group)
-        subprocess.check_call(('daenim', anim_file))
+        subprocess.check_call((daenimpath, anim_file))
         os.remove(anim_file)

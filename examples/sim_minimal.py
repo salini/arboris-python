@@ -49,19 +49,13 @@ obs = []
 obs.append(PerfMonitor(True))
 
 obs.append(Hdf5Logger("sim.h5", mode="w", flat=True))
-#obs.append(DaenimCom(r"C:\Program Files\daenim\daenim.exe", "scene.dae", flat=True)) #for Windows
+#obs.append(DaenimCom(r"C:\Program Files\ArborisTools\daenim\daenim.exe", "scene.dae", flat=True)) #for Windows
 obs.append(DaenimCom(r"daenim", "scene.dae", flat=True)) #for Linux
 
 
 ########################################################
 ## SIMULATION
 ########################################################
-i=0
-for f in w.getframes():
-    if f.name is None:
-        f.name = "unnamed_frame_"+str(i)
-        i+=1
-
 dt = 2e-2
 simulate(w, arange(0, 2., dt), obs)
 
