@@ -382,6 +382,10 @@ class World(NamedObject):
         """Returns a NamedObjectsList of the world constraints"""
         return NamedObjectsList(self._constraints)
 
+    def getcontrollers(self):
+        """Returns a NamedObjectsList of the world controllers"""
+        return NamedObjectsList(self._controllers)
+
     def itersubframes(self):
         """Iterate over all subframes."""
         for obj in self._subframes:
