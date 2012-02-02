@@ -368,7 +368,11 @@ class Drawer(object):
         if isinstance(obj, arboris.core.MovingSubFrame) and \
                 not(obj in self.frame_nodes):
             color = self._color_generator.get_color(obj)
-            node = self._add_frame(self.frame_nodes[obj.body],
+            if self._flat is True:
+                node = self._add_frame(self._ground_node,
+                    obj.bpose, False, obj.name, color)
+            else:
+                node = self._add_frame(self.frame_nodes[obj.body],
                     obj.bpose, False, obj.name, color)
             self.frame_nodes[obj] = node
             self.transform_nodes[obj] = node
