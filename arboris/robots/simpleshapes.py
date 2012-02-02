@@ -7,8 +7,7 @@ __author__ = ("Sébastien BARTHÉLEMY <sebastien.barthelemy@gmail.com>")
 
 from arboris.joints import FreeJoint
 from arboris.shapes import Sphere, Box, Cylinder, Plane
-from arboris.core import World, Body, SubFrame
-from arboris.homogeneousmatrix import transl
+from arboris.core import World, Body
 import arboris.massmatrix as massmatrix
 
 def add_sphere(world, radius=1., mass=1., name=None):

@@ -48,13 +48,14 @@ is in the ``IOMatrix`` proc in ``DynamicData.maple``).
     Human Motion Analysis and Simulation toolbox
 
 """
+from numpy import array, diag, dot, hstack, eye
+
 from arboris.core import World, Body, SubFrame, NamedObjectsList
-import numpy as np
-from numpy import array, diag, dot, hstack
 import arboris.homogeneousmatrix as Hg
-from arboris.homogeneousmatrix import adjoint
-from arboris.joints import *
 from arboris.shapes import Point
+from arboris.joints import FreeJoint, RzJoint, RzRxJoint, RyRxJoint, \
+                           RzRyJoint, RzRyRxJoint
+
 
 def anat_lengths_from_height(height):
     """Dict-like object storing anatomical lengths as defined in HuMAnS.
@@ -231,12 +232,12 @@ def add_human36(world, height=1.741, mass=73, anat_lengths=None, name=''):
     bodies = NamedObjectsList()
     def add_body(name, mass, com_position, gyration_radius):
         #mass matrix at com
-        mass_g = mass * diag(hstack((gyration_radius**2, (1,1,1))))
+        mass_g = mass * diag(hstack((gyration_radius**2, (1, 1, 1))))
         H_fg = eye(4)
-        H_fg[0:3,3] = com_position
+        H_fg[0:3, 3] = com_position
         H_gf = Hg.inv(H_fg)
         #mass matrix at body's frame origin:
-        mass_o = dot(adjoint(H_gf).T, dot(mass_g, adjoint(H_gf)))
+        mass_o = dot(Hg.adjoint(H_gf).T, dot(mass_g, Hg.adjoint(H_gf)))
         if name:
             name = prefix + name
         bodies.append(Body(name=name, mass=mass_o))
@@ -357,7 +358,7 @@ def add_human36(world, height=1.741, mass=73, anat_lengths=None, name=''):
         w.register(tag)
     # we add 1e-4*h to keep the compatibility with HuMAnS:
     add_tag('Right foot toe tip', 'FootR', [L['xfootR']-L['xheelR']+1e-4*h, -L['yfootR'], 0.])
-    add_tag('Right foot heel', 'FootR', [-L['xheelR'], -L['yfootR'],0.])
+    add_tag('Right foot heel', 'FootR', [-L['xheelR'], -L['yfootR'], 0.])
     add_tag('Right foot phalange 5', 'FootR', [0.0662*h, -L['yfootR'], 0.0305*h] )
     add_tag('Right foot Phalange 1', 'FootR', [0.0662*h, -L['yfootR'], -0.0305*h])
     add_tag('Right foot lateral malleolus', "ShankR", [0., -L['ytibiaR'], 0.0249*h])
@@ -370,7 +371,7 @@ def add_human36(world, height=1.741, mass=73, anat_lengths=None, name=''):
     add_tag('Left foot phalange 5', "FootL", [0.0662*h, -L['yfootL'], -0.0305*h])
     add_tag('Left foot phalange 1', "FootL", [0.0662*h, -L['yfootL'], 0.0305*h])
     add_tag('Left foot lateral malleolus', "ShankL", [0, -L['ytibiaL'], -0.0249*h])
-    add_tag('Left femoral lateral epicondyle', "ThighL", [0,-L['yfemurL'], -0.0290*h])
+    add_tag('Left femoral lateral epicondyle', "ThighL", [0, -L['yfemurL'], -0.0290*h])
     add_tag('Left great trochanter', "ThighL",  [0, 0, -0.0941*h+L['zhip']/2.])
     add_tag('Left iliac crest', "LPT", [0.0271*h, 0.0366*h, -0.0697*h])
     add_tag('Substernale (Xyphoid)', "UPT", [0.1219*h, 0, 0])

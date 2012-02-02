@@ -11,13 +11,12 @@ When ran as a script, the module shows the robot in motion.
 __author__ = ("Sébastien BARTHÉLEMY <sebastien.barthelemy@gmail.com>")
 
 from arboris.core import World, Body, SubFrame
-import numpy as np
 import arboris.homogeneousmatrix as Hg
 import arboris.massmatrix
 import arboris.shapes
 from arboris.joints import RzJoint
 
-def add_simplearm(world, name='', lengths=(0.5 ,0.4 , 0.2),
+def add_simplearm(world, name='', lengths=(0.5 , 0.4 , 0.2),
                   masses=(1.0, 0.8, 0.2), with_shapes=False):
     """Build a  planar 3-R robot.
 

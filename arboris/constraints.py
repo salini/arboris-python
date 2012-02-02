@@ -8,6 +8,8 @@ from numpy import array, zeros, eye, dot, hstack, diag, logical_and
 from numpy.linalg import solve, eigvals, pinv
 import arboris.homogeneousmatrix as Hg
 from arboris.core import MovingSubFrame, Constraint, Shape, World
+from arboris.joints import LinearConfigurationSpaceJoint
+from arboris.collisions import choose_solver
 
 point_contact_proximity = 0.02
 joint_limits_proximity = 0.01
@@ -32,14 +34,13 @@ class JointLimits(Constraint):
 
     """
 
-    def __init__(self, joint, min, max, proximity=None, name=None):
-        from arboris.joints import LinearConfigurationSpaceJoint
+    def __init__(self, joint, _min, _max, proximity=None, name=None):
         if not isinstance(joint, LinearConfigurationSpaceJoint):
             raise ValueError()
         Constraint.__init__(self, name)
         self._joint = joint
-        self._min = array(min).reshape((joint.ndof,))
-        self._max = array(max).reshape((joint.ndof,))
+        self._min = array(_min).reshape((joint.ndof,))
+        self._max = array(_max).reshape((joint.ndof,))
         if proximity is None:
             #TODO: choose a proper default for tol according to the joint type
             self._proximity = zeros((joint.ndof,))
@@ -261,7 +262,6 @@ class PointContact(Constraint):
         Constraint.__init__(self, name)
         if collision_solver is None:
             # automatically find the collision solver
-            from arboris.collisions import choose_solver
             (shapes, collision_solver) = choose_solver(shapes[0], shapes[1])
         self._shapes = shapes
         self._is_active = None
@@ -345,7 +345,8 @@ class SoftFingerContact(PointContact):
 
     which are often summarized as `0 \le d \perp f_z \ge 0`.
 
-    TODO: check the contact rupture condition is good. (Duindam, in his phd, chose a very specific one).
+    TODO: check the contact rupture condition is good. (Duindam, in his phd,
+    chose a very specific one).
 
     Additionnaly, the Coulomb law of friction with the elliptic friction
     model states that the contact is in static friction mode and only

@@ -6,6 +6,7 @@ from numpy import array, zeros, dot, ix_
 from numpy.linalg import norm
 import arboris.homogeneousmatrix
 from arboris.joints import LinearConfigurationSpaceJoint
+from arboris.massmatrix import principalframe
 
 class WeightController(Controller):
     """A contoller which applies weight to joints.
@@ -34,7 +35,8 @@ class WeightController(Controller):
 
     def init(self, world):
         assert isinstance(world, World)
-        self._bodies = [x for x in world.ground.iter_descendant_bodies() if norm(x.mass>0.)]
+        self._bodies = [x for x in world.ground.iter_descendant_bodies() \
+                        if norm(x.mass>0.)]
         self._wndof = world.ndof
         self._gravity_dtwist = zeros(6)
         self._gravity_dtwist[3:6] = float(self.gravity)*world.up
@@ -43,7 +45,6 @@ class WeightController(Controller):
         gforce = zeros(self._wndof)
         for b in self._bodies:
             #TODO: improve efficiency
-            from arboris.massmatrix import principalframe
             H_bc = principalframe(b.mass)
             R_gb = b.pose[0:3, 0:3]
             H_bc[0:3, 0:3] = R_gb.T

@@ -1,6 +1,6 @@
 # coding=utf-8
-from abc import ABCMeta, abstractmethod, abstractproperty
-from numpy import eye
+from abc import ABCMeta, abstractmethod
+from math import floor
 from numpy.linalg import norm, inv
 import arboris.core
 
@@ -29,7 +29,6 @@ def hsv_to_rgb(hsv):
     (0.0, 0.0, 1)
 
     """
-    from math import floor
     (h, s, v) = hsv
     hi = floor(h/60) % 6
     f = h/60. - floor(h/60)
@@ -186,7 +185,7 @@ class ColorGenerator(object):
 
     """
 
-    def __init__(self, map=None, nb_colors=20):
+    def __init__(self, _map=None, nb_colors=20):
         # init the color palette
         self._palette = []
         for k in range(nb_colors):
@@ -194,8 +193,8 @@ class ColorGenerator(object):
             self._palette.append(hsv_to_rgb((h, 0.9 , 0.9)))
         # init the mapping betwen objects and colors
         self._map = {}
-        if map:
-            for k, v in map.items():
+        if _map:
+            for k, v in _map.items():
                 self.set_color(k, v)
 
     def set_color(self, key, color):
@@ -262,6 +261,8 @@ class Drawer(object):
             self._color_generator = ColorGenerator()
         else:
             self._color_generator = color_generator
+        self._ground_node = None
+        self.frame_nodes = {}
 
     def init_parse(self, ground, up, current_time):
         self._ground_node = self._driver.add_ground(up)
@@ -317,7 +318,6 @@ class Drawer(object):
         assert isinstance(f0, arboris.core.Frame)
         assert isinstance(j, arboris.core.Joint)
         assert isinstance(f1, arboris.core.Frame)
-        d = self._driver
         bd1 = f1.body
         if isinstance(f1, arboris.core.Body):
             # no need to add a body

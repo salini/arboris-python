@@ -112,11 +112,12 @@ def get_joints_data():
 
     parent_body: the name parent body (a string)
 
-    H_parentbody_jointframe: give the transformation matrix from the parent_body frame
-                             to the joint frame. The joint is always a RzJoint, a rotation
-                             around z axis
+    H_parentbody_jointframe: give the transformation matrix from the
+                             parent_body frame to the joint frame. The joint is
+                             always a RzJoint, a rotation around z axis.
 
-    chid_body: the child body frame (a string) which is linked with the joint to the parent body
+    chid_body: the child body frame (a string) which is linked with
+    the joint to the parent body.
     """
     return {
     'torso_pitch': ['waist'     , dot(rotz(pi/2), roty(-pi/2)), 'lap_belt_1'],
@@ -166,14 +167,15 @@ def get_bodies_data():
               [(dims2)  | mass2  | H2] ]
 
     about dims (in meter):
-    if dims has 1 element: it is a sphere; the (radius,) is given
-    if dims has 2 elements: it is a cylinder with z-axis; (length, radius) are given
-    if dims has 3 elements: it is a box; half-lengths along (x,y,z) are given
+    if dims has 1 element: it is a sphere; get (radius,)
+    if dims has 2 elements: it is a cylinder with z-axis; get (length, radius)
+    if dims has 3 elements: it is a box; get half-lengths along (x,y,z)
 
     masses are in kg
 
     about transformation matrix H:
-    it represents the transformation from the body frame to the center of the shape
+    it represents the transformation from the body frame to the center of
+    the shape.
     transl for translation along (x,y,z) (meter)
     rotx,roty, rotz for rotation around x,y,z axis
     dot for matrices multiplication
@@ -249,17 +251,19 @@ def get_shapes_data():
     'r_hand_tip'  : ['r_hand', (.012,), transl(-.069, 0, 0)],
     'r_hand_palm' : ['r_hand', (.012,), transl(-.0345, 0, 0)],
 
-    'lf1'  : ['l_foot', (.002,), transl(-.039,-.027,-.031)],
-    'lf2'  : ['l_foot', (.002,), transl(-.039, .027,-.031)],
-    'lf3'  : ['l_foot', (.002,), transl(-.039, .027, .099)],
-    'lf4'  : ['l_foot', (.002,), transl(-.039,-.027, .099)],
-    'l_sole': ['l_foot', (), dot(transl(-.041, .0  , .034), dot(roty(-pi/2), rotx(-pi/2) ) )],
+    'lf1'   : ['l_foot', (.002,), transl(-.039,-.027,-.031)],
+    'lf2'   : ['l_foot', (.002,), transl(-.039, .027,-.031)],
+    'lf3'   : ['l_foot', (.002,), transl(-.039, .027, .099)],
+    'lf4'   : ['l_foot', (.002,), transl(-.039,-.027, .099)],
+    'l_sole': ['l_foot', (), dot(transl(-.041, .0  , .034),
+                                 dot(roty(-pi/2), rotx(-pi/2) ) )],
 
-    'rf1'  : ['r_foot', (.002,), transl(-.039,-.027, .031)],
-    'rf2'  : ['r_foot', (.002,), transl(-.039, .027, .031)],
-    'rf3'  : ['r_foot', (.002,), transl(-.039, .027,-.099)],
-    'rf4'  : ['r_foot', (.002,), transl(-.039,-.027,-.099)],
-    'r_sole': ['r_foot', (), dot(transl(-.041, .0  ,-.034), dot(roty(pi/2), rotx(pi/2) ) )],
+    'rf1'   : ['r_foot', (.002,), transl(-.039,-.027, .031)],
+    'rf2'   : ['r_foot', (.002,), transl(-.039, .027, .031)],
+    'rf3'   : ['r_foot', (.002,), transl(-.039, .027,-.099)],
+    'rf4'   : ['r_foot', (.002,), transl(-.039,-.027,-.099)],
+    'r_sole': ['r_foot', (), dot(transl(-.041, .0  ,-.034),
+                                 dot(roty(pi/2), rotx(pi/2) ) )],
 
     'l_eye': ['head', (.02,), transl(-.034, -.054, .0825)],
     'r_eye': ['head', (.02,), transl( .034, -.054, .0825)],
@@ -268,7 +272,7 @@ def get_shapes_data():
 def add(w, is_fixed=False):
     """
     construction of the icub robot for arboris-python:
-    the kinematics data are from: http://eris.liralab.it/wiki/ICubForwardKinematics
+    Kinematics data are from: http://eris.liralab.it/wiki/ICubForwardKinematics
     Inertia comes from the Icub.cpp used in the iCub_SIM program
     Some data are not well explained, or are badly defined
     """
@@ -281,19 +285,19 @@ def add(w, is_fixed=False):
     bodies = {}
     for name, data in bodies_data.items():
         bodies[name] = Body(name=name)
-        mass = zeros((6,6))
-        for dims, m, H in data: # extract dimensions, mass and transformation form data
+        mass = zeros((6, 6))
+        for dims, m, H in data: # get dims, mass and transformation from data
             sf = SubFrame(bodies[name], H)
-            if len(dims) == 3: # check the type of shape: len =1:sphere, =2:cylinder, =3: box
+            if len(dims) == 3:      # check the type of shape: len =3: box
                 M  = box(dims, m)
-            elif len(dims) == 2:
+            elif len(dims) == 2:                            #  len =2:cylinder,
                 M  = cylinder(dims[0], dims[1], m)
-            elif len(dims) == 1:
+            elif len(dims) == 1:                            #  len =1:sphere,
                 M  = sphere(dims[0], m)
             else:
                 raise ValueError
-            mass += transport(M, inv(H)) # add the mass of the shape to the total mass
-        bodies[name].mass = mass
+            mass += transport(M, inv(H))    # add the mass of the shape to
+        bodies[name].mass = mass            # the total mass
 
     ## check if iCub has its waist fixed on the structure (the ground)
     if is_fixed:
@@ -304,19 +308,21 @@ def add(w, is_fixed=False):
     ## joints creation
     for name, data in joints_data.items():
         parent, Hp_l, child = data
-        w.add_link(SubFrame(bodies[parent], Hp_l), RzJoint(name=name), bodies[child])
+        w.add_link(SubFrame(bodies[parent], Hp_l),
+                   RzJoint(name=name),
+                   bodies[child])
 
 
 
     ## body shapes creations
     for name, data in bodies_data.items():
-        for dims, m, H in data: # extract dimensions, mass and transformation form data
+        for dims, m, H in data: # get dims, mass and transformation from data
             sf = SubFrame(bodies[name], H)
-            if len(dims) == 3: # check the type of shape: len =1:sphere, =2:cylinder, =3: box
+            if len(dims) == 3:      # check the type of shape: len =3: box
                 sh = Box(sf, dims, name)
-            elif len(dims) == 2:
+            elif len(dims) == 2:                            #  len =2:cylinder,
                 sh = Cylinder(sf, dims[0], dims[1], name)
-            elif len(dims) == 1:
+            elif len(dims) == 1:                            #  len =1:sphere,
                 sh = Sphere(sf, dims[0], name)
             else:
                 raise ValueError
@@ -327,11 +333,11 @@ def add(w, is_fixed=False):
     for name, data in shapes_data.items():
         parent, dims, Hpf = data
         sf = SubFrame(bodies[parent], Hpf, name=name)
-        if len(dims) == 3: # check the type of shape: len =1:sphere, =2:cylinder, =3: box
+        if len(dims) == 3:      # check the type of shape: len =3: box
             sh = Box(sf, dims, name=name)
-        elif len(dims) == 2:
+        elif len(dims) == 2:                            #  len =2:cylinder,
             sh = Cylinder(sf, dims[0], dims[1], name=name)
-        elif len(dims) == 1:
+        elif len(dims) == 1:                            #  len =1:sphere,
             sh = Sphere(sf, dims[0], name=name)
         else:
             sh = Point(sf, name=name)

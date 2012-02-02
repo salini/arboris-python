@@ -4,8 +4,8 @@
 __author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 
 from arboris.core import Shape
-import numpy
-import numpy.linalg
+from numpy import array
+from numpy.linalg import norm
 
 class Plane(Shape):
     """
@@ -25,8 +25,8 @@ class Plane(Shape):
     def __init__(self, frame, coeffs=(0., 1., 0., 0.), name=None):
         Shape.__init__(self, frame, name)
         # normalize the plane normal
-        coeffs = numpy.array(coeffs)
-        n = numpy.linalg.norm(coeffs[0:3])
+        coeffs = array(coeffs)
+        n = norm(coeffs[0:3])
         self.coeffs = coeffs/n
 
 class Point(Shape):

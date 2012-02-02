@@ -9,7 +9,9 @@ from numpy.linalg import norm
 from numpy import zeros, argmin, hstack, dot, sign
 import arboris.homogeneousmatrix as Hg
 from arboris.core import Shape
-from arboris.shapes import *
+from arboris.shapes import Plane, Point, Box, Sphere
+import warnings
+
 
 def choose_solver(shape0, shape1):
     """Choose a suitable solver for the two shapes.
@@ -94,6 +96,19 @@ def box_sphere_collision(shapes):
                                  shapes[1].frame.pose[0:3, 3],
                                  shapes[1].radius)
 
+def box_point_collision(shapes):
+    assert isinstance(shapes[0], Box)
+    assert isinstance(shapes[1], Point)
+    warnings.warn("""
+    The Box/Point collision is implemented, but it may raise error while
+    looking for normal vectors, particularly when point is close to edges.
+    You should use Box/Sphere collision instead.
+    """)
+    return _box_sphere_collision(shapes[0].frame.pose,
+                                 shapes[0].half_extents,
+                                 shapes[1].frame.pose[0:3, 3],
+                                 0.0)
+
 def plane_sphere_collision(shapes):
     assert isinstance(shapes[0], Plane)
     assert isinstance(shapes[1], Sphere)
@@ -155,7 +170,7 @@ def _sphere_sphere_collision(p_g0, radius0, p_g1, radius1):
     z = H_gc0[0:3, 2]
     H_gc0[0:3, 3] = p_g0 + radius0*z
     H_gc1 = H_gc0.copy()
-    H_gc1[0:3,3] += sdist*z
+    H_gc1[0:3, 3] += sdist*z
     return (sdist, H_gc0, H_gc1)
 
 def _plane_sphere_collision(H_g0, coeffs0, p_g1, radius1):
@@ -199,9 +214,9 @@ def _plane_sphere_collision(H_g0, coeffs0, p_g1, radius1):
     csdist = dot(normal, p_01) - coeffs0[3] # signed distance from the center
     sdist = csdist - radius1
     H_gc0 = Hg.zaligned(normal)
-    H_gc0[0:3,3] = p_01 - csdist * normal
+    H_gc0[0:3, 3] = p_01 - csdist * normal
     H_gc1 = H_gc0.copy()
-    H_gc1[0:3,3] = p_01 - sign(sdist) * radius1 * normal
+    H_gc1[0:3, 3] = p_01 - sign(sdist) * radius1 * normal
     return (sdist, H_gc0, H_gc1)
 
 def _box_sphere_collision(H_g0, half_extents0, p_g1, radius1):
@@ -224,7 +239,7 @@ def _box_sphere_collision(H_g0, half_extents0, p_g1, radius1):
     >>> lengths0 = array([1., 2., 3.])
     >>> r1 = 0.1
     >>> p_g1 = array([0., 3., 1.])
-    >>> (sdist, H_gc0, H_gc1) = _box_sphere_collision(H_g0, lengths0/2, p_g1, r1)
+    >>> (sdist, H_gc0, H_gc1)=_box_sphere_collision(H_g0, lengths0/2, p_g1, r1)
     >>> print(sdist)
     1.9
     >>> print(H_gc0)
@@ -238,7 +253,7 @@ def _box_sphere_collision(H_g0, half_extents0, p_g1, radius1):
      [ 1.  -0.   0.   1. ]
      [ 0.   0.   0.   1. ]]
     >>> p_g1 = array([0.55, 0., 0.])
-    >>> (sdist, H_gc0, H_gc1) = _box_sphere_collision(H_g0, lengths0/2, p_g1, r1)
+    >>> (sdist, H_gc0, H_gc1)=_box_sphere_collision(H_g0, lengths0/2, p_g1, r1)
     >>> print(sdist)
     -0.05
     >>> print(H_gc0)
@@ -252,7 +267,7 @@ def _box_sphere_collision(H_g0, half_extents0, p_g1, radius1):
      [ 1.    0.    0.    0.  ]
      [ 0.    0.    0.    1.  ]]
     >>> p_g1 = array([0.45, 0., 0.])
-    >>> (sdist, H_gc0, H_gc1) = _box_sphere_collision(H_g0, lengths0/2, p_g1, r1)
+    >>> (sdist, H_gc0, H_gc1)=_box_sphere_collision(H_g0, lengths0/2, p_g1, r1)
     >>> print(sdist)
     -0.15
     >>> print(H_gc0)

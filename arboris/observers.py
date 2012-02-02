@@ -3,15 +3,24 @@
 """
 __author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>",
               "Joseph SALINI <joseph.salini@gmail.com>")
-import arboris.core
-from abc import ABCMeta, abstractmethod, abstractproperty
-from numpy import dot, array, eye, linalg, vstack, hstack, zeros, diag
-from time import time as _time
+
+from numpy import dot
+
+from arboris.core import Observer, MovingSubFrame, name_all_elements
 from arboris.massmatrix import principalframe
+
+from pylab import plot, show, legend, xlabel, ylabel, title
+
+import h5py
+
+from time import time as _time, sleep
+import socket
+import subprocess, shlex
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
-class EnergyMonitor(arboris.core.Observer):
+
+class EnergyMonitor(Observer):
     """Compute and store the world energy at each time step.
 
     **Example:**
@@ -25,6 +34,15 @@ class EnergyMonitor(arboris.core.Observer):
         >>> #obs.plot()
 
     """
+    def __init__(self):
+        Observer.__init__(self)
+        self._world = None
+        self.time = []
+        self.kinetic_energy = []
+        self.potential_energy = []
+        self.mechanichal_energy = []
+        self._com_pos = {}
+        self._bodies = None
 
     def init(self, world, timeline):
         self._world = world
@@ -35,7 +53,7 @@ class EnergyMonitor(arboris.core.Observer):
         self._com_pos = {}
         self._bodies = self._world.ground.iter_descendant_bodies
         for body in self._bodies():
-            self._com_pos[body]  = principalframe(body.mass)[:,3]
+            self._com_pos[body]  = principalframe(body.mass)[:, 3]
 
     def update(self, dt):
         self.time.append(self._world.current_time)
@@ -45,7 +63,7 @@ class EnergyMonitor(arboris.core.Observer):
         Ep = 0.
         for body in self._bodies():
             h = dot( dot(body.pose, self._com_pos[body])[0:3], self._world.up)
-            Ep += body.mass[3,3] * h
+            Ep += body.mass[3, 3] * h
         Ep *= 9.81
         self.potential_energy.append(Ep)
         self.mechanichal_energy.append(Ec+Ep)
@@ -56,18 +74,17 @@ class EnergyMonitor(arboris.core.Observer):
     def plot(self):
         """Plot the energy evolution.
         """
-        from pylab import plot, show, legend, xlabel, ylabel, title
         plot(self.time, self.kinetic_energy)
         plot(self.time, self.potential_energy)
         plot(self.time, self.mechanichal_energy)
-        legend(('kinetic','potential','mechanical'))
+        legend(('kinetic', 'potential', 'mechanical'))
         title('Energy evolution')
         xlabel('time (s)')
         ylabel('energy (J)')
         show()
 
 
-class PerfMonitor(arboris.core.Observer):
+class PerfMonitor(Observer):
     """
 
     **Example:**
@@ -87,11 +104,12 @@ class PerfMonitor(arboris.core.Observer):
 
     """
     def __init__(self, log=False):
-        arboris.core.Observer.__init__(self)
+        Observer.__init__(self)
         if log:
             self._logger = logging.getLogger(self.__class__.__name__)
         else:
             self._logger = None
+        self._world = None
         self._last_time = None
         self._computation_time = []
 
@@ -111,7 +129,6 @@ class PerfMonitor(arboris.core.Observer):
         pass
 
     def plot(self):
-        from pylab import plot, show, xlabel, ylabel, title
         plot(self._computation_time)
         title('Computation time for each simulation time step')
         xlabel('simulation time step')
@@ -130,7 +147,7 @@ max computation time (s): {3}""".format(
     max(self._computation_time))
 
 
-class Hdf5Logger(arboris.core.Observer):
+class Hdf5Logger(Observer):
     """An observer that saves the simulation data in an hdf5 file.
 
     :param filename: name of the output hdf5 file
@@ -194,8 +211,7 @@ class Hdf5Logger(arboris.core.Observer):
     """
     def __init__(self, filename, group="/", mode='a', save_state=False,
                  save_transforms=True, flat=False, save_model=False):
-        import h5py
-        arboris.core.Observer.__init__(self)
+        Observer.__init__(self)
         # hdf5 file handlers
         self._file = h5py.File(filename, mode)
         self._root = self._file
@@ -207,6 +223,15 @@ class Hdf5Logger(arboris.core.Observer):
         self._save_transforms = save_transforms
         self._flat = flat
         self._save_model = save_model
+
+        self._world         = None
+        self._nb_steps      = -1
+        self._current_step  = 0
+        self._gpositions    = None
+        self._gvelocities   = None
+        self._transforms    = None
+        self._arb_transforms = {}
+        self._model         = None
 
     @property
     def root(self):
@@ -222,8 +247,8 @@ class Hdf5Logger(arboris.core.Observer):
         if self._save_state:
             self._gpositions = self._root.require_group('gpositions')
             self._gvelocities = self._root.require_group('gvelocities')
+            name_all_elements(self._world.getjoints(), check_unicity=True)
             for j in self._world.getjoints():
-                if j.name is None: j.name = "joint_"+str(id(j))
                 self._gpositions.require_dataset(j.name,
                         (self._nb_steps,) + j.gpos.shape[:], 'f8')
                 self._gvelocities.require_dataset(j.name,
@@ -232,20 +257,21 @@ class Hdf5Logger(arboris.core.Observer):
             self._arb_transforms = {}
             self._transforms = self._root.require_group('transforms')
             if self._flat:
+                name_all_elements(self._world.iterbodies(), True)
                 for b in self._world.iterbodies():
-                    if b.name is None: b.name = "body_"+str(id(b))
                     self._arb_transforms[b.name] = b
             else:
+                nonflatlist = [j.frames[1] for j in self._world.getjoints()]
+                name_all_elements(nonflatlist, True)
                 for j in  self._world.getjoints():
-                    if j.frames[1].name is None: j.frames[1].name = "joint_frame_"+str(id(j.frames[1]))
                     self._arb_transforms[j.frames[1].name] = j
+            name_all_elements(self._world.itermovingsubframes(), True)
             for f in self._world.itermovingsubframes():
-                if f.name is None: f.name = "frame_"+str(id(f))
                 self._arb_transforms[f.name] = f
             for k in self._arb_transforms.keys():
-                d = self._transforms.require_dataset(k,
-                                                    (self._nb_steps, 4,4),
-                                                    'f8')
+                self._transforms.require_dataset(k,
+                                                 (self._nb_steps, 4,4),
+                                                 'f8')
         if self._save_model:
             self._model = self._root.require_group('model')
             ndof = self._world.ndof
@@ -264,29 +290,29 @@ class Hdf5Logger(arboris.core.Observer):
         """Save the current data (state...).
         """
         assert self._current_step <= self._nb_steps
-        self._root["timeline"][self._current_step] = self._world._current_time
+        self._root["timeline"][self._current_step] = self._world.current_time
         if self._save_state:
             for j in self._world.getjoints():
                 self._gpositions[j.name][self._current_step] = j.gpos
                 self._gvelocities[j.name][self._current_step] = j.gvel
         if self._save_transforms:
             for k, v in self._arb_transforms.items():
-                if isinstance(v, arboris.core.MovingSubFrame):
+                if isinstance(v, MovingSubFrame):
                     if self._flat:
                         pose = v.pose
                     else:
                         pose = v.bpose
                 else:
                     pose = v.pose
-                self._transforms[k][self._current_step,:,:] = v.pose
+                self._transforms[k][self._current_step, :, :] = pose
         if self._save_model:
-            self._model["gvel"][self._current_step,:] = self._world.gvel
-            self._model["mass"][self._current_step,:,:] = self._world.mass
-            self._model["admittance"][self._current_step,:,:] = \
+            self._model["gvel"][self._current_step, :]    = self._world.gvel
+            self._model["mass"][self._current_step, :, :] = self._world.mass
+            self._model["admittance"][self._current_step, :, :] = \
                     self._world.admittance
-            self._model["nleffects"][self._current_step,:,:] = \
+            self._model["nleffects"][self._current_step, :, :] = \
                     self._world.nleffects
-            self._model["gforce"][self._current_step,:] = self._world.gforce
+            self._model["gforce"][self._current_step, :] = self._world.gforce
         self._current_step += 1
 
     def finish(self):
@@ -294,17 +320,15 @@ class Hdf5Logger(arboris.core.Observer):
 
 
 
-import socket
-import subprocess, shlex
-import time
-
-class SocketCom(arboris.core.Observer):
+class SocketCom(Observer):
     """
     """
     def __init__(self, host="127.0.0.1", port=5000, timeout=3):
+        Observer.__init__(self)
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.settimeout(timeout)
-        for i in range(50):
+        max_port = port + 50
+        while port < max_port:
             try:
                 self.s.bind((host, port))
                 break
@@ -313,70 +337,78 @@ class SocketCom(arboris.core.Observer):
                 print("change port!!!")
         self.host = host
         self.port = port
+        self.conn = None
+        self.addr = None
 
     def init(self, world, timeline):
         self.s.listen(1)
         try:
             self.conn, self.addr = self.s.accept()
             print('Connected by', self.addr)
-        except:
+        except socket.error:
             print("Connection error: no connection occurs")
 
     def finish(self):
         try:
             self.conn.send("close connection")
             self.s.close()
-        except:
+        except socket.error:
             pass
 
 
 class DaenimCom(SocketCom):
     """
     """
-    def __init__(self, arborisViewer, daefile, host="127.0.0.1", port=5000, options = "", precision=5, flat=False):
+    def __init__(self, arborisViewer, daefile, host="127.0.0.1", port=5000, \
+                 options = "", precision=5, flat=False):
         """
         """
         SocketCom.__init__(self, host, port)
-        self.app_call = [arborisViewer, daefile, "-socket", self.host, str(self.port)] + shlex.split(options)
+        self.app_call = \
+              [arborisViewer, daefile, "-socket", self.host, str(self.port)] + \
+               shlex.split(options)
         self.precision = precision
         self.flat = flat
+        self.world = None
 
-    def init(self,world, timeline):
+    def init(self, world, timeline):
         """
         """
         self.world = world
         subprocess.Popen(self.app_call)
         SocketCom.init(self, world, timeline)
-        time.sleep(1.)
+        sleep(1.)
         if self.flat:
-            for b in self.world.getbodies():
-                if b.name is None: b.name = "body_"+str(id(b))
+            name_all_elements(self.world.getbodies(), True)
         else:
-            for j in self.world.getjoints():
-                if j.frames[1].name is None: j.frames[1].name = "joint_frame_"+str(id(j.frames[1]))
-        for f in self.world.itermovingsubframes():
-            if f.name is None: f.name = "frame_"+str(id(f))
-        
+            nonflatlist = [j.frames[1] for j in self.world.getjoints()]
+            name_all_elements(nonflatlist, True)
+        name_all_elements(self.world.itermovingsubframes(), True)
 
-    def update(self,dt):
+    def update(self, dt):
         """
         """
-        from arboris.homogeneousmatrix import inv
         msg = ""
         if self.flat:
             for b in self.world.getbodies():
                 H = b.pose
-                msg += b.name + " " + " ".join([str(round(val,self.precision)) for val in H[0:3,:].reshape(12)]) + "\n"
+                msg += b.name + " " + \
+                       " ".join([str(round(val,self.precision)) \
+                       for val in H[0:3,:].reshape(12)]) + "\n"
         else:
             for j in self.world.getjoints():
                 H = j.pose
-                msg += j.frames[1].name + " " + " ".join([str(round(val,self.precision)) for val in H[0:3,:].reshape(12)]) + "\n"
+                msg += j.frames[1].name + " " + \
+                       " ".join([str(round(val,self.precision)) \
+                       for val in H[0:3,:].reshape(12)]) + "\n"
         for f in self.world.itermovingsubframes():
             if self.flat:
                 H = f.pose
             else:
                 H = f.bpose
-            msg += f.name + " " + " ".join([str(round(val,self.precision)) for val in H[0:3,:].reshape(12)]) + "\n"
+            msg += f.name + " " + \
+                   " ".join([str(round(val,self.precision)) \
+                   for val in H[0:3,:].reshape(12)]) + "\n"
         try:
             self.conn.send(msg)
         except socket.error:

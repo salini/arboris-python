@@ -6,7 +6,7 @@ __author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 from numpy import array, zeros, sin, cos, dot, hstack, vstack, arctan2
 import numpy
 
-tol=1e-9
+tol = 1e-9
 
 def transl(t_x, t_y, t_z):
     """Homogeneous matrix of a translation.
@@ -231,25 +231,25 @@ def zaligned(vec):
     y[:] = numpy.cross(z, x)
     return H
 
-def ishomogeneousmatrix(H, tol=tol):
+def ishomogeneousmatrix(H, _tol=tol):
     """
     Return true if input is an homogeneous matrix
     """
-    return (H.shape == (4,4)) \
-        and (numpy.abs(numpy.linalg.det(H[0:3,0:3])-1)<=tol) \
-        and (H[3,0:4]==[0,0,0,1]).all()
+    return (H.shape == (4, 4)) \
+        and (numpy.abs(numpy.linalg.det(H[0:3, 0:3])-1) <= _tol) \
+        and (H[3, 0:4]==[0, 0, 0, 1]).all()
 
 def pdot(H, point):
     """Frame change for a point.
     """
     assert ishomogeneousmatrix(H)
-    return dot(H[0:3,0:3], point) + H[0:3, 3]
+    return dot(H[0:3, 0:3], point) + H[0:3, 3]
 
 def vdot(H, vec):
     """Frame change for a vector.
     """
     assert ishomogeneousmatrix(H)
-    return dot(H[0:3,0:3], vec)
+    return dot(H[0:3, 0:3], vec)
 
 def inv(H):
     """
@@ -270,9 +270,9 @@ def inv(H):
 
     """
     assert ishomogeneousmatrix(H)
-    R = H[0:3,0:3]
-    p = H[0:3,3:4]
-    return vstack( (hstack((R.T,-dot(R.T,p))), [0,0,0,1]))
+    R = H[0:3, 0:3]
+    p = H[0:3, 3:4]
+    return vstack( (hstack((R.T, -dot(R.T, p))), [0, 0, 0, 1]))
 
 def adjoint(H):
     """
@@ -306,8 +306,8 @@ def adjoint(H):
 
     """
     assert ishomogeneousmatrix(H), H
-    R = H[0:3,0:3]
-    p = H[0:3,3:4]
+    R = H[0:3, 0:3]
+    p = H[0:3, 3:4]
     pxR = dot(
         array(
             [[    0, -p[2],  p[1]],
@@ -339,12 +339,12 @@ def dAdjoint(Ad, T):
 
     return a 6x6 dAdjoint matrix
     """
-    MT = array([[0., -T[2], T[1], 0., 0., 0.],
-                [T[2], 0., -T[0], 0., 0., 0.],
-                [-T[1], T[0], 0., 0., 0., 0.],
-                [0., -T[5], T[4], 0., -T[2], T[1]],
-                [T[5], 0., -T[3], T[2], 0., -T[0]],
-                [-T[4], T[3], 0., -T[1], T[0], 0.]])
+    MT = array([[   0., -T[2],  T[1],    0.,    0.,    0.],
+                [ T[2],    0., -T[0],    0.,    0.,    0.],
+                [-T[1],  T[0],    0.,    0.,    0.,    0.],
+                [   0., -T[5],  T[4],    0., -T[2],  T[1]],
+                [ T[5],    0., -T[3],  T[2],    0., -T[0]],
+                [-T[4],  T[3],    0., -T[1],  T[0],    0.]])
     return dot(Ad, MT)
 
 def rotzyx_angles(H):
@@ -362,15 +362,15 @@ def rotzyx_angles(H):
 
     """
     assert ishomogeneousmatrix(H)
-    if abs(H[0,0])<tol and abs(H[1,0])<tol:
+    if abs(H[0, 0]) < tol and abs(H[1, 0]) < tol:
         # singularity
         az = 0
-        ay = arctan2(-H[2,0], H[0,0])
-        ax = arctan2(-H[1,2], H[1,1])
+        ay = arctan2(-H[2, 0], H[0, 0])
+        ax = arctan2(-H[1, 2], H[1, 1])
     else:
-         az= arctan2(H[1,0],H[0,0])
-         sz = sin(az)
-         cz = cos(az)
-         ay = arctan2(-H[2,0], cz*H[0,0] + sz*H[1,0])
-         ax = arctan2(sz*H[0,2] - cz*H[1,2], cz*H[1,1] - sz*H[0,1])
+        az = arctan2( H[1, 0], H[0, 0])
+        sz = sin(az)
+        cz = cos(az)
+        ay = arctan2(-H[2, 0], cz*H[0, 0] + sz*H[1, 0])
+        ax = arctan2(sz*H[0, 2] - cz*H[1, 2], cz*H[1, 1] - sz*H[0, 1])
     return (az, ay, ax)

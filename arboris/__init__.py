@@ -6,16 +6,11 @@ __author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 def optional_modules():
     """A list of optional modules which are available."""
     mods = []
-    try:
-        import arboris.visu_osg
-        mods.append('visu_osg')
-    except ImportError:
-        pass
-    try:
-        import arboris.qpcontroller
-        mods.append('qpcontroller')
-    except ImportError:
-        pass
+#    try:                             # this is an old module.
+#        import arboris.qpcontroller  # it is not available anymore.
+#        mods.append('qpcontroller')  # this snippet of code is kept as example
+#    except ImportError:              # for further use of optional_modules
+#        pass
     return mods
 
 __all__ = ['adjointmatrix', 'collisions', 'constraints', 'controllers',

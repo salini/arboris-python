@@ -22,10 +22,13 @@ to bodies and serve as anchor points to the joints.
 """
 __author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 
+from abc import ABCMeta, abstractmethod, abstractproperty
+from itertools import imap
+
 from numpy import array, zeros, eye, dot, arange
 import numpy
+
 import arboris.homogeneousmatrix as Hg
-from abc import ABCMeta, abstractmethod, abstractproperty
 from arboris.rigidmotion import RigidMotion
 
 
@@ -34,6 +37,7 @@ def simplearm():
     w = World()
     add_simplearm(w)
     return w
+
 
 class NamedObject(object):
     """
@@ -85,6 +89,7 @@ class NamedObjectsList(list):
 
     """
     def __init__(self, iterable=None):
+        list.__init__(self)
         if iterable is None:
             iterable = tuple()
         self.extend(iterable)
@@ -122,8 +127,30 @@ class NamedObjectsList(list):
                     raise DuplicateNameError()
         return result
 
+
 class DuplicateNameError(Exception):
-    pass
+    def __init__(self, message):
+        Exception.__init__(self)
+        self.message = message
+
+    def __str__(self):
+        return self.message
+
+
+def name_all_elements(nlist, check_unicity=False):
+    # give a unique name for all unnamed elements
+    for elem in nlist: 
+        if elem.name is None:
+            elem.name = str(id(elem))
+    # check duplicate name
+    if check_unicity is True:
+        list_name = [e.name for e in nlist]
+        set_name  = set(list_name)
+        if len(list_name) != len(set_name):
+            for e in set_name:
+                list_name.remove(e)
+            raise DuplicateNameError("Some names are duplicated:\n" +
+                                     str(list_name))
 
 
 class Frame(object):
@@ -170,10 +197,17 @@ class Joint(RigidMotion, NamedObject):
     __metaclass__ = ABCMeta
 
     def __init__(self, name=None):
+        RigidMotion.__init__(self)
         NamedObject.__init__(self, name)
         self._frame0 = None
         self._frame1 = None
-        self._dof = None # will be set by World.init()
+        self._dof = None # will be set by World.
+        self.gpos = zeros((0, 0))
+        self.gvel = zeros(0)
+
+    def set_frames(self, frame0, frame1):
+        self._frame0 = frame0
+        self._frame1 = frame1
 
     @abstractproperty
     def ndof(self):
@@ -195,8 +229,18 @@ class Joint(RigidMotion, NamedObject):
         return (self._frame0, self._frame1)
 
     @property
+    def frame0(self):
+        return self._frame0
+
+    @property
+    def frame1(self):
+        return self._frame1
+
+    @property
     def twist(self):
-        r"""Relative twist of frame 1 regarding to frame 0 expressed in frame 1: `\twist[1]_{1/0}`
+        r"""Relative twist `\twist[1]_{1/0}`
+        
+        It is the twist of frame 1 regarding to frame 0 expressed in frame 1
         """
         return dot(self.jacobian, self.gvel)
 
@@ -225,6 +269,7 @@ class LinearConfigurationSpaceJoint(Joint):
     Joints whose configuration space is diffeomorph to R^ndof.
     """
     def __init__(self, gpos=None, gvel=None, name=None):
+        Joint.__init__(self, name)
         if gpos is None:
             self.gpos = zeros(self.ndof)
         else:
@@ -233,7 +278,6 @@ class LinearConfigurationSpaceJoint(Joint):
             self.gvel = zeros(self.ndof)
         else:
             self.gvel = array(gvel).reshape((self.ndof))
-        Joint.__init__(self, name)
 
     def integrate(self, gvel, dt):
         self.gvel = gvel
@@ -244,9 +288,10 @@ class JointsList(NamedObjectsList):
     def __init__(self, iterable):
         NamedObjectsList.__init__(self, iterable)
         self._init_dof()
+        self._dof = slice(0, 0)
 
     def _init_dof(self):
-        self._dof = slice(0,0)
+        self._dof = slice(0, 0)
         for obj in self:
             if isinstance(obj, Joint):
                 assert obj.dof.step in (None, 1)
@@ -272,6 +317,7 @@ class Constraint(NamedObject):
     def __init__(self, name=None):
         NamedObject.__init__(self, name)
         self._is_enabled = True
+        self._force = zeros(0)
 
     def is_enabled(self):
         return self._is_enabled
@@ -453,22 +499,22 @@ class World(NamedObject):
 
         One can also add several links at a time::
 
-            world.add_link(frame0_a, joint_a, frame1_a, frame0_b, joint_b, frame1_b)
+            world.add_link(frame0_a,joint_a,frame1_a,frame0_b,joint_b,frame1_b)
 
         """
         assert isinstance(frame0, Frame)
         assert isinstance(frame1, Frame)
         assert isinstance(joint, Joint)
-        assert joint._frame0 is None
-        assert joint._frame1 is None
+        assert joint.frame0 is None
+        assert joint.frame1 is None
         assert len(args) % 3 == 0
-        joint._frame0 = frame0
-        joint._frame1 = frame1
+        joint.set_frames(frame0, frame1)
         if frame1.body.parentjoint is None:
             frame1.body.parentjoint = joint
         else:
-            raise ValueError(
-                'frame1\'s body already has a parent joint, which means you\'re probably trying to create a kinematic loop. Try using a constraint instead.')
+            raise ValueError("frame1's body already has a parent joint, " + \
+            "which means you're probably trying to create a kinematic loop." + \
+            "Try using a constraint instead.")
         frame0.body.childrenjoints.append(joint)
         self.register(frame0)
         self.register(frame1)
@@ -492,23 +538,22 @@ class World(NamedObject):
 
         """
         assert isinstance(old_joint, Joint)
-        assert old_joint in old_joint._frame0.body.childrenjoints
-        assert old_joint is old_joint._frame1.body.parentjoint
+        assert old_joint in old_joint.frame0.body.childrenjoints
+        assert old_joint is old_joint.frames1.body.parentjoint
         if len(args) == 1:
             new_joint = args[0]
-            frame0 = old_joint._frame0
-            frame1 = old_joint._frame1
+            frame0 = old_joint.frame0
+            frame1 = old_joint.frame1
             self.replace_joint(old_joint, frame0, new_joint, frame1)
         elif len(args) == 0 or len(args) % 3 != 0:
             raise RuntimeError() #TODO
         else:
             body0 = args[0].body
             body1 = args[-1].body
-            assert old_joint._frame0.body is body0
-            assert old_joint._frame1.body is body1
+            assert old_joint.frame0.body is body0
+            assert old_joint.frame1.body is body1
             body1.parentjoint = None
-            old_joint._frame0 = None
-            old_joint._frame1 = None
+            old_joint.set_frames(None, None)
             self.add_link(*args)
             # new_joint is now the last in body0.childrenjoint
             # and old_joint is still somewhere in body0.childrenjoint
@@ -544,7 +589,8 @@ class World(NamedObject):
         if isinstance(obj, Body):
             pass
         elif isinstance(obj, Joint):
-            raise ValueError('Joints should not be registered. Use add_link() instead.')
+            raise ValueError("Joints should not be registered. " + \
+                             "Use add_link() instead.")
         elif isinstance(obj, SubFrame) or isinstance(obj, MovingSubFrame):
             if not obj in self._subframes:
                 self._subframes.append(obj)
@@ -564,8 +610,8 @@ class World(NamedObject):
             if not obj in self._controllers:
                 self._controllers.append(obj)
         else:
-            raise ValueError(
-                'I do not know how to register objects of type {0}'.format(type(obj)))
+            raise ValueError("I do not know how to register objects " + \
+                             "of type {0}".format(type(obj)))
 
     def parse(self, target):
         """Parse the world and call hooks on the ``target`` object.
@@ -630,7 +676,6 @@ class World(NamedObject):
         self._mass = zeros((self._ndof, self._ndof))
         self._nleffects =  zeros((self._ndof, self._ndof))
         self._viscosity = zeros((self._ndof, self._ndof))
-        self._controller_viscosity = zeros((self._ndof, self._ndof))
         self._gforce = zeros(self._ndof)
 
         # Init the worldwide generalized velocity vector:
@@ -944,7 +989,7 @@ class World(NamedObject):
         previous_vel = vel.copy()
         for k in arange(maxiters):
             for c in constraints:
-                dforce = c.solve(vel[c._dol], admittance[c._dol,c._dol], dt)
+                dforce = c.solve(vel[c._dol], admittance[c._dol, c._dol], dt)
                 vel += dot(admittance[:, c._dol], dforce)
             error = numpy.linalg.norm(vel - previous_vel)
             if k > 0 and error < tol:
@@ -996,6 +1041,12 @@ class World(NamedObject):
             j.integrate(self._gvel[j.dof], dt)
         self._current_time += dt
 
+    def name_all_elements(self, check_unicity=False):
+        for wlist in [self.getjoints(), self.getframes(), self.getshapes(),
+                      self.getconstraints(), self.getcontrollers()]:
+            name_all_elements(wlist, check_unicity)
+
+
 
 class _SubFrame(NamedObject, Frame):
 
@@ -1020,14 +1071,17 @@ class _SubFrame(NamedObject, Frame):
         AssertionError
 
         """
+        NamedObject.__init__(self, name)
+        Frame.__init__(self)
+        
         if bpose is None:
             bpose = eye(4)
 
-        NamedObject.__init__(self, name)
         assert Hg.ishomogeneousmatrix(bpose)
         self._bpose = bpose
         if not(isinstance(body, Body)):
-            raise ValueError("The ``body`` argument must be an instance of the ``Boby`` class")
+            raise ValueError(
+            "The ``body`` argument must be an instance of the ``Boby`` class")
         else:
             self._body = body
 
@@ -1037,16 +1091,16 @@ class _SubFrame(NamedObject, Frame):
 
     @property
     def twist(self):
-        return dot(Hg.iadjoint(self._bpose), self._body._twist)
+        return dot(Hg.iadjoint(self._bpose), self._body.twist)
 
     @property
     def jacobian(self):
-        return dot(Hg.iadjoint(self._bpose), self._body._jacobian)
+        return dot(Hg.iadjoint(self._bpose), self._body.jacobian)
 
     @property
     def djacobian(self):
         # we assume self._bpose is constant
-        return dot(Hg.iadjoint(self._bpose), self._body._djacobian)
+        return dot(Hg.iadjoint(self._bpose), self._body.djacobian)
 
     @property
     def body(self):
@@ -1072,6 +1126,8 @@ class MovingSubFrame(_SubFrame):
 class Body(NamedObject, Frame):
 
     def __init__(self, name=None, mass=None, viscosity=None):
+        NamedObject.__init__(self, name)
+        Frame.__init__(self)
         if mass is None:
             mass = zeros((6, 6))
         else:
@@ -1081,7 +1137,6 @@ class Body(NamedObject, Frame):
         else:
             pass #TODO: check the viscosity matrix
 
-        NamedObject.__init__(self, name)
         # the object will have a frame, with the same name as the object itself
         self.parentjoint = None
         self.childrenjoints = []
@@ -1095,15 +1150,14 @@ class Body(NamedObject, Frame):
 
     def iter_descendant_bodies(self):
         """Iterate over all descendant bodies, with a depth-first strategy"""
-        from itertools import imap
-        for b in imap(lambda j: j._frame1.body, self.childrenjoints):
+        for b in imap(lambda j: j.frame1.body, self.childrenjoints):
             yield b
             for bb in b.iter_descendant_bodies():
                 yield bb
 
     def iter_ancestor_bodies(self):
         if self.parentjoint is not None:
-            parentbody = self.parentjoint._frame0.body
+            parentbody = self.parentjoint.frame0.body
             yield parentbody
             for a in parentbody.iter_ancestor_bodies():
                 yield a
@@ -1112,13 +1166,13 @@ class Body(NamedObject, Frame):
         """Iterate over all descendant joints, with a depth-first strategy"""
         for j in self.childrenjoints:
             yield j
-            for jj in j._frame1.body.iter_descendant_joints():
+            for jj in j.frame1.body.iter_descendant_joints():
                 yield jj
 
     def iter_ancestor_joints(self):
         if self.parentjoint is not None:
             yield self.parentjoint
-            for a in self.parentjoint._frame0.body.iter_ancestor_joints():
+            for a in self.parentjoint.frame0.body.iter_ancestor_joints():
                 yield a
 
     @property
@@ -1165,15 +1219,15 @@ class Body(NamedObject, Frame):
         self._pose = pose
         H_gp = pose
         for j in self.childrenjoints:
-            H_cn = j._frame1.bpose
-            H_pr = j._frame0.bpose
+            H_cn = j.frame1.bpose
+            H_pr = j.frame0.bpose
             H_rn = j.pose
             H_pc = dot(H_pr, dot(H_rn, Hg.inv(H_cn)))
             child_pose = dot(H_gp, H_pc)
-            j._frame1.body.update_geometric(child_pose)
+            j.frame1.body.update_geometric(child_pose)
 
     def update_dynamic(self, pose, jac, djac, twist):
-        r"""Sets the body ``pose, jac, djac, twist`` and computes its children ones.
+        r"""Compute the body ``pose, jac, djac, twist`` and its children ones.
 
         This method (1) sets the body dynamical model (pose, jacobian,
         hessian and twist) to the values given as argument, (2) computes
@@ -1297,7 +1351,7 @@ class Body(NamedObject, Frame):
         if self.mass[3, 3] <= 1e-10: #TODO: avoid hardcoded value
             rx = zeros((3, 3))
         else:
-            rx = self.mass[0:3, 3:6]/self.mass[3,3] #TODO: better solution?
+            rx = self.mass[0:3, 3:6]/self.mass[3, 3] #TODO: better solution?
         self._nleffects = zeros((6, 6))
         self._nleffects[0:3, 0:3] = wx
         self._nleffects[3:6, 3:6] = wx
@@ -1309,8 +1363,8 @@ class Body(NamedObject, Frame):
         dJ_pg = djac
         T_pg = twist
         for j in self.childrenjoints:
-            H_cn = j._frame1.bpose
-            H_pr = j._frame0.bpose
+            H_cn = j.frame1.bpose
+            H_pr = j.frame0.bpose
             H_rn = j.pose
             H_pc = dot(H_pr, dot(H_rn, Hg.inv(H_cn)))
             child_pose = dot(H_gp, H_pc)
@@ -1324,11 +1378,11 @@ class Body(NamedObject, Frame):
             dJ_nr = j.djacobian
             child_twist = dot(Ad_cp, T_pg) + dot(Ad_cn, T_nr)
             child_jac = dot(Ad_cp, J_pg)
-            child_jac[:,j.dof] += dot(Ad_cn, J_nr)
+            child_jac[:, j.dof] += dot(Ad_cn, J_nr)
 
             child_djac = dot(dAd_cp, J_pg) + dot(Ad_cp, dJ_pg)
             child_djac[:, j.dof] += dot(Ad_cn, dJ_nr)
-            j._frame1.body.update_dynamic(child_pose, child_jac, child_djac,
+            j.frame1.body.update_dynamic(child_pose, child_jac, child_djac,
                                           child_twist)
 
 
@@ -1348,6 +1402,7 @@ class Observer(object):
         pass
 
 
+
 def simulate(world, timeline, observers=()):
     """Run a full simulation,
 
@@ -1364,14 +1419,14 @@ def simulate(world, timeline, observers=()):
     >>> simulate(w, time)
 
     """
-    if world._current_time != timeline[0]:
+    if world.current_time != timeline[0]:
         pass #TODO: use logger to warn user of possible problem
     world._current_time = timeline[0]
     world.init()
     for obs in observers:
         obs.init(world, timeline)
     for next_time in timeline[1:]:
-        dt = next_time - world._current_time
+        dt = next_time - world.current_time
         world.update_dynamic()
         world.update_controllers(dt)
         world.update_constraints(dt)

@@ -12,7 +12,7 @@ from arboris.core import World, Body, SubFrame
 from arboris.massmatrix import transport, cylinder, box
 from arboris.homogeneousmatrix import transl, rotx
 from arboris.joints import FreeJoint, RzJoint
-from numpy import dot
+from numpy import dot, pi
 
 def add_snake(w, nbody, lengths=None, masses=None, gpos=None, gvel=None,
         is_fixed=True):
@@ -47,9 +47,8 @@ def add_snake(w, nbody, lengths=None, masses=None, gpos=None, gvel=None,
         frame = body
 
     for (length, mass, q, dq) in zip(lengths, masses, gpos, gvel):
-        radius = length/10. #TODO use 5 instead of 10
-        #angle = pi/2.
-        angle = 0. #TODO: remove, it is here for testing
+        radius = length/5.
+        angle = pi/2.
         body = Body(mass=transport(cylinder(length, radius, mass),
                                    dot(rotx(angle),
                                        transl(0., -length/2., 0.))))

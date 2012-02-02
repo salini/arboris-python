@@ -4,8 +4,10 @@
 __author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 
 from numpy import array, zeros, eye, sin, cos, dot
+
 import arboris.homogeneousmatrix
 from arboris.core import Joint, LinearConfigurationSpaceJoint
+from arboris.twistvector import exp
 
 class FreeJoint(Joint):
 
@@ -23,13 +25,14 @@ class FreeJoint(Joint):
         >>> j.gvel
         array([ 0.,  0.,  0.,  0.,  0.,  0.])
         """
+        Joint.__init__(self, name)
         if gpos is None:
             gpos = eye(4)
         if gvel is None:
             gvel = zeros((6))
-        self.gpos = array(gpos).reshape((4,4))
+        self.gpos = array(gpos).reshape((4, 4))
         self.gvel = array(gvel).reshape((6))
-        Joint.__init__(self, name)
+        
 
     @property
     def ndof(self):
@@ -49,10 +52,9 @@ class FreeJoint(Joint):
 
     @property
     def djacobian(self):
-        return zeros((6,6))
+        return zeros((6, 6))
 
     def integrate(self, gvel, dt):
-        from arboris.twistvector import exp
         self.gvel = gvel
         self.gpos = dot(self.gpos, exp( dt*self.gvel))
 
@@ -300,7 +302,7 @@ class RzJoint(LinearConfigurationSpaceJoint):
                [ 0.]])
 
         """
-        return zeros((6,1))
+        return zeros((6, 1))
 
 class RyJoint(LinearConfigurationSpaceJoint):
     """Hinge (1-dof) with axis in the y-direction.
@@ -323,7 +325,7 @@ class RyJoint(LinearConfigurationSpaceJoint):
 
     @property
     def djacobian(self):
-        return zeros((6,1))
+        return zeros((6, 1))
 
 class RxJoint(LinearConfigurationSpaceJoint):
     """Hinge (1-dof) with axis in the x-direction
@@ -346,7 +348,7 @@ class RxJoint(LinearConfigurationSpaceJoint):
 
     @property
     def djacobian(self):
-        return zeros((6,1))
+        return zeros((6, 1))
 
 
 class TxTyTzJoint(LinearConfigurationSpaceJoint):
@@ -405,7 +407,7 @@ class TzJoint(LinearConfigurationSpaceJoint):
     
     @property
     def djacobian(self):
-        return zeros((6,1))
+        return zeros((6, 1))
 
 
 
@@ -430,7 +432,7 @@ class TyJoint(LinearConfigurationSpaceJoint):
     
     @property
     def djacobian(self):
-        return zeros((6,1))
+        return zeros((6, 1))
 
 
 
@@ -455,7 +457,7 @@ class TxJoint(LinearConfigurationSpaceJoint):
     
     @property
     def djacobian(self):
-        return zeros((6,1))
+        return zeros((6, 1))
 
 
 

@@ -6,7 +6,7 @@ __author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 
 import arboris.homogeneousmatrix as Hg
 from numpy import diag, eye, dot, array, allclose
-from numpy.linalg import eig, eigvals, det, norm
+from numpy.linalg import eig, eigvals, det
 
 def ismassmatrix(M, semi=False):
     """Check whether M is a valid mass matrix.
@@ -18,7 +18,7 @@ def ismassmatrix(M, semi=False):
     are also considered valid.
 
     """
-    common = M.shape == (6,6) and allclose(M, M.T) and \
+    common = M.shape == (6, 6) and allclose(M, M.T) and \
             allclose(M[3:6, 3:6], M[3,3]*eye(3))
     if semi:
         return common and (eigvals(M) >= 0.).all()
@@ -93,14 +93,14 @@ def principalframe(M):
 
     """
     assert ismassmatrix(M)
-    m = M[5,5]
+    m = M[5, 5]
     rx = M[0:3, 3:6]/m
     H = eye(4)
     H[0:3, 3] = array([rx[2, 1], rx[0, 2], rx[1, 0]]) #TODO: use a function
     RSR = M[0:3, 0:3] + m*dot(rx, rx)
     [S, R] = eig(RSR)
     if det(R)<0.:
-        iI = array([[0, 0, 1],[0, 1, 0], [1, 0, 0]])
+        iI = array([[0, 0, 1], [0, 1, 0], [1, 0, 0]])
         R = dot(R, iI)
         S = dot(iI, dot(S, iI))
     H[0:3, 0:3] = R
@@ -147,7 +147,7 @@ def ellipsoid(radii, mass):
     return  diag( (Ix, Iy, Iz, mass, mass, mass) )
 
 def cylinder(length, radius, mass):
-    """Mass matrix of an homogeneous cylinder, whose symmetry axis is along the z-axis.
+    """Mass matrix of a homogeneous cylinder, with symmetry along z-axis.
 
     >>> cylinder(1., 0.1, 12.)
     array([[  1.03,   0.  ,   0.  ,   0.  ,   0.  ,   0.  ],
