@@ -19,6 +19,8 @@ import subprocess, shlex
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
+import struct
+
 
 class EnergyMonitor(Observer):
     """Compute and store the world energy at each time step.
@@ -374,9 +376,9 @@ class DaenimCom(SocketCom):
     def init(self, world, timeline):
         """
         """
-        self.world = world
         subprocess.Popen(self.app_call)
         SocketCom.init(self, world, timeline)
+        self.world = world
         sleep(1.)
         if self.flat:
             name_all_elements(self.world.getbodies(), True)
@@ -385,7 +387,7 @@ class DaenimCom(SocketCom):
             name_all_elements(nonflatlist, True)
         name_all_elements(self.world.itermovingsubframes(), True)
 
-    def update(self, dt):
+    def update_old(self, dt):
         """
         """
         msg = ""
@@ -409,6 +411,33 @@ class DaenimCom(SocketCom):
             msg += f.name + " " + \
                    " ".join([str(round(val,self.precision)) \
                    for val in H[0:3,:].reshape(12)]) + "\n"
+        try:
+            self.conn.send(msg)
+        except socket.error:
+            print("connection lost")
+
+
+    def update(self, dt):
+        """
+        """
+        if self.flat:
+            msg = ""
+            for b in self.world.getbodies():
+                H = b.pose
+                msg += struct.pack('64s12f', b.name,
+                                 *[float(val) for val in H[0:3, :].reshape(12)])
+        else:
+            for j in self.world.getjoints():
+                H = j.pose
+                msg += struct.pack('64s12f', j.frames[1].name,
+                                 *[float(val) for val in H[0:3, :].reshape(12)])
+
+        for f in self.world.itermovingsubframes():
+            H = f.pose if self.flat else f.bpose
+            msg += struct.pack('64s12f', f.name,
+                                 *[float(val) for val in H[0:3, :].reshape(12)])
+
+        msg += "update done"
         try:
             self.conn.send(msg)
         except socket.error:
