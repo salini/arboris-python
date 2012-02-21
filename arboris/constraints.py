@@ -52,8 +52,8 @@ class JointLimits(Constraint):
         self._force = zeros((joint.ndof,))
 
     def init(self, world):
-        self._jacobian = zeros((1, world.ndof))
-        self._jacobian[0, self._joint.dof] = 1
+        self._jacobian = zeros((self._joint.ndof, world.ndof))
+        self._jacobian[range(self._joint.ndof), range(world.ndof)[self._joint.dof]] = 1
 
     @property
     def jacobian(self):
@@ -61,27 +61,31 @@ class JointLimits(Constraint):
 
     @property
     def ndol(self):
-        return 1
+        return self._joint.ndof
 
     def update(self, dt):
         self._pos0 = self._joint.gpos
         self._force[:] = 0.
 
     def is_active(self):
-        return (self._pos0-self._min<self._proximity) or \
-                (self._max-self._pos0<self._proximity)
+        return (self._pos0-self._min<self._proximity).any() or \
+                (self._max-self._pos0<self._proximity).any()
 
     def solve(self, vel, admittance, dt):
         pred = self._pos0 + dt*(vel - dot(admittance, self._force))
         prev_force = self._force.copy()
         # pos = self._pos0 + dt*(vel + admittance*dforce)
-        if (pred <= self._min):
+        print "min", (self._min - pred)
+        print "max", (self._max - pred)
+        if (pred <= self._min).any():
             # the min limit is violated, we want pos == min
             self._force = dot(pinv(admittance), (self._min - pred)/dt)
+            self._force = self._force.clip(min=0)
             dforce = self._force - prev_force
-        elif (self._max <= pred):
+        elif (self._max <= pred).any():
             #the max limit is violated, we want pos == max
             self._force = dot(pinv(admittance), (self._max - pred)/dt)
+            self._force = self._force.clip(max=0)
             dforce = self._force - prev_force
         else:
             # the joint is within its limits, we ensure the
