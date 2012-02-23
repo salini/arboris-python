@@ -1,6 +1,7 @@
-#coding = utf-8
-#author Joseph Salini
-#date 24 January 2010
+#!/urs/bin/python
+#coding=utf-8
+#author=joseph salini
+#date=24 jan 2010
 
 from arboris.core import World, simulate, NamedObjectsList
 from numpy import array, arange
