@@ -440,6 +440,7 @@ class DaenimCom(SocketCom):
         msg += "update done"
         try:
             self.conn.send(msg)
+            self.conn.recv(2)
         except socket.error:
             print("connection lost")
 
