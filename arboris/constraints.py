@@ -75,8 +75,6 @@ class JointLimits(Constraint):
         pred = self._pos0 + dt*(vel - dot(admittance, self._force))
         prev_force = self._force.copy()
         # pos = self._pos0 + dt*(vel + admittance*dforce)
-        print "min", (self._min - pred)
-        print "max", (self._max - pred)
         if (pred <= self._min).any():
             # the min limit is violated, we want pos == min
             self._force = dot(pinv(admittance), (self._min - pred)/dt)
