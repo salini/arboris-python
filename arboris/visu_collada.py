@@ -494,7 +494,7 @@ def use_custom_shapes(dae_filename, mapping, stand_alone=False):
 
 
 
-def write_collada_scene(world, dae_filename, scale=1, options=None, flat=False):
+def write_collada_scene(world, dae_filename, scale=1, options=None, flat=False, color_generator=None):
     """Write a visual description of the scene in a collada file.
 
     :param world: the world to convert
@@ -518,7 +518,7 @@ def write_collada_scene(world, dae_filename, scale=1, options=None, flat=False):
         name_all_elements(nonflatlist, True)
     name_all_elements(world.itermovingsubframes(), True)
     world.update_geometric()
-    drawer = arboris._visu.Drawer(ColladaDriver(dae_filename, scale, options), flat)
+    drawer = arboris._visu.Drawer(ColladaDriver(dae_filename, scale, options), flat, color_generator)
     world.parse(drawer)
     drawer.finish()
 
