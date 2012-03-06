@@ -152,9 +152,9 @@ class BallAndSocketConstraint(Constraint):
     """
 
     def __init__(self, frames, name=None):
+        Constraint.__init__(self, name)
         self._force = zeros(3)
         self._pos0 = None
-        Constraint.__init__(self, name)
         self._frames = frames
 
     def init(self, world):
