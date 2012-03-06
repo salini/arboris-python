@@ -230,6 +230,44 @@ def get_bodies_data():
                   [(.002, .027, .065), .08185, transl(-.039, 0, -.034)]],
     }
 
+
+def get_bodies_shapes_data(shapes_from_inertia=True):
+    """
+    """
+    bodies_shapes_data = {}
+
+    for name, data in get_bodies_data().items():
+        bodies_shapes_data[name] = [[d[0], d[2]] for d in data]
+
+    if shapes_from_inertia is False:
+        modified_bodies_shapes = {
+        'head':   [[(.06,) , transl(0, 0, .0825)]],
+        'chest':  [[(.04, .04)          , transl(0, 0, -.0447)]],
+        'lap_belt_1': [],
+        'lap_belt_2': [],
+        'l_foot':     [[(.095, .027)     , transl(0,0,.0125)]],
+        'r_foot':    [[(.095, .027)      , transl(0,0,-.0125)]],
+        }
+        bodies_shapes_data.update(modified_bodies_shapes)
+
+    return bodies_shapes_data
+
+
+def get_bodies_colors():
+    """
+    """
+    bodies_colors = {}
+    for n in get_bodies_data():
+        bodies_colors[n] = (.4,.4,.45)
+    for n in ['l_arm', 'r_arm', 'l_forearm', 'r_forearm',
+              'l_thigh', 'r_thigh', 'l_shank', 'r_shank']:
+        bodies_colors[n] = (.2,.2,.2)
+    for n in ['l_hand', 'r_hand']:
+        bodies_colors[n] = (1,1,1)
+
+    return bodies_colors
+
+
 def get_shapes_data():
     """ somes extras: give some other important frames
     Each subframe is described as follows:
@@ -269,7 +307,8 @@ def get_shapes_data():
     'r_eye': ['head', (.02,), transl( .034, -.054, .0825)],
     }
 
-def add(w, is_fixed=False):
+
+def add(w, is_fixed=False, shapes_from_inertia=True):
     """
     construction of the icub robot for arboris-python:
     Kinematics data are from: http://eris.liralab.it/wiki/ICubForwardKinematics
@@ -278,8 +317,13 @@ def add(w, is_fixed=False):
     """
 
     bodies_data = get_bodies_data()
+    bodies_shapes_data = get_bodies_shapes_data(shapes_from_inertia)
     joints_data = get_joints_data()
     shapes_data = get_shapes_data()
+
+    if not shapes_from_inertia:
+        del shapes_data['l_eye']
+        del shapes_data['r_eye']
 
     ## bodies creation
     bodies = {}
@@ -315,8 +359,8 @@ def add(w, is_fixed=False):
 
 
     ## body shapes creations
-    for name, data in bodies_data.items():
-        for dims, m, H in data: # get dims, mass and transformation from data
+    for name, data in bodies_shapes_data.items():
+        for dims, H in data: # get dims, mass and transformation from data
             sf = SubFrame(bodies[name], H)
             if len(dims) == 3:      # check the type of shape: len =3: box
                 sh = Box(sf, dims, name)
