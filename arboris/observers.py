@@ -11,7 +11,15 @@ from arboris.massmatrix import principalframe
 
 from pylab import plot, show, legend, xlabel, ylabel, title
 
-import h5py
+try:
+    import h5py
+except ImportError:
+    print """
+    ************************************************************
+    WARNING: h5py is not installed! HDF5Logger is not available.
+    Install h5py first: http://alfven.org/wp/hdf5-for-python/
+    ************************************************************
+    """
 
 from time import time as _time, sleep
 import socket
@@ -445,5 +453,54 @@ class DaenimCom(SocketCom):
             print("connection lost")
 
 
+from arboris.visu_vpython import VPythonDriver
+import arboris._visu
+
+class VPythonObserver(Observer):
+    def __init__(self, scale=1, options=None, flat=False, color_generator=None):
+        Observer.__init__(self)
+        self.driver = VPythonDriver(scale, options)
+        self.drawer = arboris._visu.Drawer(self.driver, flat, color_generator)
+        self.flat = flat
+
+    def init(self, world, timeline):
+        Observer.init(self, world, timeline)
+        self.world = world
+        if self.flat:
+            name_all_elements(world.getbodies(), True)
+        else:
+            nonflatlist = [j.frames[1] for j in world.getjoints()]
+            name_all_elements(nonflatlist, True)
+        name_all_elements(world.itermovingsubframes(), True)
+
+        world.update_geometric()
+        world.parse(self.drawer)
+        self.drawer.finish()
 
 
+
+    def update(self, dt):
+        self.check_keyboard()
+        if self. flat is True:
+            for b in self.world.getbodies():
+                self.driver.update_transform(b.name, b.pose)
+            for f in self.world.itermovingsubframes():
+                self.driver.update_transform(f.name, f.pose)
+        else:
+            for j in self.world.getjoints():
+                self.driver.update_transform(j.frames[1].name, j.pose)
+            for f in self.world.itermovingsubframes():
+                self.driver.update_transform(f.name, f.bpose)
+
+    def finish(self):
+        pass
+
+    def check_keyboard(self):
+        for i in range(self.driver.scene.kb.keys):
+            k = self.driver.scene.kb.getkey()
+            if   k == "f": objList = self.driver.frame_arrows
+            elif k == "s": objList = self.driver.shapes
+            elif k == "i": objList = self.driver.inertia
+            else: continue
+            for obj in objList:
+                obj.visible = not obj.visible
