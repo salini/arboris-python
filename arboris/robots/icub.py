@@ -308,7 +308,7 @@ def get_shapes_data():
     }
 
 
-def add(w, is_fixed=False, shapes_from_inertia=True):
+def add(w, is_fixed=False, shapes_from_inertia=True, create_shapes=True):
     """
     construction of the icub robot for arboris-python:
     Kinematics data are from: http://eris.liralab.it/wiki/ICubForwardKinematics
@@ -357,34 +357,35 @@ def add(w, is_fixed=False, shapes_from_inertia=True):
                    bodies[child])
 
 
+    if create_shapes is True:
+        ## body shapes creations
+        for name, data in bodies_shapes_data.items():
+            for dims, H in data: # get dims, mass and transformation from data
+                sf = SubFrame(bodies[name], H)
+                if len(dims) == 3:      # check the type of shape: len =3: box
+                    sh = Box(sf, dims, name)
+                elif len(dims) == 2:                            #  len =2:cylinder,
+                    sh = Cylinder(sf, dims[0], dims[1], name)
+                elif len(dims) == 1:                            #  len =1:sphere,
+                    sh = Sphere(sf, dims[0], name)
+                else:
+                    raise ValueError
+                w.register(sh)
 
-    ## body shapes creations
-    for name, data in bodies_shapes_data.items():
-        for dims, H in data: # get dims, mass and transformation from data
-            sf = SubFrame(bodies[name], H)
+
+        ## user shapes creation
+        for name, data in shapes_data.items():
+            parent, dims, Hpf = data
+            sf = SubFrame(bodies[parent], Hpf, name=name)
             if len(dims) == 3:      # check the type of shape: len =3: box
-                sh = Box(sf, dims, name)
+                sh = Box(sf, dims, name=name)
             elif len(dims) == 2:                            #  len =2:cylinder,
-                sh = Cylinder(sf, dims[0], dims[1], name)
+                sh = Cylinder(sf, dims[0], dims[1], name=name)
             elif len(dims) == 1:                            #  len =1:sphere,
-                sh = Sphere(sf, dims[0], name)
+                sh = Sphere(sf, dims[0], name=name)
             else:
-                raise ValueError
+                sh = Point(sf, name=name)
             w.register(sh)
 
-
-    ## user shapes creation
-    for name, data in shapes_data.items():
-        parent, dims, Hpf = data
-        sf = SubFrame(bodies[parent], Hpf, name=name)
-        if len(dims) == 3:      # check the type of shape: len =3: box
-            sh = Box(sf, dims, name=name)
-        elif len(dims) == 2:                            #  len =2:cylinder,
-            sh = Cylinder(sf, dims[0], dims[1], name=name)
-        elif len(dims) == 1:                            #  len =1:sphere,
-            sh = Sphere(sf, dims[0], name=name)
-        else:
-            sh = Point(sf, name=name)
-        w.register(sh)
     w.init()
 
