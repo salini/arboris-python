@@ -395,36 +395,6 @@ class DaenimCom(SocketCom):
             name_all_elements(nonflatlist, True)
         name_all_elements(self.world.itermovingsubframes(), True)
 
-    def update_old(self, dt):
-        """
-        """
-        msg = ""
-        if self.flat:
-            for b in self.world.getbodies():
-                H = b.pose
-                msg += b.name + " " + \
-                       " ".join([str(round(val,self.precision)) \
-                       for val in H[0:3,:].reshape(12)]) + "\n"
-        else:
-            for j in self.world.getjoints():
-                H = j.pose
-                msg += j.frames[1].name + " " + \
-                       " ".join([str(round(val,self.precision)) \
-                       for val in H[0:3,:].reshape(12)]) + "\n"
-        for f in self.world.itermovingsubframes():
-            if self.flat:
-                H = f.pose
-            else:
-                H = f.bpose
-            msg += f.name + " " + \
-                   " ".join([str(round(val,self.precision)) \
-                   for val in H[0:3,:].reshape(12)]) + "\n"
-        try:
-            self.conn.send(msg)
-        except socket.error:
-            print("connection lost")
-
-
     def update(self, dt):
         """
         """
@@ -504,3 +474,5 @@ class VPythonObserver(Observer):
             else: continue
             for obj in objList:
                 obj.visible = not obj.visible
+
+
