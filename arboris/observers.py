@@ -405,6 +405,7 @@ class DaenimCom(SocketCom):
                 msg += struct.pack('64s12f', b.name,
                                  *[float(val) for val in H[0:3, :].reshape(12)])
         else:
+            msg = ""
             for j in self.world.getjoints():
                 H = j.pose
                 msg += struct.pack('64s12f', j.frames[1].name,
@@ -435,6 +436,7 @@ class VPythonObserver(Observer):
 
     def init(self, world, timeline):
         Observer.init(self, world, timeline)
+        self.driver.init()
         self.world = world
         if self.flat:
             name_all_elements(world.getbodies(), True)

@@ -22,9 +22,9 @@ def get_vpython_default_options():
         "width": 640,
         "height": 480,
         "background": (.2,.2,.4),
-        "center": (0,0.5,0),
+        "center": (0,0,0),
         "forward": (-1,-1,-1),
-        "range": 5,
+        "range": 1.5,
     }
 
 
@@ -37,6 +37,8 @@ class VPythonDriver(arboris._visu.DrawerDriver):
             self._options.update(options)
 
         self.scene = visual.display(**self._options)
+        self.scene.autocenter = False
+        self.scene.autoscale  = False
 
         self.transform = {}
         self.inertia = []
@@ -45,11 +47,12 @@ class VPythonDriver(arboris._visu.DrawerDriver):
         self.shapes = []
 
     def add_ground(self, up):
+        self.scene.select()
         self.scene.up = up
         self.transform['ground'] = visual.frame()
 
     def init(self):
-        pass
+        self.scene.select()
 
     def finish(self):
         pass
