@@ -3,15 +3,7 @@ from arboris.core import Observer, name_all_elements
 import arboris._visu
 from arboris.massmatrix import principalframe, transport
 
-try:
-    import visual
-except ImportError:
-    print """
-    ******************************************************************
-    WARNING: VPython is not installed! Visualization is not available.
-    Install VPython first: http://vpython.org/
-    ******************************************************************
-    """
+import visual
 
 
 def get_vpython_default_options():

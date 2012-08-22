@@ -14,12 +14,16 @@ from pylab import plot, show, legend, xlabel, ylabel, title
 try:
     import h5py
 except ImportError:
-    print """
-    ************************************************************
-    WARNING: h5py is not installed! HDF5Logger is not available.
-    Install h5py first: http://alfven.org/wp/hdf5-for-python/
-    ************************************************************
-    """
+    pass
+
+import arboris._visu
+
+try:
+    from arboris.visu_vpython import VPythonDriver
+except ImportError:
+    pass
+
+
 
 from time import time as _time, sleep
 import socket
@@ -222,8 +226,11 @@ class Hdf5Logger(Observer):
     def __init__(self, filename, group="/", mode='a', save_state=False,
                  save_transforms=True, flat=False, save_model=False):
         Observer.__init__(self)
-        # hdf5 file handlers
-        self._file = h5py.File(filename, mode)
+        try:
+            # hdf5 file handlers
+            self._file = h5py.File(filename, mode)
+        except NameError:
+            raise ImportError("h5py cannot be imported. Please check that h5py is installed on your computer.")
         self._root = self._file
         for g in group.split('/'):
             if g:
@@ -424,13 +431,14 @@ class DaenimCom(SocketCom):
             print("connection lost")
 
 
-from arboris.visu_vpython import VPythonDriver
-import arboris._visu
 
 class VPythonObserver(Observer):
     def __init__(self, scale=1, options=None, flat=False, color_generator=None):
         Observer.__init__(self)
-        self.driver = VPythonDriver(scale, options)
+        try:
+            self.driver = VPythonDriver(scale, options)
+        except NameError:
+            raise ImportError("vpython cannot be imported. Please check that vpython is installed on your computer.")
         self.drawer = arboris._visu.Drawer(self.driver, flat, color_generator)
         self.flat = flat
 
