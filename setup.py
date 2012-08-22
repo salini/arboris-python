@@ -64,7 +64,7 @@ except ImportError:
 readme = open('README.txt', 'r')
 setup(name='arboris',
       version=get_version(),
-      maintainer='Sébastien BARTHÉLEMY',
+      maintainer=unicode('Sébastien BARTHÉLEMY', 'utf-8'),
       maintainer_email='barthelemy@crans.org',
       url='http://chronos.isir.upmc.fr/~barthelemy/arboris',
       description=
