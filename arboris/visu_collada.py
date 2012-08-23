@@ -16,6 +16,13 @@ import tempfile
 from datetime import datetime
 import warnings
 
+try:
+    import h5py
+except ImportError:
+    pass
+
+
+
 NS = 'http://www.collada.org/2005/11/COLLADASchema'
 SHAPES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'shapes.dae')
 
@@ -522,8 +529,8 @@ def write_collada_scene(world, dae_filename, scale=1, options=None, flat=False, 
     world.parse(drawer)
     drawer.finish()
 
-def write_collada_animation(collada_animation, collada_scene, hdf5_file,
-                            hdf5_group="/", h5toanimpath=None):
+def write_collada_animation_deprecated(collada_animation, collada_scene, 
+                        hdf5_file, hdf5_group="/", h5toanimpath=None):
     """Combine a collada scene and an HDF5 file into a collada animation.
 
     :param collada_animation: path of the output collada animation file
@@ -555,6 +562,75 @@ def write_collada_animation(collada_animation, collada_scene, hdf5_file,
             '--hdf5-group', hdf5_group,
             '--scene-file', collada_scene,
             '--output', collada_animation))
+
+
+
+def write_collada_animation(collada_animation, collada_scene, hdf5_file,
+                            hdf5_group="/"):
+    """Combine a collada scene and an HDF5 file into a collada animation.
+
+    :param collada_animation: path of the output collada animation file
+    :type collada_animation: str
+    :param collada_scene: path of the input collada scene file
+    :type collada_scene: str
+    :param hdf5_file: path of the input HDF5 file.
+    :type hdf5_file: str
+    :param hdf5_group: subgroup within the HDF5 file. Defaults to "/".
+    :type hdf5_group: str
+    """
+    def create_anim_src_elem(parent_element, name, src, nameOfSrc, typeOfSrc, paramName, paramType, count, stride=None):
+        idName = name +"-"+nameOfSrc
+        src_elem = SubElement(parent_element, "source", {"id":idName})
+        
+        idName += "-array"
+        typeArrayElem = SubElement(src_elem, typeOfSrc+"_array", {"id":idName, "count":str(count)})
+        typeArrayElem.text = src
+        
+        techElem = SubElement(src_elem, "technique_common")
+        accessElem = SubElement(techElem, "accessor", {"source":"#"+idName, "count":str(count)})
+        if stride:
+            accessElem.set("stride", str(stride))
+        paramElem  = SubElement(accessElem, "param", {"name": paramName, "type":paramType})
+
+
+    def create_anim_elem(anim_lib, name, timeline, val):
+        idName=name+"-matrix"
+        animElem = SubElement(anim_lib, "animation", {"id":idName})
+        
+        count = len(timeline)
+        inputSrc  = " ".join(map(str, timeline))
+        interSrc  = " ".join(["STEP"]*count)
+        outputSrc = " ".join(map(str, val.value.flatten()))
+        create_anim_src_elem(animElem, idName, inputSrc,  "input",         "float", "TIME", "float", count)
+        create_anim_src_elem(animElem, idName, interSrc,  "interpolation", "Name", "INTERPOLATION", "name", count)
+        create_anim_src_elem(animElem, idName, outputSrc, "output",        'float', "TRANSFORM", "float4x4", count, 16)
+
+        samplerElem = SubElement(animElem, "sampler", {"id":idName+"-sampler"})
+        for semantic in ["input", "output", "interpolation"]:
+            SubElement(samplerElem, "input", {"semantic":semantic.upper(), "source":"#"+idName+"-"+semantic})
+        channelElem = SubElement(animElem, "channel", {"source":"#"+idName+"-sampler", "target":name+"/"+"matrix"})
+
+
+    tree = ET.parse(collada_scene)
+    anim_lib = Element("library_animations")
+    children = tree.getroot().getchildren()
+    children.insert(children.index(tree.find(QN("scene"))), anim_lib)
+
+    try:
+        sim=h5py.File(hdf5_file, "r")
+    except NameError:
+            raise ImportError("h5py cannot be imported. Please check that h5py is installed on your computer.")
+    for name, val in sim[hdf5_group]["transforms"].items():
+        create_anim_elem(anim_lib, name, sim[hdf5_group]["timeline"], val)
+    sim.close()
+
+    indent(tree)
+    fix_namespace(tree)
+    with open(collada_animation, 'w') as _file:
+        _file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+        _file.write(tostring(tree.getroot(), encoding='utf-8'))
+
+
 
 def view(collada_file, hdf5_file=None, hdf5_group="/", daenimpath=None):
     """Display a collada file, generating the animation if necessary.
