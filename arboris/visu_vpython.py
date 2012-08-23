@@ -2,6 +2,8 @@
 from arboris.core import Observer, name_all_elements
 import arboris._visu
 from arboris.massmatrix import principalframe, transport
+from arboris.homogeneousmatrix import zaligned, pdot
+import numpy as np
 
 import visual
 
@@ -17,6 +19,8 @@ def get_vpython_default_options():
         "center": (0,0,0),
         "forward": (-1,-1,-1),
         "range": 1.5,
+        "autocenter":True,
+        "autoscale": True
     }
 
 
@@ -29,8 +33,6 @@ class VPythonDriver(arboris._visu.DrawerDriver):
             self._options.update(options)
 
         self.scene = visual.display(**self._options)
-        self.scene.autocenter = False
-        self.scene.autoscale  = False
 
         self.transform = {}
         self.inertia = []
@@ -94,14 +96,12 @@ class VPythonDriver(arboris._visu.DrawerDriver):
 
     def create_plane(self, coeffs, color, name=None):
         x,y = self._options['plane half extents']
+        H = zaligned(coeffs[0:3])
+        H[0:3, 3] = coeffs[3] * coeffs[0:3]
         plane = visual.faces()
-        #TODO append to add vertex : f.append(pos=(x,y,z), normal=(nx,ny,nz), color=(r,g,b))
-        plane.append(pos=(-x, -y, 0), normal=(0,0,1), color=color)
-        plane.append(pos=( x, -y, 0), normal=(0,0,1), color=color)
-        plane.append(pos=(-x,  y, 0), normal=(0,0,1), color=color)
-        plane.append(pos=(-x,  y, 0), normal=(0,0,1), color=color)
-        plane.append(pos=( x, -y, 0), normal=(0,0,1), color=color)
-        plane.append(pos=( x,  y, 0), normal=(0,0,1), color=color)
+        for pt in [(-x,-y,0), (x,-y,0), (-x,y,0),(-x, y,0), (x,-y,0), ( x,y,0)]:
+            pt0 = pdot(H, pt)
+            plane.append(pos=pt0, normal=coeffs[0:3], color=color)
         self.shapes.append(plane)
         return plane
 
