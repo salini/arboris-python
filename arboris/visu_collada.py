@@ -16,6 +16,7 @@ import tempfile
 from datetime import datetime
 import warnings
 
+import pickle as pkl
 try:
     import h5py
 except ImportError:
@@ -565,19 +566,8 @@ def write_collada_animation_deprecated(collada_animation, collada_scene,
 
 
 
-def write_collada_animation(collada_animation, collada_scene, hdf5_file,
-                            hdf5_group="/"):
-    """Combine a collada scene and an HDF5 file into a collada animation.
-
-    :param collada_animation: path of the output collada animation file
-    :type collada_animation: str
-    :param collada_scene: path of the input collada scene file
-    :type collada_scene: str
-    :param hdf5_file: path of the input HDF5 file.
-    :type hdf5_file: str
-    :param hdf5_group: subgroup within the HDF5 file. Defaults to "/".
-    :type hdf5_group: str
-    """
+def _write_col_anim(collada_animation, collada_scene, timeline, transforms):
+    
     def create_anim_src_elem(parent_element, name, src, nameOfSrc, typeOfSrc, paramName, paramType, count, stride=None):
         idName = name +"-"+nameOfSrc
         src_elem = SubElement(parent_element, "source", {"id":idName})
@@ -600,7 +590,7 @@ def write_collada_animation(collada_animation, collada_scene, hdf5_file,
         count = len(timeline)
         inputSrc  = " ".join(map(str, timeline))
         interSrc  = " ".join(["STEP"]*count)
-        outputSrc = " ".join(map(str, val.value.flatten()))
+        outputSrc = " ".join(map(str, val.flatten()))
         create_anim_src_elem(animElem, idName, inputSrc,  "input",         "float", "TIME", "float", count)
         create_anim_src_elem(animElem, idName, interSrc,  "interpolation", "Name", "INTERPOLATION", "name", count)
         create_anim_src_elem(animElem, idName, outputSrc, "output",        'float', "TRANSFORM", "float4x4", count, 16)
@@ -616,13 +606,8 @@ def write_collada_animation(collada_animation, collada_scene, hdf5_file,
     children = tree.getroot().getchildren()
     children.insert(children.index(tree.find(QN("scene"))), anim_lib)
 
-    try:
-        sim=h5py.File(hdf5_file, "r")
-    except NameError:
-            raise ImportError("h5py cannot be imported. Please check that h5py is installed on your computer.")
-    for name, val in sim[hdf5_group]["transforms"].items():
-        create_anim_elem(anim_lib, name, sim[hdf5_group]["timeline"], val)
-    sim.close()
+    for name, val in transforms.items():
+        create_anim_elem(anim_lib, name, timeline, val)
 
     indent(tree)
     fix_namespace(tree)
@@ -630,6 +615,45 @@ def write_collada_animation(collada_animation, collada_scene, hdf5_file,
         _file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
         _file.write(tostring(tree.getroot(), encoding='utf-8'))
 
+
+def write_collada_animation(collada_animation, collada_scene, sim_file, 
+                            hdf5_group="/", file_type=None):
+    """Combine a collada scene and an HDF5 file into a collada animation.
+
+    :param collada_animation: path of the output collada animation file
+    :type collada_animation: str
+    :param collada_scene: path of the input collada scene file
+    :type collada_scene: str
+    :param hdf5_file: path of the input HDF5 file.
+    :type hdf5_file: str
+    :param hdf5_group: subgroup within the HDF5 file. Defaults to "/".
+    :type hdf5_group: str
+    """
+    if file_type is None:
+        file_type = sim_file.split(".")[-1]
+
+    if file_type in ["hdf5", "h5"]:
+        try:
+            sim=h5py.File(sim_file, "r")
+            timeline = array(sim[hdf5_group]["timeline"])
+            transforms = {}
+            for k,v in sim[hdf5_group]["transforms"].items():
+                transforms[k] = array(v)
+            sim.close()
+        except NameError:
+            raise ImportError("Cannot load file '"+sim_file+"'. h5py may not be installed.")
+        except IOError:
+            raise IOError("Cannot load file '"+sim_file+"'. It may not be a hdf5 file.")
+    elif file_type in ["pickle", "pkl"]:
+        try:
+            f = open(sim_file,'r')
+            sim = pkl.load(f)
+            timeline = sim["timeline"]
+            transforms = sim["transforms"]
+            f.close()
+        except IOError:
+            raise IOError("Cannot load file '"+sim_file+"'. It may not be a pickle file.")
+    _write_col_anim(collada_animation, collada_scene, timeline, transforms)
 
 
 def view(collada_file, hdf5_file=None, hdf5_group="/", daenimpath=None):

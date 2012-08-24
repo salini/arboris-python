@@ -4,13 +4,14 @@
 __author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>",
               "Joseph SALINI <joseph.salini@gmail.com>")
 
-from numpy import dot
+from numpy import dot, zeros
 
 from arboris.core import Observer, MovingSubFrame, name_all_elements
 from arboris.massmatrix import principalframe
 
 from pylab import plot, show, legend, xlabel, ylabel, title
 
+import pickle as pkl
 try:
     import h5py
 except ImportError:
@@ -161,7 +162,112 @@ max computation time (s): {3}""".format(
     max(self._computation_time))
 
 
-class Hdf5Logger(Observer):
+
+class _SaveLogger(Observer):
+    """ TODO
+    """
+    def __init__(self, save_state=False, save_transforms=True,
+                       flat=False, save_model=False):
+        Observer.__init__(self)
+        # what to save
+        self._save_state = save_state
+        self._save_transforms = save_transforms
+        self._flat = flat
+        self._save_model = save_model
+
+    def init(self, world, timeline):
+        self._world = world
+        self._nb_steps = len(timeline)-1
+        self._current_step = 0
+
+        self._root = {}
+        self._timeline = zeros(self._nb_steps)
+        self._root["timeline"] = self._timeline
+        if self._save_state:
+            self._gpositions = {}
+            self._root['gpositions'] = self._gpositions
+            self._gvelocities = {}
+            self._root['gvelocities'] = self._gvelocities
+            name_all_elements(self._world.getjoints(), check_unicity=True)
+            for j in self._world.getjoints():
+                self._gpositions[j.name] = zeros((self._nb_steps,)+j.gpos.shape[:])
+                self._gvelocities[j.name] = zeros((self._nb_steps, j.ndof))
+
+        if self._save_transforms:
+            self._arb_transforms = {}
+            self._transforms = {}
+            self._root['transforms'] = self._transforms
+            if self._flat:
+                name_all_elements(self._world.iterbodies(), True)
+                for b in self._world.iterbodies():
+                    self._arb_transforms[b.name] = b
+            else:
+                nonflatlist = [j.frames[1] for j in self._world.getjoints()]
+                name_all_elements(nonflatlist, True)
+                for j in  self._world.getjoints():
+                    self._arb_transforms[j.frames[1].name] = j
+            name_all_elements(self._world.itermovingsubframes(), True)
+            for f in self._world.itermovingsubframes():
+                self._arb_transforms[f.name] = f
+            for k in self._arb_transforms.keys():
+                self._transforms[k] = zeros((self._nb_steps, 4,4))
+
+        if self._save_model:
+            ndof = self._world.ndof
+            self._model = {}
+            self._root['model'] = self._model
+            self._model["gvel"] = zeros((self._nb_steps, ndof))
+            self._model["mass"] = zeros((self._nb_steps, ndof, ndof))
+            self._model["admittance"] = zeros((self._nb_steps, ndof, ndof))
+            self._model["nleffects"]  = zeros((self._nb_steps, ndof, ndof))
+            self._model["gforce"] = zeros((self._nb_steps, ndof))
+
+    def update(self, dt):
+        """Save the current data (state...).
+        """
+        assert self._current_step <= self._nb_steps
+        self._root["timeline"][self._current_step] = self._world.current_time
+        if self._save_state:
+            for j in self._world.getjoints():
+                self._gpositions[j.name][self._current_step] = j.gpos
+                self._gvelocities[j.name][self._current_step] = j.gvel
+        if self._save_transforms:
+            for k, v in self._arb_transforms.items():
+                if isinstance(v, MovingSubFrame):
+                    if self._flat:
+                        pose = v.pose
+                    else:
+                        pose = v.bpose
+                else:
+                    pose = v.pose
+                self._transforms[k][self._current_step, :, :] = pose
+        if self._save_model:
+            self._model["gvel"][self._current_step, :]    = self._world.gvel
+            self._model["mass"][self._current_step, :, :] = self._world.mass
+            self._model["admittance"][self._current_step, :, :] = \
+                    self._world.admittance
+            self._model["nleffects"][self._current_step, :, :] = \
+                    self._world.nleffects
+            self._model["gforce"][self._current_step, :] = self._world.gforce
+        self._current_step += 1
+
+
+class PickleLogger(_SaveLogger):
+    """ TODO
+    """
+    def __init__(self, filename, mode='a', save_state=False,
+                 save_transforms=True, flat=False, save_model=False):
+        _SaveLogger.__init__(self, save_state, save_transforms, flat, save_model)
+        self._filename = filename
+        self._mode = mode
+
+    def finish(self):
+        f = open(self._filename, self._mode)
+        pkl.dump(self._root, f, -1)
+        f.close()
+
+
+class Hdf5Logger(_SaveLogger):
     """An observer that saves the simulation data in an hdf5 file.
 
     :param filename: name of the output hdf5 file
@@ -225,114 +331,25 @@ class Hdf5Logger(Observer):
     """
     def __init__(self, filename, group="/", mode='a', save_state=False,
                  save_transforms=True, flat=False, save_model=False):
-        Observer.__init__(self)
+        _SaveLogger.__init__(self, save_state, save_transforms, flat, save_model)
         try:
-            # hdf5 file handlers
-            self._file = h5py.File(filename, mode)
+            self._file = h5py.File(filename, mode)  # hdf5 file handlers
         except NameError:
             raise ImportError("h5py cannot be imported. Please check that h5py is installed on your computer.")
-        self._root = self._file
+        self._h5_root = self._file
         for g in group.split('/'):
             if g:
-                self._root = self._root.require_group(g)
-        # what to save
-        self._save_state = save_state
-        self._save_transforms = save_transforms
-        self._flat = flat
-        self._save_model = save_model
-
-        self._world         = None
-        self._nb_steps      = -1
-        self._current_step  = 0
-        self._gpositions    = None
-        self._gvelocities   = None
-        self._transforms    = None
-        self._arb_transforms = {}
-        self._model         = None
-
-    @property
-    def root(self):
-        return self._root
-
-    def init(self, world, timeline):
-        """Create the datasets.
-        """
-        self._world = world
-        self._nb_steps = len(timeline)-1
-        self._current_step = 0
-        self._root.require_dataset("timeline", (self._nb_steps,), 'f8')
-        if self._save_state:
-            self._gpositions = self._root.require_group('gpositions')
-            self._gvelocities = self._root.require_group('gvelocities')
-            name_all_elements(self._world.getjoints(), check_unicity=True)
-            for j in self._world.getjoints():
-                self._gpositions.require_dataset(j.name,
-                        (self._nb_steps,) + j.gpos.shape[:], 'f8')
-                self._gvelocities.require_dataset(j.name,
-                        (self._nb_steps, j.ndof), 'f8')
-        if self._save_transforms:
-            self._arb_transforms = {}
-            self._transforms = self._root.require_group('transforms')
-            if self._flat:
-                name_all_elements(self._world.iterbodies(), True)
-                for b in self._world.iterbodies():
-                    self._arb_transforms[b.name] = b
-            else:
-                nonflatlist = [j.frames[1] for j in self._world.getjoints()]
-                name_all_elements(nonflatlist, True)
-                for j in  self._world.getjoints():
-                    self._arb_transforms[j.frames[1].name] = j
-            name_all_elements(self._world.itermovingsubframes(), True)
-            for f in self._world.itermovingsubframes():
-                self._arb_transforms[f.name] = f
-            for k in self._arb_transforms.keys():
-                self._transforms.require_dataset(k,
-                                                 (self._nb_steps, 4,4),
-                                                 'f8')
-        if self._save_model:
-            self._model = self._root.require_group('model')
-            ndof = self._world.ndof
-            self._model.require_dataset("gvel",
-                    (self._nb_steps, ndof), 'f8')
-            self._model.require_dataset("mass",
-                    (self._nb_steps, ndof, ndof), 'f8')
-            self._model.require_dataset("admittance",
-                    (self._nb_steps, ndof, ndof), 'f8')
-            self._model.require_dataset("nleffects",
-                    (self._nb_steps, ndof, ndof), 'f8')
-            self._model.require_dataset("gforce",
-                    (self._nb_steps, ndof), 'f8')
-
-    def update(self, dt):
-        """Save the current data (state...).
-        """
-        assert self._current_step <= self._nb_steps
-        self._root["timeline"][self._current_step] = self._world.current_time
-        if self._save_state:
-            for j in self._world.getjoints():
-                self._gpositions[j.name][self._current_step] = j.gpos
-                self._gvelocities[j.name][self._current_step] = j.gvel
-        if self._save_transforms:
-            for k, v in self._arb_transforms.items():
-                if isinstance(v, MovingSubFrame):
-                    if self._flat:
-                        pose = v.pose
-                    else:
-                        pose = v.bpose
-                else:
-                    pose = v.pose
-                self._transforms[k][self._current_step, :, :] = pose
-        if self._save_model:
-            self._model["gvel"][self._current_step, :]    = self._world.gvel
-            self._model["mass"][self._current_step, :, :] = self._world.mass
-            self._model["admittance"][self._current_step, :, :] = \
-                    self._world.admittance
-            self._model["nleffects"][self._current_step, :, :] = \
-                    self._world.nleffects
-            self._model["gforce"][self._current_step, :] = self._world.gforce
-        self._current_step += 1
+                self._h5_root = self._h5_root.require_group(g)
 
     def finish(self):
+        self._h5_root.create_dataset("timeline", data=self._root["timeline"])
+        group_elements = self._root.keys()
+        group_elements.remove("timeline")
+        for elem in group_elements:
+            g = self._h5_root.create_group(elem)
+            for k, v in self._root[elem].items():
+                g.create_dataset(k, data=v)
+
         self._file.close()
 
 
