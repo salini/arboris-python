@@ -477,7 +477,7 @@ class VPythonObserver(Observer):
 
 
     def update(self, dt):
-        self.check_keyboard()
+        self.driver.check_keyboard()
         if self. flat is True:
             for b in self.world.getbodies():
                 self.driver.update_transform(b.name, b.pose)
@@ -492,14 +492,5 @@ class VPythonObserver(Observer):
     def finish(self):
         pass
 
-    def check_keyboard(self):
-        for i in range(self.driver.scene.kb.keys):
-            k = self.driver.scene.kb.getkey()
-            if   k == "f": objList = self.driver.frame_arrows
-            elif k == "s": objList = self.driver.shapes
-            elif k == "i": objList = self.driver.inertia
-            else: continue
-            for obj in objList:
-                obj.visible = not obj.visible
 
 
