@@ -9,7 +9,10 @@ from numpy import dot, zeros
 from arboris.core import Observer, MovingSubFrame, name_all_elements
 from arboris.massmatrix import principalframe
 
-from pylab import plot, show, legend, xlabel, ylabel, title
+try:
+    from pylab import plot, show, legend, xlabel, ylabel, title
+except ImportError:
+    pass
 
 import pickle as pkl
 try:
@@ -89,14 +92,17 @@ class EnergyMonitor(Observer):
     def plot(self):
         """Plot the energy evolution.
         """
-        plot(self.time, self.kinetic_energy)
-        plot(self.time, self.potential_energy)
-        plot(self.time, self.mechanichal_energy)
-        legend(('kinetic', 'potential', 'mechanical'))
-        title('Energy evolution')
-        xlabel('time (s)')
-        ylabel('energy (J)')
-        show()
+        try:
+            plot(self.time, self.kinetic_energy)
+            plot(self.time, self.potential_energy)
+            plot(self.time, self.mechanichal_energy)
+            legend(('kinetic', 'potential', 'mechanical'))
+            title('Energy evolution')
+            xlabel('time (s)')
+            ylabel('energy (J)')
+            show()
+        except NameError:
+            raise ImportError("pylab cannot be imported. Please check that pylab is installed on your computer.")
 
 
 class PerfMonitor(Observer):
@@ -144,11 +150,14 @@ class PerfMonitor(Observer):
         pass
 
     def plot(self):
-        plot(self._computation_time)
-        title('Computation time for each simulation time step')
-        xlabel('simulation time step')
-        ylabel('computation time (s)')
-        show()
+        try:
+            plot(self._computation_time)
+            title('Computation time for each simulation time step')
+            xlabel('simulation time step')
+            ylabel('computation time (s)')
+            show()
+        except NameError:
+            raise ImportError("pylab cannot be imported. Please check that pylab is installed on your computer.")
 
     def get_summary(self):
         total = sum(self._computation_time)
