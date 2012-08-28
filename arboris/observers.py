@@ -265,7 +265,7 @@ class PickleLogger(_SaveLogger):
     """ TODO
     """
     def __init__(self, filename, mode='w', save_state=False,
-                 save_transforms=True, flat=False, save_model=False, protocol=1):
+                 save_transforms=True, flat=False, save_model=False, protocol=0):
         _SaveLogger.__init__(self, save_state, save_transforms, flat, save_model)
         self._filename = filename
         self._mode = mode
