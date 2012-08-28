@@ -255,15 +255,16 @@ class _SaveLogger(Observer):
 class PickleLogger(_SaveLogger):
     """ TODO
     """
-    def __init__(self, filename, mode='a', save_state=False,
-                 save_transforms=True, flat=False, save_model=False):
+    def __init__(self, filename, mode='w', save_state=False,
+                 save_transforms=True, flat=False, save_model=False, protocol=1):
         _SaveLogger.__init__(self, save_state, save_transforms, flat, save_model)
         self._filename = filename
         self._mode = mode
+        self._protocol = protocol
 
     def finish(self):
         f = open(self._filename, self._mode)
-        pkl.dump(self._root, f, -1)
+        pkl.dump(self._root, f, self._protocol)
         f.close()
 
 
@@ -342,13 +343,15 @@ class Hdf5Logger(_SaveLogger):
                 self._h5_root = self._h5_root.require_group(g)
 
     def finish(self):
-        self._h5_root.create_dataset("timeline", data=self._root["timeline"])
+        dset = self._h5_root.require_dataset("timeline", (self._nb_steps,), "f8")
+        dset[:] = self._root["timeline"]
         group_elements = self._root.keys()
         group_elements.remove("timeline")
         for elem in group_elements:
-            g = self._h5_root.create_group(elem)
+            g = self._h5_root.require_group(elem)
             for k, v in self._root[elem].items():
-                g.create_dataset(k, data=v)
+                dset = g.require_dataset(k, (self._nb_steps, 4,4), "f8")
+                dset[:] = v
 
         self._file.close()
 

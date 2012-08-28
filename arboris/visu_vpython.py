@@ -265,7 +265,7 @@ def get_animation_data(root):
         return None, None
 
 
-def view_collada_file(animation_file):
+def view_collada_file(animation_file, user_options=None):
     """
     """
     
@@ -280,6 +280,8 @@ def view_collada_file(animation_file):
     timeline, animation_data = get_animation_data(root)
 
     # draw world from collada with VPython driver
+    if user_options is not None:
+        collada_options.update(user_options)
     drv = VPythonDriver(options = collada_options)
     drv.add_ground(collada_options["up"])
     parse_collada(drv, collada_colors, ground_node, drv.transform['ground'])
