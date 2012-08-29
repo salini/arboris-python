@@ -83,6 +83,6 @@ setup(name='arboris',
               'Operating System :: OS Independent',
               'Programming Language :: Python',
               'Topic :: Scientific/Engineering :: Physics'],
-        requires=['numpy', 'matplotlib'],
+        requires=['numpy'],
       cmdclass=cmdclass)
 readme.close()
