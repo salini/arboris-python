@@ -36,6 +36,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 
 import struct
+import os
 
 
 class EnergyMonitor(Observer):
@@ -405,11 +406,18 @@ class SocketCom(Observer):
 class DaenimCom(SocketCom):
     """
     """
-    def __init__(self, arborisViewer, daefile, host="127.0.0.1", port=5000, \
+    def __init__(self, daefile, arborisViewer=None, host="127.0.0.1", port=5000, \
                  options = "", precision=5, flat=False):
         """
         """
         SocketCom.__init__(self, host, port)
+        
+        if arborisViewer is None:
+            if os.name == 'posix':
+                arborisViewer = 'daenim'
+            elif os.name == 'nt':
+                arborisViewer = 'C:/Program Files/daenim/daenim.exe'
+
         self.app_call = \
               [arborisViewer, daefile, "-socket", self.host, str(self.port)] + \
                shlex.split(options)
@@ -420,10 +428,13 @@ class DaenimCom(SocketCom):
     def init(self, world, timeline):
         """
         """
-        subprocess.Popen(self.app_call)
+        try:
+            subprocess.Popen(self.app_call)
+        except OSError:
+            raise OSError("Cannot find program "+self.app_call[0]+". Please check where the arboris viewer (daenim) is installed on your computer.")
         SocketCom.init(self, world, timeline)
         self.world = world
-        sleep(1.)
+        sleep(.1)
         if self.flat:
             name_all_elements(self.world.getbodies(), True)
         else:

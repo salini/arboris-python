@@ -530,40 +530,6 @@ def write_collada_scene(world, dae_filename, scale=1, options=None, flat=False, 
     world.parse(drawer)
     drawer.finish()
 
-def write_collada_animation_deprecated(collada_animation, collada_scene, 
-                        hdf5_file, hdf5_group="/", h5toanimpath=None):
-    """Combine a collada scene and an HDF5 file into a collada animation.
-
-    :param collada_animation: path of the output collada animation file
-    :type collada_animation: str
-    :param collada_scene: path of the input collada scene file
-    :type collada_scene: str
-    :param hdf5_file: path of the input HDF5 file.
-    :type hdf5_file: str
-    :param hdf5_group: subgroup within the HDF5 file. Defaults to "/".
-    :type hdf5_group: str
-
-    This function is a simple Wrapper around the ``h5toanim`` external command,
-    which should be installed for this function to work.
-
-    """
-    if h5toanimpath is None:
-        if os.name == 'posix':
-            h5toanimpath = 'h5toanim'
-        elif os.name == 'nt':
-            h5toanimpath = \
-                       'C:/Program Files/ArborisTools/ColladaTools/h5toanim.exe'
-        else:
-            print("May not work on this os. " + \
-                  "h5toanim path should be specified manually")
-            h5toanimpath = 'h5toanim'
-
-    subprocess.check_call((h5toanimpath,
-            '--hdf5-file', hdf5_file,
-            '--hdf5-group', hdf5_group,
-            '--scene-file', collada_scene,
-            '--output', collada_animation))
-
 
 
 def _write_col_anim(collada_animation, collada_scene, timeline, transforms):
@@ -676,7 +642,7 @@ def view(collada_file, hdf5_file=None, hdf5_group="/", daenimpath=None):
         if os.name == 'posix':
             daenimpath = 'daenim'
         elif os.name == 'nt':
-            daenimpath = 'C:/Program Files/ArborisTools/daenim/daenim.exe'
+            daenimpath = 'C:/Program Files/daenim/daenim.exe'
         else:
             print("May not work on this os. " + \
                   "h5toanim path should be specified manually")
@@ -689,3 +655,5 @@ def view(collada_file, hdf5_file=None, hdf5_group="/", daenimpath=None):
         write_collada_animation(anim_file, collada_file, hdf5_file, hdf5_group)
         subprocess.check_call((daenimpath, anim_file))
         os.remove(anim_file)
+
+
