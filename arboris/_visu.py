@@ -2,6 +2,7 @@
 from abc import ABCMeta, abstractmethod
 from math import floor
 from numpy.linalg import norm, inv
+from numpy import arange
 import arboris.core
 
 def hsv_to_rgb(hsv):
@@ -188,7 +189,7 @@ class ColorGenerator(object):
     def __init__(self, _map=None, nb_colors=20):
         # init the color palette
         self._palette = []
-        for k in range(nb_colors):
+        for k in arange(nb_colors):
             h = 360./nb_colors * k
             self._palette.append(hsv_to_rgb((h, 0.9 , 0.9)))
         # init the mapping betwen objects and colors

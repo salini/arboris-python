@@ -306,11 +306,11 @@ def view_collada_file(animation_file, user_options=None):
                 idx = (idx + 1)%max_idx
                 if idx:
                     dt = timeline[idx] - timeline[idx-1]
-                print "time:", timeline[idx]
+                print("time:", timeline[idx])
 
             time.sleep(dt)
     else:
-        print "No animation found."
+        print("No animation found.")
         while 1:
             drv.check_keyboard()
             time.sleep(dt)

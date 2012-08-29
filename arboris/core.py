@@ -23,7 +23,6 @@ to bodies and serve as anchor points to the joints.
 __author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 
 from abc import ABCMeta, abstractmethod, abstractproperty
-from itertools import imap
 
 from numpy import array, zeros, eye, dot, arange
 import numpy
@@ -1150,7 +1149,7 @@ class Body(NamedObject, Frame):
 
     def iter_descendant_bodies(self):
         """Iterate over all descendant bodies, with a depth-first strategy"""
-        for b in imap(lambda j: j.frame1.body, self.childrenjoints):
+        for b in map(lambda j: j.frame1.body, self.childrenjoints):
             yield b
             for bb in b.iter_descendant_bodies():
                 yield bb

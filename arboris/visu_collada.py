@@ -51,8 +51,8 @@ def indent(tree):
                 elem.text = i + istr
             if not elem.tail or not elem.tail.strip():
                 elem.tail = i
-            for elem in elem:
-                _indent(elem, level+1)
+            for e in elem:
+                _indent(e, level+1)
             if not elem.tail or not elem.tail.strip():
                 elem.tail = i
         else:
@@ -115,8 +115,8 @@ def fix_namespace(tree):
     def _fix_tag(elem):
         if elem.tag.startswith('{'+NS+'}'):
             elem.tag = elem.tag.split('}')[1]
-        for elem in elem:
-            _fix_tag(elem)
+        for e in elem:
+            _fix_tag(e)
     root = tree.getroot()
     root.set('xmlns', NS)
     _fix_tag(root)

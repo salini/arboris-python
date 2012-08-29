@@ -6,7 +6,7 @@
 __author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 
 from numpy.linalg import norm
-from numpy import zeros, argmin, hstack, dot, sign
+from numpy import zeros, argmin, hstack, dot, sign, arange
 import arboris.homogeneousmatrix as Hg
 from arboris.core import Shape
 from arboris.shapes import Plane, Point, Box, Sphere
@@ -301,7 +301,7 @@ def _box_sphere_collision(H_g0, half_extents0, p_g1, radius1):
         # find the point x inside the box that is the nearest to
         # the sphere center:
         f_0 = zeros(3)
-        for i in range(3):
+        for i in arange(3):
             f_0[i] = max(min(half_extents0[i], p_01[i]), -half_extents0[i])
         f_g = Hg.pdot(H_g0, f_0)
         vec = p_g1 - f_g

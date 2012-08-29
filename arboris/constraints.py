@@ -5,7 +5,7 @@
 __author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 
 from numpy import array, zeros, eye, dot, hstack, diag, logical_and
-from numpy.linalg import solve, eigvals, pinv
+from numpy.linalg import solve, eigvals, pinv, arange
 import arboris.homogeneousmatrix as Hg
 from arboris.core import MovingSubFrame, Constraint, Shape, World
 from arboris.joints import LinearConfigurationSpaceJoint
@@ -53,7 +53,7 @@ class JointLimits(Constraint):
 
     def init(self, world):
         self._jacobian = zeros((self._joint.ndof, world.ndof))
-        self._jacobian[range(self._joint.ndof), range(world.ndof)[self._joint.dof]] = 1
+        self._jacobian[arange(self._joint.ndof), arange(world.ndof)[self._joint.dof]] = 1
 
     @property
     def jacobian(self):
@@ -864,9 +864,9 @@ def get_all_contacts(world, contact_class=None, **args):
         assert issubclass(contact_class, PointContact)
     contacts = []
     shapes = tuple(world.itershapes())
-    for i in range(len(shapes)):
+    for i in arange(len(shapes)):
         s0 = shapes[i]
-        for j in range(i+1, len(shapes)):
+        for j in arange(i+1, len(shapes)):
             s1 = shapes[j]
             if s0.frame.body is s1.frame.body:
                 # Contact between two rigidly linked bodies would be
