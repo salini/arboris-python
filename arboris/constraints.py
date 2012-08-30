@@ -4,8 +4,8 @@
 
 __author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 
-from numpy import array, zeros, eye, dot, hstack, diag, logical_and
-from numpy.linalg import solve, eigvals, pinv, arange
+from numpy import array, zeros, eye, dot, hstack, diag, logical_and, arange
+from numpy.linalg import solve, eigvals, pinv
 import arboris.homogeneousmatrix as Hg
 from arboris.core import MovingSubFrame, Constraint, Shape, World
 from arboris.joints import LinearConfigurationSpaceJoint
@@ -34,13 +34,13 @@ class JointLimits(Constraint):
 
     """
 
-    def __init__(self, joint, _min, _max, proximity=None, name=None):
+    def __init__(self, joint, min_limits, max_limits, proximity=None, name=None):
         if not isinstance(joint, LinearConfigurationSpaceJoint):
             raise ValueError()
         Constraint.__init__(self, name)
         self._joint = joint
-        self._min = array(_min).reshape((joint.ndof,))
-        self._max = array(_max).reshape((joint.ndof,))
+        self._min = array(min_limits).reshape((joint.ndof,))
+        self._max = array(max_limits).reshape((joint.ndof,))
         if proximity is None:
             #TODO: choose a proper default for tol according to the joint type
             self._proximity = zeros((joint.ndof,))
