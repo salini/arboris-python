@@ -1,7 +1,7 @@
 # coding=utf-8
 
 import xml.etree.ElementTree as ET
-from xml.etree.ElementTree import XML, Element, SubElement,  tostring
+from xml.etree.ElementTree import XML, Element, SubElement, tostring
 
 from numpy import all as np_all, array, linalg
 
@@ -128,6 +128,19 @@ def find_by_id(root, _id, tag=None):
             return(e)
     return None
 
+
+def write_collada_tree_in_file(_filename, _tree):
+    indent(_tree)
+    fix_namespace(_tree)
+    with open(_filename, 'w') as _file:
+        _file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+        tree_as_str = tostring(_tree.getroot(), 'utf-8')
+        try:
+            _file.write(tree_as_str)                # for python2.x
+        except TypeError:
+            _file.write(str(tree_as_str, 'utf-8'))  # for python3.x
+
+
 def require_SubElement(root_node, tag, attrib=None, position=None):
     attrib = attrib or {}
     children = [e for e in list(root_node) if tag in e.tag]
@@ -217,13 +230,14 @@ class ColladaDriver(arboris._visu.DrawerDriver):
 
 
     def add_child(self, parent, child, category=None):
-        assert category in (None, 'frame arrows', 'shape', 'link', 'inertia')
         def plural(noun):
             """Return the plural of a noun"""
-            if noun[-1] is 's':
+            if noun[-1] == 's':
                 return noun
             else:
                 return noun + 's'
+
+        assert category in (None, 'frame arrows', 'shape', 'link', 'inertia')
         if category is None or self._options['display '+plural(category)]:
             parent.append(child)
 
@@ -400,11 +414,7 @@ class ColladaDriver(arboris._visu.DrawerDriver):
             to_lib = require_SubElement(to_root, QN(lib_name))
             if len(to_lib.getchildren())==0:
                 to_root.remove(to_lib)
-        indent(self._tree)
-        fix_namespace(self._tree)
-        with open(self._filename, 'w') as _file:
-            _file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-            _file.write(tostring(self._tree.getroot(), encoding='utf-8'))
+        write_collada_tree_in_file(self._filename, self._tree)
 
 
 
@@ -494,11 +504,8 @@ def use_custom_shapes(dae_filename, mapping, stand_alone=False):
             SubElement(shape_node, QN("instance_"+custom_node_tag),
                        {"url": custom_shape})
             _add_osg_description(shape_node, "shape")
-    with open(dae_filename, 'w') as _file:
-        indent(tree)
-        fix_namespace(tree)
-        _file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-        _file.write(tostring(tree.getroot(), encoding='utf-8'))
+
+    write_collada_tree_in_file(dae_filename, tree)
 
 
 
@@ -575,11 +582,8 @@ def _write_col_anim(collada_animation, collada_scene, timeline, transforms):
     for name, val in transforms.items():
         create_anim_elem(anim_lib, name, timeline, val)
 
-    indent(tree)
-    fix_namespace(tree)
-    with open(collada_animation, 'w') as _file:
-        _file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-        _file.write(tostring(tree.getroot(), encoding='utf-8'))
+    write_collada_tree_in_file(collada_animation, tree)
+
 
 
 def write_collada_animation(collada_animation, collada_scene, sim_file, 

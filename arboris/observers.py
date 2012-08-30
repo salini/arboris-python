@@ -265,7 +265,7 @@ class _SaveLogger(Observer):
 class PickleLogger(_SaveLogger):
     """ TODO
     """
-    def __init__(self, filename, mode='w', save_state=False,
+    def __init__(self, filename, mode='wb', save_state=False,
                  save_transforms=True, flat=False, save_model=False, protocol=0):
         _SaveLogger.__init__(self, save_state, save_transforms, flat, save_model)
         self._filename = filename
@@ -273,9 +273,8 @@ class PickleLogger(_SaveLogger):
         self._protocol = protocol
 
     def finish(self):
-        f = open(self._filename, self._mode)
-        pkl.dump(self._root, f, self._protocol)
-        f.close()
+        with open(self._filename, self._mode) as _file:
+            pkl.dump(self._root, _file, self._protocol)
 
 
 class Hdf5Logger(_SaveLogger):
@@ -355,7 +354,7 @@ class Hdf5Logger(_SaveLogger):
     def finish(self):
         dset = self._h5_root.require_dataset("timeline", (self._nb_steps,), "f8")
         dset[:] = self._root["timeline"]
-        group_elements = self._root.keys()
+        group_elements = list(self._root.keys())
         group_elements.remove("timeline")
         for elem in group_elements:
             g = self._h5_root.require_group(elem)
@@ -397,7 +396,7 @@ class SocketCom(Observer):
 
     def finish(self):
         try:
-            self.conn.send("close connection")
+            self.conn.send(b"close connection")
             self.s.close()
         except socket.error:
             pass
@@ -446,30 +445,33 @@ class DaenimCom(SocketCom):
         """
         """
         if self.flat:
-            msg = ""
+            msg = b""
             for b in self.world.getbodies():
                 H = b.pose
-                msg += struct.pack('64s12f', b.name,
-                                 *[float(val) for val in H[0:3, :].reshape(12)])
+                msg += self.packing_transform(b.name, H)
         else:
             msg = ""
             for j in self.world.getjoints():
                 H = j.pose
-                msg += struct.pack('64s12f', j.frames[1].name,
-                                 *[float(val) for val in H[0:3, :].reshape(12)])
+                msg += self.packing_transform(j.frames[1].name, H)
 
         for f in self.world.itermovingsubframes():
             H = f.pose if self.flat else f.bpose
-            msg += struct.pack('64s12f', f.name,
-                                 *[float(val) for val in H[0:3, :].reshape(12)])
+            msg += self.packing_transform(f.name, H)
 
-        msg += "update done"
+
+        msg += b"update done"
         try:
             self.conn.send(msg)
             self.conn.recv(2)
         except socket.error:
             print("connection lost")
 
+
+    def packing_transform(self, _name, _H):
+        bytes_name = _name.encode()     #this convert is made to have compatibility between python2.x and python3.x
+        res = struct.pack('64s12f', bytes_name, *[float(v) for v in _H[0:3, :].reshape(12)])
+        return res
 
 
 class VPythonObserver(Observer):
