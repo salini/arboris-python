@@ -4,7 +4,7 @@ Functions for working with twists stored as [w,v]
 """
 __author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 
-from numpy import array, sin, cos, eye, dot, outer
+from numpy import array, sin, cos, eye, dot, outer, zeros
 from numpy.linalg import norm
 
 def adjacency(tw):

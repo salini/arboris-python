@@ -271,7 +271,7 @@ def inv(H):
     """
     assert ishomogeneousmatrix(H)
     R = H[0:3, 0:3]
-    p = H[0:3, 3:4]
+    p = H[0:3, 3]
     
     invH = zeros((4,4))
     invH[0:3, 0:3] = R.T

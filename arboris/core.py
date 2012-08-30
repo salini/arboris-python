@@ -319,6 +319,7 @@ class Constraint(NamedObject):
         NamedObject.__init__(self, name)
         self._is_enabled = True
         self._force = zeros(0)
+        self._child_obj_to_reg = []
 
     def is_enabled(self):
         return self._is_enabled
@@ -605,11 +606,8 @@ class World(NamedObject):
         elif isinstance(obj, Constraint):
             if not obj in self._constraints:
                 self._constraints.append(obj)
-                from arboris.constraints import PointContact
-                if isinstance(obj, PointContact):
-                    #TODO: World should not know about PointContact!
-                    self.register(obj._frames[0])
-                    self.register(obj._frames[1])
+                for child_obj in obj._child_obj_to_reg:
+                    self.register(child_obj)
         elif isinstance(obj, Controller):
             if not obj in self._controllers:
                 self._controllers.append(obj)
@@ -1369,7 +1367,6 @@ class Body(NamedObject, Frame):
             rx = zeros((3, 3))
         else:
             rx = self.mass[0:3, 3:6]/ self.mass[5,5]
-        print rx
         self._nleffects = zeros((6, 6))
         self._nleffects[0:3, 0:3] = wx
         self._nleffects[3:6, 3:6] = wx

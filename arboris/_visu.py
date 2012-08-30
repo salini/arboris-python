@@ -274,7 +274,6 @@ class Drawer(object):
         self._driver.add_child(parent, node)
         self._driver.add_child(node, self._driver.create_frame_arrows(),
                 'frame arrows')
-        #TODO: add frame name as node
         if is_constant and norm(pose[0:3, 3]) > 0:
             line = self._driver.create_line((0., 0., 0.), pose[0:3, 3], color)
             self._driver.add_child(parent, line, 'link')

@@ -268,10 +268,12 @@ class PointContact(Constraint):
         self._shapes = shapes
         self._is_active = None
         self._sdist = None
-        self._frames = (MovingSubFrame(shapes[0].frame.body),
-                        MovingSubFrame(shapes[1].frame.body))
         self._collision_solver = collision_solver
         self._proximity = proximity
+        
+        self._frames = (MovingSubFrame(shapes[0].frame.body),
+                        MovingSubFrame(shapes[1].frame.body))
+        self._child_obj_to_reg.extend(self._frames)
 
     def init(self, world):
         pass
