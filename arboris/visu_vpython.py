@@ -316,3 +316,15 @@ def view_collada_file(animation_file, user_options=None):
             time.sleep(dt)
 
 
+def view(world, scale=1., options=None, color_generator=None):
+    """
+    """
+    driver = VPythonDriver(scale, options)
+    drawer = arboris._visu.Drawer(driver, True, color_generator)
+    world.update_geometric()
+    world.parse(drawer)
+    drawer.finish()
+    while 1:
+        driver.check_keyboard()
+        time.sleep(.01)
+

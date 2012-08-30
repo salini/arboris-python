@@ -377,13 +377,7 @@ class TxTyTzJoint(LinearConfigurationSpaceJoint):
 
     @property
     def djacobian(self):
-        return array(
-            [[  0. , 0. , 0. ],
-             [  0. , 0. , 0. ],
-             [  0. , 0. , 0. ],
-             [  0. , 0. , 0. ],
-             [  0. , 0. , 0. ],
-             [  0. , 0. , 0. ]])
+        return zeros((6, 3))
 
 
 class TzJoint(LinearConfigurationSpaceJoint):
