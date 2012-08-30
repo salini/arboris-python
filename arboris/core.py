@@ -29,7 +29,9 @@ import numpy
 
 import arboris.homogeneousmatrix as Hg
 from arboris.rigidmotion import RigidMotion
+from arboris.massmatrix import ismassmatrix
 
+import warnings
 
 def simplearm():
     from arboris.robots.simplearm import add_simplearm
@@ -217,7 +219,7 @@ class Joint(RigidMotion, NamedObject):
     @property
     def dof(self):
         if self._dof is None:
-            raise ValueError
+            raise ValueError("joint dof is None. run world.init() first.")
         else:
             return self._dof
 
@@ -394,10 +396,10 @@ class World(NamedObject):
         self.ground = Body('ground')
         self._current_time = 0.
         self._up = array((0., 1., 0.))
-        self._controllers = [] #TODO: should be a Set?
-        self._constraints = [] #TODO: should be a Set?
-        self._subframes = [] #TODO: should be a Set?
-        self._shapes = [] #TODO: should be a Set?
+        self._controllers = []
+        self._constraints = []
+        self._subframes   = []
+        self._shapes      = []
         self._ndof = 0
         self._gvel = array([])
         self._mass =  array([])# updated by self.update_dynamic()
@@ -544,8 +546,11 @@ class World(NamedObject):
             frame0 = old_joint.frame0
             frame1 = old_joint.frame1
             self.replace_joint(old_joint, frame0, new_joint, frame1)
-        elif len(args) == 0 or len(args) % 3 != 0:
-            raise RuntimeError() #TODO
+        elif len(args) == 0:
+            raise RuntimeError("nb args is 0, need at least the new joint.")
+        elif len(args) % 3 != 0:
+            raise RuntimeError("args not a multiple of 3. Template should be"+ \
+            "(old_joint, ..., child_frame, parent_frame, new_joint, ...)")
         else:
             body0 = args[0].body
             body1 = args[-1].body
@@ -559,7 +564,7 @@ class World(NamedObject):
             # let's fix that
             i = body0.childrenjoints.index(old_joint)
             body0.childrenjoints[i] = body0.childrenjoints.pop()
-            self.init() #TODO
+            self.init()
 
     def register(self, obj):
         """
@@ -1040,6 +1045,7 @@ class World(NamedObject):
             j.integrate(self._gvel[j.dof], dt)
         self._current_time += dt
 
+
     def name_all_elements(self, check_unicity=False):
         for wlist in [self.getjoints(), self.getframes(), self.getshapes(),
                       self.getconstraints(), self.getcontrollers()]:
@@ -1086,20 +1092,32 @@ class _SubFrame(NamedObject, Frame):
 
     @property
     def pose(self):
-        return dot(self._body.pose, self._bpose)
+        try:
+            return dot(self._body.pose, self._bpose)
+        except TypeError:
+            raise TypeError("pose is not up to date, run world.update_geometric() first.")
 
     @property
     def twist(self):
-        return dot(Hg.iadjoint(self._bpose), self._body.twist)
+        try:
+            return dot(Hg.iadjoint(self._bpose), self._body.twist)
+        except TypeError:
+            raise TypeError("twist is not up to date, run world.update_dynamic() first.")
 
     @property
     def jacobian(self):
-        return dot(Hg.iadjoint(self._bpose), self._body.jacobian)
+        try:
+            return dot(Hg.iadjoint(self._bpose), self._body.jacobian)
+        except TypeError:
+            raise TypeError("jacobian is not up to date, run world.update_dynamic() first.")
 
     @property
     def djacobian(self):
-        # we assume self._bpose is constant
-        return dot(Hg.iadjoint(self._bpose), self._body.djacobian)
+        try:
+            # we assume self._bpose is constant
+            return dot(Hg.iadjoint(self._bpose), self._body.djacobian)
+        except TypeError:
+            raise TypeError("djacobian is not up to date, run world.update_dynamic() first.")
 
     @property
     def body(self):
@@ -1130,7 +1148,7 @@ class Body(NamedObject, Frame):
         if mass is None:
             mass = zeros((6, 6))
         else:
-            pass #TODO: check the mass matrix
+            assert(ismassmatrix(mass))
         if viscosity is None:
             viscosity = zeros((6, 6))
         else:
@@ -1347,10 +1365,11 @@ class Body(NamedObject, Frame):
             [[             0, -self.twist[2],  self.twist[1]],
              [ self.twist[2],              0, -self.twist[0]],
              [-self.twist[1],  self.twist[0],              0]])
-        if self.mass[3, 3] <= 1e-10: #TODO: avoid hardcoded value
+        if self.mass[5, 5] <= 1e-10: #TODO: avoid hardcoded value
             rx = zeros((3, 3))
         else:
-            rx = self.mass[0:3, 3:6]/self.mass[3, 3] #TODO: better solution?
+            rx = self.mass[0:3, 3:6]/ self.mass[5,5]
+        print rx
         self._nleffects = zeros((6, 6))
         self._nleffects[0:3, 0:3] = wx
         self._nleffects[3:6, 3:6] = wx
@@ -1419,7 +1438,8 @@ def simulate(world, timeline, observers=()):
 
     """
     if world.current_time != timeline[0]:
-        pass #TODO: use logger to warn user of possible problem
+        warnings.warn('world.current_time != timeline[0]: \
+may become a problem if some conditions depend on world.current_time')
     world._current_time = timeline[0]
     world.init()
     for obs in observers:

@@ -28,7 +28,10 @@ def inv(Ad):
     """
     R = Ad[0:3, 0:3].transpose()
     pxR = Ad[3:6, 0:3].transpose()
-    return np.vstack((
-        np.hstack((R  , np.zeros((3,3)))),
-        np.hstack((pxR, R))))
+    
+    invAd = zeros((6,6))
+    invAd[0:3, 0:3] = R
+    invAd[3:6, 0:3] = pxR
+    invAd[3:6, 3:6] = R
+    return invAd
 

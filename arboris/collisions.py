@@ -6,7 +6,7 @@
 __author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 
 from numpy.linalg import norm
-from numpy import zeros, argmin, hstack, dot, sign, arange
+from numpy import zeros, argmin, dot, sign, arange
 import arboris.homogeneousmatrix as Hg
 from arboris.core import Shape
 from arboris.shapes import Plane, Point, Box, Sphere
@@ -286,7 +286,10 @@ def _box_sphere_collision(H_g0, half_extents0, p_g1, radius1):
     p_01 = Hg.pdot(Hg.inv(H_g0), p_g1)
     if (abs(p_01) <= half_extents0).all():
         # p_01 is inside the box, we need to find the nearest face
-        i = argmin(hstack((half_extents0 - p_01, half_extents0 + p_01)))
+        near_face = zeros(6)
+        near_face[0:3] = half_extents0 - p_01
+        near_face[3:6] = half_extents0 + p_01
+        i = argmin(near_face)
         f_0 = p_01.copy()
         normal = zeros(3)
         if i < 3:

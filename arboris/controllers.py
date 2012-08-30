@@ -4,7 +4,7 @@ __author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 from arboris.core import Controller, World
 from numpy import array, zeros, dot, ix_
 from numpy.linalg import norm
-import arboris.homogeneousmatrix
+import arboris.homogeneousmatrix as Hg
 from arboris.joints import LinearConfigurationSpaceJoint
 from arboris.massmatrix import principalframe
 
@@ -21,7 +21,7 @@ class WeightController(Controller):
     >>> c = WeightController()
     >>> w.register(c)
     >>> w.init()
-    >>> w.update_dynamic() #TODO change for update_kinematic
+    >>> w.update_geometric()
     >>> (gforce, impedance) = c.update() #TODO: test!
 
     """
@@ -40,24 +40,17 @@ class WeightController(Controller):
         self._wndof = world.ndof
         self._gravity_dtwist = zeros(6)
         self._gravity_dtwist[3:6] = float(self.gravity)*world.up
+        self.impedance = zeros( (self._wndof, self._wndof) )
 
     def update(self, dt=None):
         gforce = zeros(self._wndof)
         for b in self._bodies:
-            #TODO: improve efficiency
             H_bc = principalframe(b.mass)
             R_gb = b.pose[0:3, 0:3]
             H_bc[0:3, 0:3] = R_gb.T
-            #wrench_c = array((0,0,0,0,-9.81*b.mass[3,3],0))
-            #Ad_cb = arboris.homogeneousmatrix.iadjoint(H_bc)
-            #wrench_b = dot(Ad_cb.T, wrench_c)
-            #gforce += dot(b.jacobian.T, wrench_b )
-            # gravity acceleration expressed in body frame
-            g = dot(arboris.homogeneousmatrix.iadjoint(b.pose),
-                    self._gravity_dtwist)
+            g = dot(Hg.iadjoint(b.pose), self._gravity_dtwist)
             gforce += dot(b.jacobian.T, dot(b.mass, g))
-        impedance = zeros( (self._wndof, self._wndof) )
-        return (gforce, impedance)
+        return (gforce, self.impedance)
 
 
 class ProportionalDerivativeController(Controller):

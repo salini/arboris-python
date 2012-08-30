@@ -244,6 +244,7 @@ class ColorGenerator(object):
             # the palette is exhausted
             return (1., 1., 1.)
 
+
 class Drawer(object):
     """
     Draw a world
@@ -255,7 +256,6 @@ class Drawer(object):
     def __init__(self, driver, flat=False, color_generator=None):
         self.transform_nodes = {}
         self._flat = flat
-        # TODO: guess driver
         assert isinstance(driver, DrawerDriver)
         self._driver = driver
         if not color_generator:

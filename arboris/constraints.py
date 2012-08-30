@@ -4,7 +4,7 @@
 
 __author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 
-from numpy import array, zeros, eye, dot, hstack, diag, logical_and, arange
+from numpy import array, zeros, eye, dot, diag, logical_and, arange
 from numpy.linalg import solve, eigvals, pinv
 import arboris.homogeneousmatrix as Hg
 from arboris.core import MovingSubFrame, Constraint, Shape, World
@@ -795,8 +795,9 @@ class SoftFingerContact(PointContact):
             # friction model.
 
             # First, try with static friction: zero tangent velocity
-            dforce = dot(-pinv(admittance),
-                           hstack((vel[0:3], vel[3]+self._sdist/dt)))
+            zero_tan_vel     = vel.copy()
+            zero_tan_vel[3] += self._sdist/dt
+            dforce = dot(-pinv(admittance), zero_tan_vel)
             force = self._force + dforce
 
             if sum((force[0:3]/self._eps)**2) <= (force[3]*self._mu)**2:

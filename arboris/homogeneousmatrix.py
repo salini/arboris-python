@@ -3,7 +3,7 @@
 
 __author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 
-from numpy import array, zeros, sin, cos, dot, hstack, vstack, arctan2
+from numpy import array, zeros, sin, cos, dot, arctan2
 import numpy
 
 tol = 1e-9
@@ -272,7 +272,12 @@ def inv(H):
     assert ishomogeneousmatrix(H)
     R = H[0:3, 0:3]
     p = H[0:3, 3:4]
-    return vstack( (hstack((R.T, -dot(R.T, p))), [0, 0, 0, 1]))
+    
+    invH = zeros((4,4))
+    invH[0:3, 0:3] = R.T
+    invH[0:3,3]    = -dot(R.T, p)
+    invH[3,3]      = 1
+    return invH
 
 def adjoint(H):
     """
@@ -307,16 +312,20 @@ def adjoint(H):
     """
     assert ishomogeneousmatrix(H), H
     R = H[0:3, 0:3]
-    p = H[0:3, 3:4]
+    p = H[0:3, 3]
     pxR = dot(
         array(
             [[    0, -p[2],  p[1]],
              [ p[2],     0, -p[0]],
              [-p[1],  p[0],     0]]),
         R)
-    return vstack((
-        hstack((R  , zeros((3,3)))),
-        hstack((pxR, R))))
+    
+    Ad = zeros((6,6))
+    Ad[0:3,0:3] = R
+    Ad[3:6,0:3] = pxR
+    Ad[3:6,3:6] = R
+    return Ad
+
 
 def iadjoint(H):
     """

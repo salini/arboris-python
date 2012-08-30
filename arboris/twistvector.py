@@ -4,7 +4,7 @@ Functions for working with twists stored as [w,v]
 """
 __author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 
-from numpy import array, sin, cos, eye, dot, hstack, vstack
+from numpy import array, sin, cos, eye, dot, outer
 from numpy.linalg import norm
 
 def adjacency(tw):
@@ -64,7 +64,12 @@ def exp(tw):
         dsc = 1./6.
 
     R = eye(3) + sc*wx + cc*dot(wx, wx)
-    w_3x1 = w.reshape(3, 1) #TODO improve efficiency
-    p = dot(sc*eye(3) + cc*wx + dsc*dot(w_3x1, w_3x1.T), v)
-    return vstack((hstack((R, p.reshape(3, 1))),
-                   array([[0., 0., 0., 1.]])))
+    p = dot(sc*eye(3) + cc*wx + dsc*outer(w,w), v)
+
+    H = zeros((4,4))
+    H[0:3,0:3] = R
+    H[0:3,3] = p
+    H[3,3] = 1
+
+    return H
+

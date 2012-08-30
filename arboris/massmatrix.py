@@ -96,7 +96,7 @@ def principalframe(M):
     m = M[5, 5]
     rx = M[0:3, 3:6]/m
     H = eye(4)
-    H[0:3, 3] = array([rx[2, 1], rx[0, 2], rx[1, 0]]) #TODO: use a function
+    H[0:3, 3] = [rx[2, 1], rx[0, 2], rx[1, 0]]
     RSR = M[0:3, 0:3] + m*dot(rx, rx)
     [S, R] = eig(RSR)
     if det(R)<0.:
