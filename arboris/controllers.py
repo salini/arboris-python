@@ -21,7 +21,7 @@ class WeightController(Controller):
     >>> c = WeightController()
     >>> w.register(c)
     >>> w.init()
-    >>> w.update_geometric()
+    >>> w.update_dynamic()
     >>> (gforce, impedance) = c.update() #TODO: test!
 
     """

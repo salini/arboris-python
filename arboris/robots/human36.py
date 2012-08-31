@@ -71,8 +71,8 @@ def anat_lengths_from_height(height):
     >>> L['ysternoclavL']
     0.17061800000000002
     >>> L = anat_lengths_from_height(2.)
-    >>> L['ysternoclavL']
-    0.19600000000000001
+    >>> print(L['ysternoclavL'])
+    0.196
 
     ** Differences with HuMAnS **
 
@@ -169,8 +169,8 @@ def height_from_anat_lengths(lengths):
     **Examples:**
 
     >>> L = anat_lengths_from_height(1.741)
-    >>> height_from_anat_lengths(L)
-    1.7410000000000001
+    >>> print(height_from_anat_lengths(L))
+    1.741
     >>> L['ytibiaL'] = .95 * L['ytibiaL'] # shorten the left leg
     >>> height_from_anat_lengths(L)
     Traceback (most recent call last):

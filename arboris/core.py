@@ -289,7 +289,6 @@ class JointsList(NamedObjectsList):
     def __init__(self, iterable):
         NamedObjectsList.__init__(self, iterable)
         self._init_dof()
-        self._dof = slice(0, 0)
 
     def _init_dof(self):
         self._dof = slice(0, 0)
@@ -303,7 +302,7 @@ class JointsList(NamedObjectsList):
                         self._dof = slice(self._dof.start, obj.dof.stop)
                     else:
                         # otherwise, self._dof is converted into a sequence
-                        self._dof = arange(self._dof.start, self._dof.stop)
+                        self._dof = range(self._dof.start, self._dof.stop)
                         self._dof.extend(arange(obj.dof.start, obj.dof.stop))
                 else:
                     self._dof.extend(arange(obj.dof.start, obj.dof.stop))
@@ -541,7 +540,7 @@ class World(NamedObject):
         """
         assert isinstance(old_joint, Joint)
         assert old_joint in old_joint.frame0.body.childrenjoints
-        assert old_joint is old_joint.frames1.body.parentjoint
+        assert old_joint is old_joint.frame1.body.parentjoint
         if len(args) == 1:
             new_joint = args[0]
             frame0 = old_joint.frame0
@@ -1146,7 +1145,7 @@ class Body(NamedObject, Frame):
         if mass is None:
             mass = zeros((6, 6))
         else:
-            assert(ismassmatrix(mass))
+            assert(ismassmatrix(mass, True))
         if viscosity is None:
             viscosity = zeros((6, 6))
         else:
