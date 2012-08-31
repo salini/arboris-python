@@ -415,7 +415,9 @@ class DaenimCom(SocketCom):
             if os.name == 'posix':
                 arborisViewer = 'daenim'
             elif os.name == 'nt':
-                arborisViewer = 'C:/Program Files/daenim/daenim.exe'
+                arborisViewer = 'C:/Program Files (x86)/Daenim/daenim.exe'
+                if not os.path.exists(arborisViewer):
+                    arborisViewer = 'C:/Program Files/Daenim/daenim.exe'
 
         self.app_call = \
               [arborisViewer, daefile, "-socket", self.host, str(self.port)] + \
