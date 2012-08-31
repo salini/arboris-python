@@ -201,6 +201,8 @@ latex_preamble = r"""\providecommand{\SO}{\text{SO}}
 \providecommand{\dGVel}{\dot{\nu}}
 \providecommand{\GAcc}{\dot{\nu}}
 \providecommand{\GForce}{\gamma}
+
+\newcommand{\R}[1]{\ensuremath{\mathbb{R}^{#1}}}
 """
 
 # Documents to append as an appendix to all manuals.

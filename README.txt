@@ -1,49 +1,4 @@
 
-Requirements & Install
-======================
-
-Arboris-python requires numpy (http://numpy.scipy.org/) to compute and
-integrate the model during simulation.
-
-The following modules are very useful, but are not mandatory:
-
-*  Vpython (http://www.vpython.org/) to display and replay simulations,
-*  Matplotlib (http://matplotlib.sourceforge.net/) to plot some results,
-   in the same manner as Matlab,
-*  h5py (http://alfven.org/wp/hdf5-for-python/) to save simulation data in
-   hdf5 files, in order to read results with other applications that python.
-
-
-Windows
--------
-
-When you have downloaded Arboris-python, open a command prompt in this folder
-and run:
-
-    setup.py install
-
-
-Linux
------
-
-When you have downloaded Arboris-python, open a terminal in this folder
-and run:
-
-    sudo python setup.py install
-
-if you have no administration rights, you can install locally:
-
-    python setup.py install --user
-
-
-Macintosh
----------
-
-Same method as linux (?).
-
-
-
-
 About Arboris
 =============
 
@@ -104,4 +59,5 @@ The matlab version of the simulator is now deprecated.
     V. Duindam,
     "Port-Based Modelling and Control for Efficent Bipedal Walking Robots",
     University of Twente, 2006.
+
 

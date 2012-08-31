@@ -10,9 +10,9 @@ Ideal Joints
 An ideal joint is a kinematic restriction of the allowed relative twist of two rigid bodies `i` and `j` to a linear subspace of dimension `k`, where the relative motion of the bodies is described by two sets of states, namely
 
 - a matrix `\GPos`, parameterizing the relative configuration as `H_{01} = H_{01}(\GPos)`,
-- a vector `\GVel \in \Re^k`, parameterizing the relative twist as `\twist[1]_{1/0} = X(\GPos) \GVel`
+- a vector `\GVel \in \R{k}`, parameterizing the relative twist as `\twist[1]_{1/0} = X(\GPos) \GVel`
 
-where `X(\GPos)` depends smoothly on `\GPos` and `\nu = V_\GPos(\dot{\GPos})` with `V_\GPos` invertible and linear in `\dot{\GPos}`. Furthermore, there exists a mapping `F_\GPos : \Re^k \rightarrow \GPosSet`.
+where `X(\GPos)` depends smoothly on `\GPos` and `\nu = V_\GPos(\dot{\GPos})` with `V_\GPos` invertible and linear in `\dot{\GPos}`. Furthermore, there exists a mapping `F_\GPos : \R{k} \rightarrow \GPosSet`.
 
 Implementation
 ==============

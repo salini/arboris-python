@@ -20,9 +20,9 @@ An homogeneous matrix `H` is a matrix of the form
             0 & 0 & 0
         \end{smallmatrix} & 1
     \end{bmatrix}
-    \in \Re^{4\times4}
+    \in \R{4\times4}
 
-with `R^{-1}=R^T \in \Re^{3\times3}` and `p \in \Re^{3\times1}`.
+with `R^{-1}=R^T \in \R{3\times3}` and `p \in \R{3\times1}`.
 
 The *pose* (position and orientation, also known as the *configuration*)
 of a (right-handed) coordinate frame `\Psi_b` regarding to a reference 

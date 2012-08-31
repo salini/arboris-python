@@ -1,0 +1,45 @@
+
+Requirements & Install
+======================
+
+Arboris-python requires `numpy <http://numpy.scipy.org/>`_ to compute and
+integrate the model during simulation.
+
+The following modules are very useful, but are not mandatory:
+
+*  `Vpython <http://www.vpython.org/>`_ to display and replay simulations,
+*  `Matplotlib <http://matplotlib.sourceforge.net/>`_ to plot some results,
+   in the same manner as Matlab,
+*  `h5py <http://alfven.org/wp/hdf5-for-python/>`_ to save simulation data in
+   hdf5 files, in order to read results with other applications that python.
+
+
+Windows
+-------
+
+When you have downloaded Arboris-python, open a command prompt in the folder
+and run:
+
+    ``setup.py install``
+
+
+Linux
+-----
+
+When you have downloaded Arboris-python, open a terminal in the folder
+and run:
+
+    ``sudo python setup.py install``
+
+if you have no administration rights, you can install locally:
+
+    ``python setup.py install --user``
+
+
+Macintosh
+---------
+
+Same method as linux (?).
+
+
+
