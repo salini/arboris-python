@@ -135,7 +135,7 @@ class Human36AgainstHumansTestCase(TestCase):
                  0.    ,  0.    ,  0.    ,  0.0127,  0.    ,  0.    , -0.0127,
                  0.    ,  0.    ,  0.    ,  0.    ,  0.    ,  0.    ,  0.    ,
                  0.    ,  0.    ,  0.    )}
-        for h, hl in hld.iteritems():
+        for h, hl in hld.items():
             lengths = anat_lengths_from_height(h)
             al = [lengths[n] for n in HuMAnS_lengths]
             self.assertListsAlmostEqual(hl, al)
@@ -213,7 +213,7 @@ class Human36AgainstHumansTestCase(TestCase):
                 frame = tag_frames[name]
                 positions.append(frame._bpose[0:3,3])
             return positions
-        for h, ht in htd.iteritems():
+        for h, ht in htd.items():
             w = World()
             add_human36(w, height=h)
             at = tags_local_positions(w.getframes())

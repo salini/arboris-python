@@ -302,7 +302,7 @@ class JointsList(NamedObjectsList):
                         self._dof = slice(self._dof.start, obj.dof.stop)
                     else:
                         # otherwise, self._dof is converted into a sequence
-                        self._dof = range(self._dof.start, self._dof.stop)
+                        self._dof = arange(self._dof.start, self._dof.stop).tolist()
                         self._dof.extend(arange(obj.dof.start, obj.dof.stop))
                 else:
                     self._dof.extend(arange(obj.dof.start, obj.dof.stop))

@@ -15,12 +15,12 @@ class VisuColladaTestCase(arboristest.TestCase):
         self.world.update_geometric()
         self.cases = {True: 'flat', False:'notflat'}
         self.h5_files = {}
-        for flat, name in self.cases.iteritems():
+        for flat, name in self.cases.items():
             self.h5_files[flat] = join(self.testdir, 'simplearm_'+name+'.h5')
         if False:
             # save hdf5 files as a reference
             obs = []
-            for flat in self.cases.iterkeys():
+            for flat in self.cases.keys():
                 obs.append(observers.Hdf5Logger(self.h5_files[flat],
                                                 mode='w',
                                                 flat=flat))

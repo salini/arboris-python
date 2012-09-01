@@ -29,7 +29,7 @@ def inv(Ad):
     R = Ad[0:3, 0:3].transpose()
     pxR = Ad[3:6, 0:3].transpose()
     
-    invAd = zeros((6,6))
+    invAd = np.zeros((6,6))
     invAd[0:3, 0:3] = R
     invAd[3:6, 0:3] = pxR
     invAd[3:6, 3:6] = R

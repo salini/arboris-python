@@ -123,7 +123,7 @@ def fix_namespace(tree):
 
 def find_by_id(root, _id, tag=None):
     """Find an element by id."""
-    for e in root.getiterator(tag):
+    for e in root.iter(tag):
         if e.get('id') == _id:
             return(e)
     return None
@@ -412,7 +412,7 @@ class ColladaDriver(arboris._visu.DrawerDriver):
         for lib_name in ["library_materials", "library_effects",
                          "library_nodes", "library_geometries"]:
             to_lib = require_SubElement(to_root, QN(lib_name))
-            if len(to_lib.getchildren())==0:
+            if len(list(to_lib))==0:
                 to_root.remove(to_lib)
         write_collada_tree_in_file(self._filename, self._tree)
 
@@ -576,7 +576,7 @@ def _write_col_anim(collada_animation, collada_scene, timeline, transforms):
 
     tree = ET.parse(collada_scene)
     anim_lib = Element("library_animations")
-    children = tree.getroot().getchildren()
+    children = list(tree.getroot())
     children.insert(children.index(tree.find(QN("scene"))), anim_lib)
 
     for name, val in transforms.items():

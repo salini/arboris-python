@@ -20,9 +20,8 @@ class Human36FallingTestCase(arboristest.TestCase):
         self.world.register(controllers.WeightController())
 
         # add a (single) PD Controller to all the simple joints
-        ljoints = filter(
-                lambda x: isinstance(x, core.LinearConfigurationSpaceJoint),
-                self.world.iterjoints());
+        ljoints = [x for x in self.world.iterjoints()
+                           if isinstance(x, core.LinearConfigurationSpaceJoint)]
         n = len(JointsList(ljoints).dof)
         kp = 0.1*numpy.eye(n)
         c = ProportionalDerivativeController(ljoints, kp=kp, kd=2.*numpy.sqrt(kp))

@@ -124,7 +124,7 @@ class VPythonDriver(arboris._visu.DrawerDriver):
     def check_keyboard(self):
         unused_keys = []
         objList = []
-        for i in range(self.scene.kb.keys):
+        for i in np.arange(self.scene.kb.keys):
             k = self.scene.kb.getkey()
             if   k == "f": objList.extend(self.frame_arrows)
             elif k == "s": objList.extend(self.shapes)
