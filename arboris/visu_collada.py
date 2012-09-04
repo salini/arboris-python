@@ -577,7 +577,7 @@ def _write_col_anim(collada_animation, collada_scene, timeline, transforms):
     tree = ET.parse(collada_scene)
     anim_lib = Element("library_animations")
     children = list(tree.getroot())
-    children.insert(children.index(tree.find(QN("scene"))), anim_lib)
+    tree.getroot().insert(children.index(tree.find(QN("scene"))), anim_lib)
 
     for name, val in transforms.items():
         create_anim_elem(anim_lib, name, timeline, val)
@@ -623,6 +623,7 @@ def write_collada_animation(collada_animation, collada_scene, sim_file,
             f.close()
         except IOError:
             raise IOError("Cannot load file '"+sim_file+"'. It may not be a pickle file.")
+
     _write_col_anim(collada_animation, collada_scene, timeline, transforms)
 
 
