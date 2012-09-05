@@ -185,7 +185,7 @@ def height_from_anat_lengths(lengths):
     return left_leg + lengths['yvT10'] + lengths['yvC7'] + lengths['yhead']
 
 
-def add_human36(world, height=1.741, mass=73, anat_lengths=None, name=''):
+def add_human36(world, height=1.741, mass=73, anat_lengths=None, prefix=''):
     """Add an anthropometric humanoid model to the world.
 
     :param height: the human height in meters. Ignored if ``anat_lengths``
@@ -196,8 +196,8 @@ def add_human36(world, height=1.741, mass=73, anat_lengths=None, name=''):
     :param anat_lengths: the human anatomical lengths.
                          Computed from ``height`` if not provided
     :type anat_lengths: dict
-    :param name: name of the human, used to prefix every object name.
-    :type name: string
+    :param prefix: name of the human, used to prefix every object name.
+    :type prefix: string
     :param return_lists: if True, returns of a tuple of the added objects
     :return: None
 
@@ -205,13 +205,13 @@ def add_human36(world, height=1.741, mass=73, anat_lengths=None, name=''):
 
     >>> w = World()
     >>> # add a normal human
-    >>> add_human36(w, height=1.8, name="Bob's ")
+    >>> add_human36(w, height=1.8, prefix="Bob's ")
     >>> # add a human with a shorter left arm
     >>> L = anat_lengths_from_height(1.8)
     >>> L['yhumerusL'] *= .7
     >>> L['yforearmL'] *= .7
     >>> L['yhandL'] *= .7
-    >>> add_human36(w, anat_lengths=L, name="Casimodo's ")
+    >>> add_human36(w, anat_lengths=L, prefix="Casimodo's ")
     >>> frames = w.getframes()
 
     >> frames["Bob's Left stylion"].bpose[0:3, 3]
@@ -226,7 +226,6 @@ def add_human36(world, height=1.741, mass=73, anat_lengths=None, name=''):
     else:
         L = anat_lengths
     h = height_from_anat_lengths(L)
-    prefix = name
 
     # create the bodies
     bodies = NamedObjectsList()
@@ -238,9 +237,7 @@ def add_human36(world, height=1.741, mass=73, anat_lengths=None, name=''):
         H_gf = Hg.inv(H_fg)
         #mass matrix at body's frame origin:
         mass_o = dot(Hg.adjoint(H_gf).T, dot(mass_g, Hg.adjoint(H_gf)))
-        if name:
-            name = prefix + name
-        bodies.append(Body(name=name, mass=mass_o))
+        bodies.append(Body(name=prefix+name, mass=mass_o))
     # Lower Part of Trunk
     add_body("LPT", 0.275 * mass,
              [0, 0.5108*L['yvT10'], 0],
@@ -300,46 +297,47 @@ def add_human36(world, height=1.741, mass=73, anat_lengths=None, name=''):
              array([0.303, 0.261, 0.315])*L['yhead'])
 
     # create the joints and add the links (i.e. joints+bodies)
-    def add_link(body0, transl, joint, body1):
+    def add_link(body0, transl, joint, name, body1):
         if not isinstance(body0, Body):
             body0 = bodies[prefix+body0]
         frame0 = SubFrame(body0, Hg.transl(*transl))
+        joint.name = prefix + name
         w.add_link(frame0, joint, bodies[prefix+body1])
 
     add_link(w.ground, (0, L['yfootL']+L['ytibiaL']+L['yfemurL'], 0),
-             FreeJoint(), 'LPT')
+             FreeJoint(), 'Root', 'LPT')
     add_link('LPT', (0, 0, L['zhip']/2.),
-             RzRyRxJoint(), 'ThighR')
+             RzRyRxJoint(), 'HipR', 'ThighR')
     add_link('ThighR', (0, -L['yfemurR'], 0),
-             RzJoint(), 'ShankR')
+             RzJoint(), 'KneeR', 'ShankR')
     add_link('ShankR', (0, -L['ytibiaR'], 0),
-             RzRxJoint(), 'FootR')
+             RzRxJoint(), 'AnkleR', 'FootR')
     add_link('LPT', (0, 0, -L['zhip']/2.),
-             RzRyRxJoint(), 'ThighL')
+             RzRyRxJoint(), 'HipL', 'ThighL')
     add_link('ThighL', (0, -L['yfemurL'], 0),
-             RzJoint(), 'ShankL')
+             RzJoint(), 'KneeL', 'ShankL')
     add_link('ShankL', (0, -L['ytibiaL'], 0),
-             RzRxJoint(), 'FootL')
+             RzRxJoint(), 'AnkleL', 'FootL')
     add_link('LPT', (-L['xvT10'], L['yvT10'], 0),
-             RzRyRxJoint(), 'UPT')
+             RzRyRxJoint(), 'Back', 'UPT')
     add_link('UPT', (L['xsternoclavR'], L['ysternoclavR'], L['zsternoclavR']),
-             RyRxJoint(), 'ScapulaR')
+             RyRxJoint(), 'Torso-ScapR', 'ScapulaR')
     add_link('ScapulaR', (-L['xshoulderR'], L['yshoulderR'], L['zshoulderR']),
-             RzRyRxJoint(), 'ArmR')
+             RzRyRxJoint(), 'Arm-ScapR', 'ArmR')
     add_link('ArmR', (0, -L['yhumerusR'], 0),
-             RzRyJoint(), 'ForearmR')
+             RzRyJoint(), 'ElbowR', 'ForearmR')
     add_link('ForearmR', (0, -L['yforearmR'], 0),
-             RzRxJoint(), 'HandR')
+             RzRxJoint(), 'WristR', 'HandR')
     add_link('UPT', (L['xsternoclavL'], L['ysternoclavL'], -L['zsternoclavL']),
-             RyRxJoint(), 'ScapulaL')
+             RyRxJoint(), 'Torso-ScapL', 'ScapulaL')
     add_link('ScapulaL', (-L['xshoulderL'], L['yshoulderL'], -L['zshoulderL']),
-             RzRyRxJoint(), 'ArmL')
+             RzRyRxJoint(), 'Arm-ScapL', 'ArmL')
     add_link('ArmL', (0, -L['yhumerusL'], 0),
-             RzRyJoint(), 'ForearmL')
+             RzRyJoint(), 'ElbowL', 'ForearmL')
     add_link('ForearmL', (0, -L['yforearmL'], 0),
-             RzRxJoint(), 'HandL')
+             RzRxJoint(), 'WristL', 'HandL')
     add_link('UPT', (L['xvT10'], L['yvC7'], 0),
-             RzRyRxJoint(), 'Head')
+             RzRyRxJoint(), 'Neck', 'Head')
 
     # add the tags
     tags = NamedObjectsList()
