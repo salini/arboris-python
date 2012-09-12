@@ -20,8 +20,9 @@ try:
 except ImportError:
     pass
 
+import tempfile
 import arboris._visu
-
+from arboris.visu_collada import get_daenim_path, write_collada_scene
 try:
     from arboris.visu_vpython import VPythonDriver
 except ImportError:
@@ -405,22 +406,19 @@ class SocketCom(Observer):
 class DaenimCom(SocketCom):
     """
     """
-    def __init__(self, daefile, arborisViewer=None, host="127.0.0.1", port=5000, \
+    def __init__(self, daefile=None, daenim_path=None, host="127.0.0.1", port=5000, \
                  options = "", precision=5, flat=False):
         """
         """
         SocketCom.__init__(self, host, port)
         
-        if arborisViewer is None:
-            if os.name == 'posix':
-                arborisViewer = 'daenim'
-            elif os.name == 'nt':
-                arborisViewer = 'C:/Program Files (x86)/Daenim/daenim.exe'
-                if not os.path.exists(arborisViewer):
-                    arborisViewer = 'C:/Program Files/Daenim/daenim.exe'
+        self.daefile = daefile
+
+        if daenim_path is None:
+            daenim_path = get_daenim_path()
 
         self.app_call = \
-              [arborisViewer, daefile, "-socket", self.host, str(self.port)] + \
+              [daenim_path, daefile, "-socket", self.host, str(self.port)] + \
                shlex.split(options)
         self.precision = precision
         self.flat = flat
@@ -429,6 +427,11 @@ class DaenimCom(SocketCom):
     def init(self, world, timeline):
         """
         """
+        if self.daefile is None:
+            tmp_daefile = tempfile.mkstemp(suffix='scene.dae', text=True)[1]
+            write_collada_scene(world, tmp_daefile, flat=self.flat)
+            self.app_call[1] = tmp_daefile
+
         try:
             subprocess.Popen(self.app_call)
         except OSError:

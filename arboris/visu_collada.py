@@ -627,38 +627,54 @@ def write_collada_animation(collada_animation, collada_scene, sim_file,
     _write_col_anim(collada_animation, collada_scene, timeline, transforms)
 
 
-def view(collada_file, hdf5_file=None, hdf5_group="/", daenimpath=None):
+
+def get_daenim_path():
+    if os.name == 'posix':
+        daenim_path = 'daenim'
+    elif os.name == 'nt':
+        daenim_path = 'C:/Program Files (x86)/Daenim/daenim.exe'
+        if not os.path.exists(daenim_path):
+            daenim_path = 'C:/Program Files/Daenim/daenim.exe'
+    else:
+        print("May not work on this os. " + \
+                  "daenim path should be specified manually.")
+        daenim_path=None
+    return daenim_path
+
+
+def view(scene, hdf5_file=None, hdf5_group="/", daenim_path=None):
     """Display a collada file, generating the animation if necessary.
 
     Usage::
 
-        view(collada_file)
+        view(world)
+        view(collada_scene_file)
         view(collada_scene_file, hdf5_file, [hdf5_group])
 
-    If only the `collada_file` is given, it is displayed.
-    If both `collada_file` and `hdf5_file` are given, they are combined into
+    If only the `scene` is given (World or collada file), it is displayed.
+    If both `scene` and `hdf5_file` are given, they are combined into
     a collada animation file, which is displayed.
 
-    This function is a Wrapper around the ``h5toanim`` and ``daenim`` external
-    commands. Tey should both be installed for the function to work.
+    This function is a Wrapper around the ``daenim`` external commands.
+    It should be installed for the function to work.
 
     """
-    if daenimpath is None:
-        if os.name == 'posix':
-            daenimpath = 'daenim'
-        elif os.name == 'nt':
-            daenimpath = 'C:/Program Files/daenim/daenim.exe'
-        else:
-            print("May not work on this os. " + \
-                  "h5toanim path should be specified manually")
-            daenimpath = 'daenim'
+    if daenim_path is None:
+        daenim_path = get_daenim_path()
 
-    if hdf5_file is None:
-        subprocess.check_call((daenimpath, collada_file))
+
+    if isinstance(scene, World):
+        scene_file = tempfile.mkstemp(suffix='anim.dae', text=True)[1]
+        write_collada_scene(scene, scene_file)
+        subprocess.check_call((daenim_path, scene_file))
+        
     else:
-        anim_file = tempfile.mkstemp(suffix='anim.dae', text=True)[1]
-        write_collada_animation(anim_file, collada_file, hdf5_file, hdf5_group)
-        subprocess.check_call((daenimpath, anim_file))
-        os.remove(anim_file)
+        if hdf5_file is None:
+            subprocess.check_call((daenim_path, scene))
+        else:
+            anim_file = tempfile.mkstemp(suffix='anim.dae', text=True)[1]
+            write_collada_animation(anim_file, scene, hdf5_file, hdf5_group)
+            subprocess.check_call((daenim_path, anim_file))
+            os.remove(anim_file)
 
 
