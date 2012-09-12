@@ -1446,15 +1446,15 @@ def simulate(world, timeline, observers=()):
 may become a problem if some conditions depend on world.current_time')
     world._current_time = timeline[0]
     world.init()
-    for obs in observers:
+    for obs in observers_list:
         obs.init(world, timeline)
     for next_time in timeline[1:]:
         dt = next_time - world.current_time
         world.update_dynamic()
         world.update_controllers(dt)
         world.update_constraints(dt)
-        for obs in observers:
+        for obs in observers_list:
             obs.update(dt)
         world.integrate(dt)
-    for obs in observers:
+    for obs in observers_list:
         obs.finish()
