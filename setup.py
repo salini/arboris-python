@@ -26,7 +26,7 @@ def get_version():
             line = p.stdout.readlines()[0].strip()
             assert line.startswith('v')
             return line[1:] #remove the leading 'v'
-        except OSError:
+        except (OSError, IndexError):
             return None
 
     def get_version_from_file():
@@ -64,9 +64,9 @@ except ImportError:
 readme = open('README.txt', 'r')
 setup(name='arboris',
       version=get_version(),
-      maintainer=unicode('Sébastien BARTHÉLEMY', 'utf-8'),
-      maintainer_email='barthelemy@crans.org',
-      url='http://chronos.isir.upmc.fr/~barthelemy/arboris',
+      maintainer=unicode('Joseph SALINI & Sébastien BARTHÉLEMY', 'utf-8'),
+      maintainer_email='salini@isir.upmc.fr',
+      url='https://github.com/salini/arboris-python',
       description=
               'A rigid body dynamics and contacts simulator written in python.',
       long_description=unicode(readme.read(), 'utf-8'),
