@@ -120,7 +120,7 @@ class BallAndSocketConstraint(Constraint):
     .. math::
 
         v &= S \; \twist[0]_{1/0} = \dot{p}_{01} \\
-        \wrench[0]_{0/1} &= S^T \; f  \\
+        \wrench[0]_{0/1} &= S\tp \; f  \\
         S &=
         \begin{bmatrix}
         0 & 0 & 0 & 1 & 0 & 0\\
@@ -143,7 +143,7 @@ class BallAndSocketConstraint(Constraint):
         v^k(t+dt)
         &= v^*(t+dt) + Y(t) \Delta f  \\
         H_{01}^k(t+dt)
-        &= \exp( dt \; S^T \; ( v^*(t+dt) + Y(t) \; \Delta f ) ) \;
+        &= \exp( dt \; S\tp \; ( v^*(t+dt) + Y(t) \; \Delta f ) ) \;
         H_{01}(t)
         \\
         p_{01}^k(t+dt)
@@ -478,7 +478,7 @@ class SoftFingerContact(PointContact):
         so that
 
         .. math::
-            \wrench[0]_{0/1} = S^T \; f
+            \wrench[0]_{0/1} = S\tp \; f
 
         at the `k`-iest iteration of the Gauss-Seidel algorithm, we have
 
@@ -605,7 +605,7 @@ class SoftFingerContact(PointContact):
 
         .. math::
 
-            \left( f^{k-1}+\Delta f \right)^T
+            \left( f^{k-1}+\Delta f \right)\tp
             \begin{bmatrix}
             \frac{1}{e_p^2} & 0 & 0 & 0 \\
             0 & \frac{1}{e_x^2} & 0 & 0 \\
@@ -618,7 +618,7 @@ class SoftFingerContact(PointContact):
         so that if we can find `s` solution of
 
         .. math::
-            \alpha^T
+            \alpha\tp
             \left(
             Y - s
             \begin{bmatrix}
@@ -659,7 +659,7 @@ class SoftFingerContact(PointContact):
             =
             \begin{bmatrix}
             Y_t   & Y_c \\
-            Y_c^T & y_n
+            Y_c\tp & y_n
             \end{bmatrix}
 
         It can then be block-diagonalized:
@@ -683,7 +683,7 @@ class SoftFingerContact(PointContact):
                 0 & 0 & \frac{1}{e_y^2}
                 \end{bmatrix}
             & Y_c \\
-            Y_c^T & y_n
+            Y_c\tp & y_n
             \end{bmatrix}
             \\
             &=
@@ -692,7 +692,7 @@ class SoftFingerContact(PointContact):
             0_{1 \times 3} & 1
             \end{bmatrix}
             \begin{bmatrix}
-            Y_t - Y_c\;Y_c^T/y_n - s
+            Y_t - Y_c\;Y_c\tp/y_n - s
                 \begin{bmatrix}
                 \frac{1}{e_p^2} & 0 & 0 \\
                 0 & \frac{1}{e_x^2} & 0 \\
@@ -703,7 +703,7 @@ class SoftFingerContact(PointContact):
             \end{bmatrix}
             \begin{bmatrix}
             I_{3 \times 3} &  0_{3 \times 1} \\
-            Y_c^T/y_n      & 1
+            Y_c\tp/y_n      & 1
             \end{bmatrix}
 
         and its inverse
@@ -721,10 +721,10 @@ class SoftFingerContact(PointContact):
             &=
             \begin{bmatrix}
             I_{3 \times 3}  &  0_{3 \times 1} \\
-            -Y_c^T/y_n      & 1
+            -Y_c\tp/y_n      & 1
             \end{bmatrix}
             \begin{bmatrix}
-            \left(Y_t - Y_c\;Y_c^T/y_n - s
+            \left(Y_t - Y_c\;Y_c\tp/y_n - s
                 \begin{bmatrix}
                 \frac{1}{e_p^2} & 0 & 0 \\
                 0 & \frac{1}{e_x^2} & 0 \\
@@ -752,15 +752,15 @@ class SoftFingerContact(PointContact):
                 0 & 0 & 0 & 0 & 0 & e_y^2
             \end{bmatrix}
             \begin{bmatrix}
-                Y_t - Y_c\;Y_c^T/y_n + 2 \frac{\beta b^T}{a}
-                    & -\frac{\beta \beta^T}{a^2} \\
-                b b^T -
+                Y_t - Y_c\;Y_c\tp/y_n + 2 \frac{\beta b\tp}{a}
+                    & -\frac{\beta \beta\tp}{a^2} \\
+                b b\tp -
                 \begin{bmatrix}
                     \frac{1}{e_p^2} & 0 & 0 \\
                     0 & \frac{1}{e_x^2} & 0 \\
                     0 & 0 & \frac{1}{e_y^2}
                 \end{bmatrix}
-                    & Y_t - Y_c\;Y_c^T/y_n
+                    & Y_t - Y_c\;Y_c\tp/y_n
             \end{bmatrix}
 
         where the following values have been introduced

@@ -10,8 +10,9 @@ from arboris.massmatrix import principalframe
 
 class WeightController(Controller):
     """A contoller which applies weight to joints.
-
-    **Test:**:
+    
+    Test:
+    
     >>> from arboris.core import simplearm
     >>> w = simplearm()
     >>> joints = w.getjoints()
@@ -22,7 +23,7 @@ class WeightController(Controller):
     >>> w.register(c)
     >>> w.init()
     >>> w.update_dynamic()
-    >>> (gforce, impedance) = c.update() #TODO: test!
+    >>> (gforce, impedance) = c.update()
 
     """
     def __init__(self, gravity=-9.81, name=None):

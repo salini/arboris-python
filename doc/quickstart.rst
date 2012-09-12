@@ -14,8 +14,8 @@ A world consists of
 - additional constraints such as contacts or kinematic joints.
 
 
-First contact with the :class:`World`
-=====================================
+First contact with the :class:`arboris.core.World`
+==================================================
 
 First, let's create a world ``w``, which will consist of bodies and 
 joints which form a simple planar arm model, plus the "ground" body. 
@@ -137,8 +137,9 @@ A dynamic simulation
 =====================
 
 To get informations about the world, we can add
-:class:`arboris.core.Observers` to the simulation.
-One of these observers saves the trajectory of the frames for later viewing.
+:class:`arboris.core.Observer` to the simulation.
+One of these observers displays the evolution of the world while simulation
+is running, and another saves the trajectory of the frames for later viewing.
 See :doc:`visu` for more details.
 
 Using a controller
@@ -157,14 +158,14 @@ Using a controller
   ...     gpos_des=(3.14/4,3.14/4,3.14/4),
   ...     kp=diag((1.,1.,1.)),
   ...     kd=diag((1.,1.,1.))/sqrt(2)))
-  >>> timeline = arange(0.,3,1e-3)
+  >>> timeline = arange(0.,1,1e-2)
   >>> simulate(w, timeline)
 
 Writing a controller
 ====================
 
 Arboris-python allows the control of the system through the derivation of
-the abstract class :class:`Controller`.
+the abstract class :class:`arboris.core.Controller`.
 A minimalist subclass which does nothing, can be written as follows
 
 .. code-block:: python
@@ -187,9 +188,33 @@ A minimalist subclass which does nothing, can be written as follows
 
 
 There are three mandatory methods.
-The first one, \py{\_\_init\_\_}, is the class constructor and may have several user-defined arguments, the second one, \py{init}, initializes the controller relative to the \py{world} instance with fixed arguments, and the third one, \py{update}, is the main function which updates the input generalized force, again with fixed arguments.
+The first one, ``__init__``, is the class constructor and may have several 
+user-defined arguments, the second one, ``init``, initializes the controller 
+relative to the ``world`` instance with fixed arguments, 
+and the third one, ``update``, is the main function which updates 
+the input generalized force, again with fixed arguments.
 
 Adding contacts
 ===============
 
-TODO
+Contacts are subclass of :class:`arboris.core.Constraint` subclass in
+Arboris-python. They have to be registered as every elements of the world.
+
+.. doctest::
+
+  >>> from arboris.all import *
+  >>> from numpy import arange, diag, sqrt
+  >>> from arboris.constraints import SoftFingerContact
+  >>> from arboris.shapes import Plane, Sphere
+  >>> w = World()
+  >>> add_simplearm(w)
+  >>> frames = w.getframes()
+  >>> sh1 = Sphere(frames['EndEffector'], radius=.1, name="eeSphere")
+  >>> sh2 = Plane(w.ground, coeffs=(0,1,0,0), name="floor")
+  >>> w.register(sh1)
+  >>> w.register(sh2)
+  >>> contact = SoftFingerContact( (sh1, sh2), .7)
+  >>> w.register(contact)
+  >>> timeline = arange(0.,.01,1e-3)
+  >>> simulate(w, timeline)
+

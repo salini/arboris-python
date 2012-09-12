@@ -20,11 +20,9 @@ Implementation
 Several ideal joints are already implemented:
 
 - :class:`RzJoint` for hinge joints,
-- :class:`RzRyJoint`, :class:`RyRxJoint` and :class:`RzRxJoint` for cardan
-  joints,
+- :class:`RzRyJoint`, :class:`RyRxJoint` and :class:`RzRxJoint` for cardan joints,
 - :class:`RzRyRxJoint` for ball and socket joints,
-- :class:`FreeJoint` for "free" joints, that do not constrain the relative
-  motion.
+- :class:`FreeJoint` for "free" joints, that do not constrain the relative motion.
 
 Let's take the example of an hinge joint, it has 1 dof, and may be parametrized by the angle `q` and its derivative `\dot{q}`. Here we create a joint, with angle of 60 degrees and rotational velocity of 2 radians per second.
 
@@ -39,11 +37,11 @@ Let's take the example of an hinge joint, it has 1 dof, and may be parametrized 
   >>> j.gvel
   array([ 2.])
 
-The relative configuration corresponding to this joint is defined by the homogeneous `H_{01}` is given by ``pose()``
+The relative configuration corresponding to this joint is defined by the homogeneous `\HM_{01}` is given by ``pose()``
 
 .. math::
 
-  H_{rn} =
+  \HM_{rn} =
   \begin{bmatrix}
   cos(q) & -sin(q) & 0 & 0\\
   sin(q) &  cos(q) & 0 & 0\\

@@ -192,8 +192,7 @@ latex_preamble = r"""\providecommand{\SO}{\text{SO}}
 \providecommand{\J}[1][{}]{\vphantom{J}^{#1}\!J}
 \providecommand{\dJ}[1][{}]{\vphantom{J}^{#1}\!\dot{J}}
 \providecommand{\wrench}[1][{}]{\vphantom{W}^{#1}\!W}
-\providecommand{\vect}[2]{\vphantom{#2}^{#1}#2}
-\providecommand{\Ad}[1][{}]{\,\vphantom{Ad}^{#1}\!\!Ad}
+
 \providecommand{\dAd}[1][{}]{\,\vphantom{Ad}^{#1}\!\!\dot{Ad}}
 \providecommand{\GPos}{Q}
 \providecommand{\GPosSet}{\bar{\mathcal{Q}}}
@@ -202,7 +201,25 @@ latex_preamble = r"""\providecommand{\SO}{\text{SO}}
 \providecommand{\GAcc}{\dot{\nu}}
 \providecommand{\GForce}{\gamma}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\tens}[1]   {#1}
+\newcommand{\vect}[1]   {\mbox{\boldmath${#1}$}}
+\newcommand{\argmin}[1] {\underset{#1}{\operatorename{argmin}}}
+\newcommand{\diag}      {\mathop{\mathrm{diag}}}
+\newcommand{\norm}[1]   {\ensuremath{\left\lVert #1 \right\rVert}}
+\newcommand{\tp}        {\ensuremath{^{\mathsf{T}}}}
+\renewcommand{\skew}[1] {\ensuremath{\widehat{#1}}}
+
+\newcommand{\HM}{\ensuremath{\tens{H}}}				%homogenous matrix
+\newcommand{\Rot}{\ensuremath{\tens{R}}}			%rotation matrix
+
+\newcommand{\Frame}[1]{\ensuremath{\Psi_{#1}}}	%frame
 \newcommand{\R}[1]{\ensuremath{\mathbb{R}^{#1}}}
+\newcommand{\Id}[1]{\ensuremath{\tens{I}_{#1}}}
+\newcommand{\In}{\ensuremath{\tens{\mathcal{I}}}}
+
+\newcommand{\Ad}{\ensuremath{\tens{Ad}}}
 """
 
 # Documents to append as an appendix to all manuals.

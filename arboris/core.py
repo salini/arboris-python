@@ -762,9 +762,9 @@ class World(NamedObject):
         viscosity `B_b` and nleffects `N_b` matrices as :
 
         .. math::
-            M &= \sum_b \J[b]_{b/g}^T \; M_b \; \J[b]_{b/g} \\
-            B &= \sum_b \J[b]_{b/g}^T \; B_b \; \J[b]_{b/g} \\
-            N &= \sum_b \J[b]_{b/g}^T
+            M &= \sum_b \J[b]_{b/g}\tp \; M_b \; \J[b]_{b/g} \\
+            B &= \sum_b \J[b]_{b/g}\tp \; B_b \; \J[b]_{b/g} \\
+            N &= \sum_b \J[b]_{b/g}\tp
             \left( M_b \; \dJ[b]_{b/g} + N_b \; \J[b]_{b/g}\right)
 
         If there is no additional constraint (such as contacts) nor actuation
@@ -899,13 +899,13 @@ class World(NamedObject):
 
         This (constraint-free) model must be completed by constraints
         forces `\pre[c]f`, which are mapped to generalized forces
-        by the constraint jacobian `\pre[c]J_c^T`:
+        by the constraint jacobian `\pre[c]J_c\tp`:
 
         .. math::
             \GVel(t+dt)
             &= Y(t)
             \left( \frac{M(t)}{dt} \GVel(t) + \GForce(t)
-                + \sum_{c} \; \pre[c]J_{c}^T(t) \; \pre[c]f(t)
+                + \sum_{c} \; \pre[c]J_{c}\tp(t) \; \pre[c]f(t)
             \right)
 
         one can also define the constraint velocity  as:
@@ -918,7 +918,7 @@ class World(NamedObject):
             \left(
                 \frac{M(t)}{dt} \GVel(t) + \; \GForce(t)
             \right)
-            + \sum_d \; \pre[c]J_c(t) \; Y(t) \; \pre[d]J_d^T(t)
+            + \sum_d \; \pre[c]J_c(t) \; Y(t) \; \pre[d]J_d\tp(t)
             \; \pre[d]f(t)
 
         one can define the (global) constraints velocity `v'`,
@@ -942,7 +942,7 @@ class World(NamedObject):
                 \pre[0]f(t)\\ \vdots \\ \pre[c]f(t) \\ \vdots
             \end{bmatrix}\\
             Y'(t) &=
-            J'(t) \; Y(t) \; J'(t)^T
+            J'(t) \; Y(t) \; J'(t)\tp
 
         and get a synthetic expression:
 
