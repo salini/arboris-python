@@ -1400,8 +1400,11 @@ class Body(NamedObject, Frame):
                                           child_twist)
 
 
-class Observer(object):
+class Observer(NamedObject):
     __metaclass__ = ABCMeta
+
+    def __init__(self, name=None):
+        NamedObject.__init__(self, name)
 
     @abstractmethod
     def init(self, world, timeline):
@@ -1433,6 +1436,11 @@ def simulate(world, timeline, observers=()):
     >>> simulate(w, time)
 
     """
+    if isinstance(observers, dict):
+        observers_list = observers.values()
+    else:
+        observers_list = observers
+
     if world.current_time != timeline[0]:
         warnings.warn('world.current_time != timeline[0]: \
 may become a problem if some conditions depend on world.current_time')

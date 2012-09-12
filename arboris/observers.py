@@ -54,8 +54,8 @@ class EnergyMonitor(Observer):
         >>> #obs.plot()
 
     """
-    def __init__(self):
-        Observer.__init__(self)
+    def __init__(self, name=None):
+        Observer.__init__(self, name)
         self._world = None
         self.time = []
         self.kinetic_energy = []
@@ -126,8 +126,8 @@ class PerfMonitor(Observer):
         >>> #obs.plot()
 
     """
-    def __init__(self, log=False):
-        Observer.__init__(self)
+    def __init__(self, log=False, name=None):
+        Observer.__init__(self, None)
         if log:
             self._logger = logging.getLogger(self.__class__.__name__)
         else:
@@ -178,8 +178,8 @@ class _SaveLogger(Observer):
     """ TODO
     """
     def __init__(self, save_state=False, save_transforms=True,
-                       flat=False, save_model=False):
-        Observer.__init__(self)
+                       flat=False, save_model=False, name=None):
+        Observer.__init__(self, name)
         # what to save
         self._save_state = save_state
         self._save_transforms = save_transforms
@@ -267,8 +267,8 @@ class PickleLogger(_SaveLogger):
     """ TODO
     """
     def __init__(self, filename, mode='wb', save_state=False,
-                 save_transforms=True, flat=False, save_model=False, protocol=0):
-        _SaveLogger.__init__(self, save_state, save_transforms, flat, save_model)
+                 save_transforms=True, flat=False, save_model=False, protocol=0, name=None):
+        _SaveLogger.__init__(self, save_state, save_transforms, flat, save_model, name)
         self._filename = filename
         self._mode = mode
         self._protocol = protocol
@@ -341,8 +341,8 @@ class Hdf5Logger(_SaveLogger):
 
     """
     def __init__(self, filename, group="/", mode='a', save_state=False,
-                 save_transforms=True, flat=False, save_model=False):
-        _SaveLogger.__init__(self, save_state, save_transforms, flat, save_model)
+                 save_transforms=True, flat=False, save_model=False, name=None):
+        _SaveLogger.__init__(self, save_state, save_transforms, flat, save_model, name)
         try:
             self._file = h5py.File(filename, mode)  # hdf5 file handlers
         except NameError:
@@ -370,8 +370,8 @@ class Hdf5Logger(_SaveLogger):
 class SocketCom(Observer):
     """
     """
-    def __init__(self, host="127.0.0.1", port=5000, timeout=3):
-        Observer.__init__(self)
+    def __init__(self, host="127.0.0.1", port=5000, timeout=3, name=None):
+        Observer.__init__(self, name)
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.settimeout(timeout)
         max_port = port + 50
@@ -406,11 +406,11 @@ class SocketCom(Observer):
 class DaenimCom(SocketCom):
     """
     """
-    def __init__(self, daefile=None, daenim_path=None, host="127.0.0.1", port=5000, \
-                 options = "", precision=5, flat=False):
+    def __init__(self, daefile=None, daenim_path=None, host="127.0.0.1", port=5000, timeout=3, \
+                 options = "", precision=5, flat=False, name=None):
         """
         """
-        SocketCom.__init__(self, host, port)
+        SocketCom.__init__(self, host, port, timeout, name)
         
         self.daefile = daefile
 
@@ -480,8 +480,8 @@ class DaenimCom(SocketCom):
 
 
 class VPythonObserver(Observer):
-    def __init__(self, scale=1, options=None, flat=False, color_generator=None):
-        Observer.__init__(self)
+    def __init__(self, scale=1, options=None, flat=False, color_generator=None, name=None):
+        Observer.__init__(self, None)
         try:
             self.driver = VPythonDriver(scale, options)
         except NameError:
