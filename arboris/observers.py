@@ -4,10 +4,12 @@
 __author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>",
               "Joseph SALINI <joseph.salini@gmail.com>")
 
-from numpy import dot, zeros
+from numpy import dot, zeros, arange
 
-from arboris.core import Observer, MovingSubFrame, name_all_elements
+from arboris.core import Observer, MovingSubFrame, name_all_elements, LinearConfigurationSpaceJoint
 from arboris.massmatrix import principalframe
+from arboris.collisions import choose_solver
+from arboris.homogeneousmatrix import iadjoint, dAdjoint
 
 try:
     from pylab import plot, show, legend, xlabel, ylabel, title
@@ -28,6 +30,7 @@ try:
 except ImportError:
     pass
 
+from abc import ABCMeta, abstractmethod, abstractproperty
 
 
 from time import time as _time, sleep
@@ -522,5 +525,170 @@ class VPythonObserver(Observer):
     def finish(self):
         pass
 
+
+
+
+
+from time import time as _time
+
+class CoMObserver(Observer):
+    """
+    """
+    def __init__(self, bodies, compute_Jacobians=True, name=None):
+        Observer.__init__(self, name)
+        self.user_bodies = bodies
+        self.compute_Jacobians = compute_Jacobians
+
+    def init(self, world, timeline):
+        self.H_body_com = []
+        self.mass       = []
+        self.bodies = [b for b in self.user_bodies if b.mass[5,5]>0]
+        for b in self.bodies:
+            self.H_body_com.append(principalframe(b.mass))
+            self.mass.append(b.mass[5,5])
+
+        self.total_mass = sum(self.mass)
+        self._CoMPosition  = zeros(3)
+        self._CoMJacobian  = zeros((3, world.ndof))
+        self._CoMdJacobian = zeros((3, world.ndof))
+        
+        self.total_time = 0.
+        self.tot = len(timeline)-1
+
+    def update(self, dt):
+        self._CoMPosition[:]  = 0.
+        self._CoMJacobian[:]  = 0.
+        self._CoMdJacobian[:] = 0.
+        
+        for i in arange(len(self.bodies)):
+            H_0_com_i = dot(self.bodies[i].pose, self.H_body_com[i])
+            self._CoMPosition += self.mass[i] * H_0_com_i[0:3,3]
+            
+            if self.compute_Jacobians is True:
+                ##### For jacobian
+                H_com_i_com2 = zeros((4,4))       #com2 is aligned with ground
+                H_com_i_com2[0:3, 0:3] = H_0_com_i[0:3,0:3].T
+                H_com_i_com2[3,3] = 1.
+                
+                Ad_com2_body = iadjoint(dot(self.H_body_com[i], H_com_i_com2))
+                self._CoMJacobian[:] += self.mass[i] * dot(Ad_com2_body, self.bodies[i].jacobian)[3:6,:]
+
+                ##### For dJacobian
+                T_com2_body = self.bodies[i].twist.copy()
+                T_com2_body[3:6] = 0.
+                dAd_com2_body = dAdjoint(Ad_com2_body, T_com2_body)
+                dJ_com2 = dot(Ad_com2_body, self.bodies[i].djacobian) + dot(dAd_com2_body, self.bodies[i].jacobian)
+                self._CoMdJacobian[:] += self.mass[i] * dJ_com2[3:6,:]
+
+        self._CoMPosition  /= self.total_mass
+        self._CoMJacobian  /= self.total_mass
+        self._CoMdJacobian /= self.total_mass
+
+    def finish(self):
+        pass
+
+    def get_CoMPosition(self):
+        return self._CoMPosition.copy()
+
+    def get_CoMJacobian(self):
+        return self._CoMJacobian.copy()
+
+    def get_CoMdJacobian(self):
+        return self._CoMdJacobian.copy()
+
+
+class _Recorder(Observer):
+    """
+    """
+    __metaclass__ = ABCMeta
+
+    def __init__(self, name=None):
+        Observer.__init__(self, name)
+
+    def init(self, world, timeline):
+        self._record = [None]*(len(timeline)-1)
+        self._index = 0
+
+    @abstractmethod
+    def update(self, dt):
+        pass
+
+    def save_data(self, data):
+        self._record[self._index] = data
+        self._index += 1
+
+    def finish(self):
+        pass
+
+    def get_record(self):
+        return self._record
+
+
+
+class RecordJointGpos(_Recorder):
+    def __init__(self, joint, name=None):
+        _Recorder.__init__(self, name)
+        self.joint = joint
+
+    def update(self, dt):
+        self.save_data(self.joint.gpos.copy())
+
+class RecordJointGvel(_Recorder):
+    def __init__(self, joint, name=None):
+        _Recorder.__init__(self, name)
+        self.joint = joint
+
+    def update(self, dt):
+        self.save_data(self.joint.gvel.copy())
+
+
+class RecordFramePose(_Recorder):
+    def __init__(self, frame, name=None):
+        _Recorder.__init__(self, name)
+        self.frame = frame
+
+    def update(self, dt):
+        self.save_data(self.frame.pose)
+
+class RecordFrameTwist(_Recorder):
+    def __init__(self, frame, name=None):
+        _Recorder.__init__(self, name)
+        self.frame = frame
+
+    def update(self, dt):
+        self.save_data(self.frame.pose)
+
+
+class RecordConstForce(_Recorder):
+    def __init__(self, const, name=None):
+        _Recorder.__init__(self, name)
+        self.const = const
+
+    def update(self, dt):
+        self.save_data(self.const._force.copy())
+
+
+class RecordDistance(_Recorder):
+    def __init__(self, sh1, sh2, name=None):
+        _Recorder.__init__(self, name)
+        self.shapes, self.solver = choose_solver(sh1, sh2)
+
+    def update(self, dt):
+        dist = self.solver(self.shapes)[0]
+        self.save_data(dist)
+
+
+class RecordCoMPosition(_Recorder):
+    def __init__(self, bodies, name=None):
+        _Recorder.__init__(self, name)
+        self.com_obs = CoMObserver(bodies, compute_Jacobians=False)
+
+    def init(self, world, timeline):
+        _Recorder.init(self, world, timeline)
+        self.com_obs.init(world, timeline)
+
+    def update(self, dt):
+        self.com_obs.update(dt)
+        self.save_data(self.com_obs.get_CoMPosition())
 
 
