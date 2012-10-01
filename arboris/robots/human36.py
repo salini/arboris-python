@@ -201,7 +201,7 @@ def add_human36(world, height=1.741, mass=73, anat_lengths=None, prefix=''):
     :param return_lists: if True, returns of a tuple of the added objects
     :return: None
 
-    **Exemples**
+    **Examples**
 
     >>> w = World()
     >>> # add a normal human
@@ -213,10 +213,10 @@ def add_human36(world, height=1.741, mass=73, anat_lengths=None, prefix=''):
     >>> L['yhandL'] *= .7
     >>> add_human36(w, anat_lengths=L, prefix="Casimodo's ")
     >>> frames = w.getframes()
-
-    >> frames["Bob's Left stylion"].bpose[0:3, 3]
-    >> frames["Bob's Left stylion"].pose[0:3, 3]
-    >> frames["Casimodo's Left stylion"].bpose[0:3, 3]
+    >>>
+    >>> frames["Bob's Left stylion"].bpose[0:3, 3]
+    >>> frames["Bob's Left stylion"].pose[0:3, 3]
+    >>> frames["Casimodo's Left stylion"].bpose[0:3, 3]
 
     """
     assert isinstance(world, World)
@@ -358,7 +358,7 @@ def add_human36(world, height=1.741, mass=73, anat_lengths=None, prefix=''):
     add_tag('Right foot toe tip', 'FootR', [L['xfootR']-L['xheelR']+1e-4*h, -L['yfootR'], 0.])
     add_tag('Right foot heel', 'FootR', [-L['xheelR'], -L['yfootR'], 0.])
     add_tag('Right foot phalange 5', 'FootR', [0.0662*h, -L['yfootR'], 0.0305*h] )
-    add_tag('Right foot Phalange 1', 'FootR', [0.0662*h, -L['yfootR'], -0.0305*h])
+    add_tag('Right foot phalange 1', 'FootR', [0.0662*h, -L['yfootR'], -0.0305*h])
     add_tag('Right foot lateral malleolus', "ShankR", [0., -L['ytibiaR'], 0.0249*h])
     add_tag('Femoral lateral epicondyle', "ThighR", [0., -L['yfemurR'], 0.0290*h])
     add_tag('Right great trochanter', "ThighR", [0., 0., 0.0941*h-L['zhip']/2.])
@@ -387,7 +387,7 @@ def add_human36(world, height=1.741, mass=73, anat_lengths=None, prefix=''):
 
     # Add point shapes to the feet
     for k in ('Right foot toe tip', 'Right foot heel',
-             'Right foot phalange 5', 'Right foot Phalange 1',
+             'Right foot phalange 5', 'Right foot phalange 1',
              'Left foot toe tip','Left foot heel',
               'Left foot phalange 5','Left foot phalange 1'):
         name = prefix + k
