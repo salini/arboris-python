@@ -6,6 +6,7 @@
 from arboris.core import World, simulate, NamedObjectsList
 from numpy import array, arange
 
+
 ########################################################
 ## WORLD BUILDING
 ########################################################
@@ -45,28 +46,52 @@ w.register(WeightController())
 from arboris.visu_collada import write_collada_scene
 write_collada_scene(w, "scene.dae", flat=True)
 
-from arboris.observers import PerfMonitor, Hdf5Logger, DaenimCom
+from arboris.observers import PerfMonitor
 obs = []
 obs.append(PerfMonitor(True))
 
-obs.append(Hdf5Logger("sim.h5", mode="w", flat=True))
-#obs.append(DaenimCom(r"C:\Program Files\ArborisTools\daenim\daenim.exe", "scene.dae", flat=True)) #for Windows
-obs.append(DaenimCom(r"daenim", "scene.dae", flat=True)) #for Linux
+try:
+    from arboris.observers import Hdf5Logger
+    obs.append(Hdf5Logger("sim.h5", mode="w", flat=True))
+except ImportError:
+    print("WARNING: cannot use Hdf5Logger. h5py may not be installed.")
+    print("This module is not mandatory, but useful to save simulation data")
+
+from arboris.observers import PickleLogger
+obs.append(PickleLogger("sim.pkl", mode="wb", flat=True))
+
+try:
+    from arboris.observers import DaenimCom
+    obs.append(DaenimCom("scene.dae", flat=True))
+except:
+    print("WARNING: cannot use DaenimCom. daenim may not be installed.")
+    print("This program is not mandatory, but useful for visualization")
+
+try:
+    from arboris.observers import VPythonObserver
+    obs.append(VPythonObserver())
+except:
+    print("WARNING: cannot use VPythonObserver. vpython may not be installed.")
+    print("This module is not mandatory, but useful for visualization")
 
 
 ########################################################
 ## SIMULATION
 ########################################################
-dt = 2e-2
-simulate(w, arange(0, 2., dt), obs)
+dt = 5e-3
+simulate(w, arange(0, 1., dt), obs)
 
 
 ########################################################
 ## RESULTS
 ########################################################
 
-print obs[0].get_summary()
+print(obs[0].get_summary())
 
 from arboris.visu_collada import write_collada_animation
-write_collada_animation("anim.dae", "scene.dae", "sim.h5")
+try:
+    write_collada_animation("anim_h5.dae", "scene.dae", "sim.h5")
+    write_collada_animation("anim_pkl.dae", "scene.dae", "sim.pkl")
+except:
+    pass
 
