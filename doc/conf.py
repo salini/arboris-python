@@ -192,7 +192,7 @@ latex_preamble = r"""\providecommand{\SO}{\text{SO}}
 \providecommand{\J}[1][{}]{\vphantom{J}^{#1}\!J}
 \providecommand{\dJ}[1][{}]{\vphantom{J}^{#1}\!\dot{J}}
 \providecommand{\wrench}[1][{}]{\vphantom{W}^{#1}\!W}
-
+\providecommand{\Ad}[1][{}]{\,\vphantom{Ad}^{#1}\!\!Ad}
 \providecommand{\dAd}[1][{}]{\,\vphantom{Ad}^{#1}\!\!\dot{Ad}}
 \providecommand{\GPos}{Q}
 \providecommand{\GPosSet}{\bar{\mathcal{Q}}}
@@ -219,7 +219,8 @@ latex_preamble = r"""\providecommand{\SO}{\text{SO}}
 \newcommand{\Id}[1]{\ensuremath{\tens{I}_{#1}}}
 \newcommand{\In}{\ensuremath{\tens{\mathcal{I}}}}
 
-\newcommand{\Ad}{\ensuremath{\tens{Ad}}}
+
+
 """
 
 # Documents to append as an appendix to all manuals.

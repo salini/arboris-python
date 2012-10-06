@@ -11,9 +11,8 @@ tol = 1e-9
 def transl(t_x, t_y, t_z):
     """Homogeneous matrix of a translation.
 
-    INPUT: t_x, t_y, t_z - coordinates of the translation vector in 3d space
-
-    OUTPUT: Homogeneous matrix of the translation
+    :param float t_x, t_y, t_z: coordinates of the translation vector in 3d space
+    :return: ((4,4) array) homogeneous matrix of the translation
 
     Example:
 
@@ -32,7 +31,7 @@ def transl(t_x, t_y, t_z):
 
 
 def rotzyx(angle_z, angle_y, angle_x):
-    """homogeneous transformation matrix from pitch-roll-yaw angles
+    """Homogeneous transformation matrix from pitch-roll-yaw angles
 
     In short:  R = Rz * Ry * Rx
 
@@ -60,7 +59,7 @@ def rotzyx(angle_z, angle_y, angle_x):
 
 
 def rotzy(angle_z, angle_y):
-    """homogeneous transformation matrix from pitch-roll-yaw angles)
+    """Homogeneous transformation matrix from pitch-roll-yaw angles)
 
     In short:  R = Rz * Ry
 
@@ -85,7 +84,7 @@ def rotzy(angle_z, angle_y):
 
 
 def rotzx(angle_z, angle_x):
-    """homogeneous transformation matrix from pitch-roll-yaw angles)
+    """Homogeneous transformation matrix from pitch-roll-yaw angles)
 
     In short:  R = Rz * Rx
 
@@ -110,7 +109,7 @@ def rotzx(angle_z, angle_x):
 
 
 def rotyx(angle_y, angle_x):
-    """homogeneous transformation matrix from pitch-roll-yaw angles)
+    """Homogeneous transformation matrix from pitch-roll-yaw angles)
 
     In short:  R = Ry * Rx
 
@@ -134,8 +133,7 @@ def rotyx(angle_y, angle_x):
          [ 0., 0.   , 0.   , 1.]])
 
 def rotx(angle):
-    """
-    Homogeneous matrix of a rotation around the x-axis
+    """Homogeneous matrix of a rotation around the x-axis
 
     **Example:**
 
@@ -144,7 +142,6 @@ def rotx(angle):
            [ 0.        ,  0.86615809, -0.4997701 ,  0.        ],
            [ 0.        ,  0.4997701 ,  0.86615809,  0.        ],
            [ 0.        ,  0.        ,  0.        ,  1.        ]])
-
     """
     ca = cos(angle)
     sa = sin(angle)
@@ -156,8 +153,7 @@ def rotx(angle):
     return H
 
 def roty(angle):
-    """
-    Homogeneous matrix of a rotation around the y-axis
+    """Homogeneous matrix of a rotation around the y-axis
 
     **Example:**
 
@@ -166,7 +162,6 @@ def roty(angle):
            [ 0.        ,  1.        ,  0.        ,  0.        ],
            [-0.4997701 ,  0.        ,  0.86615809,  0.        ],
            [ 0.        ,  0.        ,  0.        ,  1.        ]])
-
     """
     ca = cos(angle)
     sa = sin(angle)
@@ -178,16 +173,15 @@ def roty(angle):
     return H
 
 def rotz(angle):
-    """
-    Rotation around the z-axis
-    example:
+    """Homogeneous matrix of a rotation around the z-axis
+
+    **Example:**
 
     >>> rotz(3.14/6)
     array([[ 0.86615809, -0.4997701 ,  0.        ,  0.        ],
            [ 0.4997701 ,  0.86615809,  0.        ,  0.        ],
            [ 0.        ,  0.        ,  1.        ,  0.        ],
            [ 0.        ,  0.        ,  0.        ,  1.        ]])
-
     """
     ca = cos(angle)
     sa = sin(angle)
@@ -203,8 +197,7 @@ def zaligned(vec):
 
     :param vec: input vector, assumed to be normalized
     :type vec: (3,) array
-    :return: homogeneous matrix of the frame
-    :rtype: (4,4) array
+    :return: ((4,4) array) homogeneous matrix of the frame
 
     **Example:**
 
@@ -232,8 +225,7 @@ def zaligned(vec):
     return H
 
 def ishomogeneousmatrix(H, _tol=tol):
-    """
-    Return true if input is an homogeneous matrix
+    """Return true if input is an homogeneous matrix.
     """
     return (H.shape == (4, 4)) \
         and (numpy.abs(numpy.linalg.det(H[0:3, 0:3])-1) <= _tol) \
@@ -252,8 +244,7 @@ def vdot(H, vec):
     return dot(H[0:3, 0:3], vec)
 
 def inv(H):
-    """
-    Invert an homogeneous matrix.
+    """Invert an homogeneous matrix.
 
     **Example:**
 
@@ -267,7 +258,6 @@ def inv(H):
            [ 0.        ,  0.50045969, -0.86575984,  2.32696044],
            [-0.70682518,  0.61242835,  0.35401931, -2.09933441],
            [ 0.        ,  0.        ,  0.        ,  1.        ]])
-
     """
     assert ishomogeneousmatrix(H)
     R = H[0:3, 0:3]
@@ -280,13 +270,11 @@ def inv(H):
     return invH
 
 def adjoint(H):
-    """
-    Adjoint (6x6 matrix) of the homogeneous matrix.
+    """Adjoint of the homogeneous matrix.
 
     :param H: homogeneous matrix
-    :type H: 4x4 ndarray
-    :return: adjoint matrix
-    :rtype: 6x6 ndarray
+    :type H: (4,4) array
+    :return: ((6,6) array) adjoint matrix
 
     **Example:**
 
@@ -308,7 +296,6 @@ def adjoint(H):
              0.61242835],
            [-0.9937305 ,  1.50137907,  4.66458577,  0.35373751, -0.86575984,
              0.35401931]])
-
     """
     assert ishomogeneousmatrix(H), H
     R = H[0:3, 0:3]
@@ -328,8 +315,7 @@ def adjoint(H):
 
 
 def iadjoint(H):
-    """
-    Return the adjoint (6x6 matrix) of the inverse homogeneous matrix.
+    """Return the adjoint ((6,6) array) of the inverse homogeneous matrix.
     """
     return adjoint(inv(H))
 
@@ -342,11 +328,12 @@ def dAdjoint(Ad, T):
     Ad = adjoint( H )
     T  = velocity of {b} relative to {a} expressed in {b}
 
-    inputs:
-    Ad: a 6x6 adjoint matrix
-    T: twist vectors(6)
+    :param Ad: adjoint matrix
+    :type Ad: (6,6) array
+    :param T: twist vectors
+    :type T: (6,) array
 
-    return a 6x6 dAdjoint matrix
+    :return: ((6,6) array) dAdjoint matrix
     """
     MT = array([[   0., -T[2],  T[1],    0.,    0.,    0.],
                 [ T[2],    0., -T[0],    0.,    0.,    0.],
@@ -360,8 +347,8 @@ def rotzyx_angles(H):
     """Returns the angles such that `H[0:3, 0:3] = R_z(a_z) R_y(a_y) R_x(a_x)`
 
     :param H: homogeneous matrix
-    :type H: 4x4 ndarray
-    :rtype: 3-tuple
+    :type H: (4,4) array
+    :return: ((3,) array) angles of roll pitch yaw
 
     **Example:**
 

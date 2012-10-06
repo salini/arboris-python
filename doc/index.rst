@@ -8,6 +8,7 @@ Contents:
    :maxdepth: 2
 
    intro
+   install
    quickstart
    rigidmotion
    rigidmechanism
@@ -19,7 +20,6 @@ Contents:
    visu
    modules
    notations
-   install
    devel
    quirks
 

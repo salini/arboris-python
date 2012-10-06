@@ -128,7 +128,8 @@ def plane_point_collision(shapes):
 def _sphere_sphere_collision(p_g0, radius0, p_g1, radius1):
     """
 
-    .. image:: img/sphere_sphere_collision.png
+    .. image:: img/sphere_sphere_collision.svg
+       :width: 300px
 
     **Tests:**
 
@@ -230,7 +231,8 @@ def _box_sphere_collision(H_g0, half_extents0, p_g1, radius1):
     :param radius1: radius of the sphere
     :type radius1: float
 
-    .. image:: img/box_sphere_collision.png
+    .. image:: img/box_sphere_collision.svg
+       :width: 300px
 
     **Tests:**
 

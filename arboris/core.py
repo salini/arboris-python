@@ -266,8 +266,7 @@ class Joint(RigidMotion, NamedObject):
 
 
 class LinearConfigurationSpaceJoint(Joint):
-    """
-    Joints whose configuration space is diffeomorph to R^ndof.
+    """Joints whose configuration space is diffeomorph to `\R{ndof}`.
     """
     def __init__(self, gpos=None, gvel=None, name=None):
         Joint.__init__(self, name)
@@ -926,22 +925,25 @@ class World(NamedObject):
         and admittance matrix `Y'`:
 
         .. math::
-            J'(t) &=
+            v'(t) =
+            \begin{bmatrix}
+                \pre[0]v(t)\\ \vdots \\ \pre[c]v(t) \\ \vdots
+            \end{bmatrix}
+            \hspace{50px}
+            f'(t) =
+            \begin{bmatrix}
+                \pre[0]f(t)\\ \vdots \\ \pre[c]f(t) \\ \vdots
+            \end{bmatrix}
+            \hspace{50px}
+            J'(t) =
             \begin{bmatrix}
                 \pre[0]J_0(t)\\
                 \vdots\\
                 \pre[c]J_c(t)\\
                 \vdots
-            \end{bmatrix}\\
-            v'(t) &=
-            \begin{bmatrix}
-                \pre[0]v(t)\\ \vdots \\ \pre[c]v(t) \\ \vdots
-            \end{bmatrix}\\
-            f'(t) &=
-            \begin{bmatrix}
-                \pre[0]f(t)\\ \vdots \\ \pre[c]f(t) \\ \vdots
-            \end{bmatrix}\\
-            Y'(t) &=
+            \end{bmatrix}
+            \hspace{50px}
+            Y'(t) =
             J'(t) \; Y(t) \; J'(t)\tp
 
         and get a synthetic expression:
@@ -963,7 +965,7 @@ class World(NamedObject):
           updated by `\Delta\pre[c]f`
 
         - eventually add each active constraint generalized force to
-          world :attr:`~arboros.core.World._gforce` property.
+          world :attr:`~arboris.core.World._gforce` property.
 
         TODO: add an example.
 
@@ -1020,18 +1022,18 @@ class World(NamedObject):
         TODO: repair this doctest
         TODO: check the last test result!
 
-        >> w = simplearm()
-        >> joints = w.getjoints()
-        >> joints['Shoulder'].gpos[:] = -1.
-        >> from arboris.controllers import ProportionalDerivativeController
-        >> c0 = ProportionalDerivativeController(w.joints[1:2], 1.)
-        >> w.register(c0)
-        >> w.init()
-        >> w.update_dynamic()
-        >> dt = 0.001
-        >> w.update_controllers(dt)
-        >> w.integrate(dt)
-        >> w._gvel
+        >>> w = simplearm()
+        >>> joints = w.getjoints()
+        >>> joints['Shoulder'].gpos[:] = -1.
+        >>> from arboris.controllers import ProportionalDerivativeController
+        >>> c0 = ProportionalDerivativeController(w.joints[1:2], 1.)
+        >>> w.register(c0)
+        >>> w.init()
+        >>> w.update_dynamic()
+        >>> dt = 0.001
+        >>> w.update_controllers(dt)
+        >>> w.integrate(dt)
+        >>> w._gvel
         array([-0.00709132,  0.03355273, -0.09131555])
         """
         assert dt > 0
@@ -1218,7 +1220,7 @@ class Body(NamedObject, Frame):
         return self
 
     def update_geometric(self, pose):
-        """
+        r"""
         - g: ground body
         - p: parent body
         - c: child body
@@ -1227,8 +1229,9 @@ class Body(NamedObject, Frame):
 
         so H_nc and H_pr are constant.
 
-        H_gc = H_gp * H_pc
-             = H_gp * (H_pr * H_rn * H_nc)
+        .. math::
+            H_gc &= H_{gp} \ H_{pc} \\
+                 &= H_{gp} \ (H_{pr} \ H_{rn} \ H_{nc})
         """
         self._pose = pose
         H_gp = pose
@@ -1273,7 +1276,8 @@ class Body(NamedObject, Frame):
           body
         - `n`: new frame of the joint `j`, rigidly fixed to the child body
 
-        .. image:: img/body_model.png
+        .. image:: img/body_model.svg
+           :width: 300px
 
         One can notice that `H_{nc}` and `H_{pr}` are constant.
 
@@ -1299,7 +1303,7 @@ class Body(NamedObject, Frame):
 
         where  `\twist[n]_{n/r}` isgiven by the joint
         :attr:`~arboris.core.Joint.twist` attribute.
-        \GVel_j is the generalized velocity of the joint `j` and is
+        `\GVel_j` is the generalized velocity of the joint `j` and is
         related to the world generalized velocity by trivial projection
 
         .. math::
@@ -1424,7 +1428,7 @@ def simulate(world, timeline, observers=()):
     """Run a full simulation,
 
     :param world: the world to be simulated
-    :type world: :class:`arboris.core.World`
+    :type world: :class:`~arboris.core.World`
     :param time: a list of distinct times
     :type time: iterable
 

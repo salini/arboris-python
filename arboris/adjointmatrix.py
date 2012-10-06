@@ -2,20 +2,20 @@
 """
 Functions for working with adjoint matrices
 
-H = [ R p
-      0 1 ]
-Ad(H) = [  R   0
-          pxR  R ]
+.. math::
+    H = [ R p
+          0 1 ]
+    Ad(H) = [  R   0
+              pxR  R ]
 """
 __author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 
 
 import numpy as np
 def isadjointmatrix(a):
+    """Return true if a is an adjoint matrix
     """
-    Return true if a is an adjoint matrix
-    """
-#todo: do a better check
+#TODO: do a better check
     return (a.shape == (6, 6)) and (
         np.linalg.det(a[0:3, 0:3])==1) and (
         a[0:3, 0:3]==a[3:6, 3:6]).all() and (
