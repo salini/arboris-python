@@ -667,7 +667,7 @@ def view(scene, hdf5_file=None, hdf5_group="/", daenim_path=None):
         scene_file = tempfile.mkstemp(suffix='anim.dae', text=True)[1]
         write_collada_scene(scene, scene_file)
         subprocess.check_call((daenim_path, scene_file))
-        
+        os.remove(scene_file)
     else:
         if hdf5_file is None:
             subprocess.check_call((daenim_path, scene))
