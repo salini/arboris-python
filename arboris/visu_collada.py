@@ -373,12 +373,12 @@ class ColladaDriver(arboris._visu.DrawerDriver):
             color_id = self._color_id(c)
             lib_materials.append(XML("""
             <material id="{0}" xmlns="{NS}">
-                <instance_effect url="#{0}_fx"/>
+                <instance_effect url="#{0}-fx"/>
             </material>
             """.format(color_id, NS=NS)))
 
             lib_effects.append(XML("""
-            <effect id="{0}_fx" xmlns="{NS}">
+            <effect id="{0}-fx" xmlns="{NS}">
                 <profile_COMMON>
                     <technique sid="blender">
                         <phong>
