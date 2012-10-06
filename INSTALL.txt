@@ -1,45 +1,185 @@
 
-Requirements & Install
+What we use...
+==============
+
+...for the simulation
+---------------------
+
+The program is written in python 2.7. It should work on python 3.2.
+For some tutorial, see `dive into python <http://www.diveintopython.net/>`_.
+
+It requires `numpy <http://numpy.scipy.org/>`_. For Matlab users, see
+`NumPy for Matlab users <http://www.scipy.org/NumPy_for_Matlab_Users>`_.
+
+Numpy supports n-dimensionnal arrays (class :class:`numpy.ndarray`) and
+matrices (built with ``numpy.matrix``) which are 2-d matrices with special
+behavior, similar to the matlab one. In arboris-python we never uses
+matrices, they are evil.
+
+We also use (they are useful but not mandatory):
+
+* `h5py <http://alfven.org/wp/hdf5-for-python/>`_ to store simulation results
+  in the `HDF5 format <http://www.hdfgroup.org/HDF5/>`_,
+* `matplotlib <http://matplotlib.org/>`_ to plot results, like Matlab.
+
+
+...for the visualization
+------------------------
+
+We use 2 different ways to visualize simulations:
+
+* `Vpython <http://www.vpython.org/>`_ which is a python module which can
+  easily be connected with arboris-python.
+* `Daenim <http://www.isir.upmc.fr/?op=view_profil&lang=fr&id=121&pageid=847>`_,
+  which is a program developed in parallel with Arboris-python,
+  dedicated to the visualization of collada files. It can be plugged on
+  Arboris-python as an observer in order to replace Vpython.
+  It allows to display the scene with more complex shapes
+  (by mixing collada files) and to save snapshots to create movies.
+
+
+
+...for the documentation
+------------------------
+
+The documentation is written in the reST markup language and processed
+by sphinx (version >=6). See the sphinx (and reST) documentation
+`online <http://sphinx.pocoo.org/>`_. We use sphinx plugins which allow
+
+* to embed latex in the doc,
+* to parse the docstrings spread in the code,
+* to run the examples with doctest,
+* to generate the uml diagrams using graphviz.
+
+
+
+Installation on Ubuntu
 ======================
 
-Arboris-python requires `numpy <http://numpy.scipy.org/>`_ to compute and
-integrate the model during simulation.
+Installing arboris-python dependancies
+--------------------------------------
 
-The following modules are very useful, but are not mandatory:
+::
 
-*  `Vpython <http://www.vpython.org/>`_ to display and replay simulations,
-*  `Matplotlib <http://matplotlib.sourceforge.net/>`_ to plot some results,
-   in the same manner as Matlab,
-*  `h5py <http://alfven.org/wp/hdf5-for-python/>`_ to save simulation data in
-   hdf5 files, in order to read results with other applications that python.
+  sudo apt-get install  ipython  python-numpy  python-h5py  python-matplotlib python-visual
 
 
-Windows
--------
+Installing arboris-python
+-------------------------
 
-When you have downloaded Arboris-python, open a command prompt in the folder
-and run:
+When you have downloaded Arboris-python, go in the new directory,
+open a terminal and run::
 
-    ``setup.py install``
+  sudo python setup.py install
 
+if you have no administration rights, you can install locally::
 
-Linux
------
-
-When you have downloaded Arboris-python, open a terminal in the folder
-and run:
-
-    ``sudo python setup.py install``
-
-if you have no administration rights, you can install locally:
-
-    ``python setup.py install --user``
+  python setup.py install --user
 
 
-Macintosh
----------
 
-Same method as linux (?).
+
+Installing the tools needed to build the documentation
+------------------------------------------------------
+
+::
+
+  sudo aptitude install python-sphinx graphviz texlive-latex-base dvipng
+
+
+
+For Mac OS 10.6 (Snow Leopard)
+==============================
+
+Installing dependancies
+-----------------------
+
+...manually
+~~~~~~~~~~~
+
+If you choose to install dependancies manually, be aware that VPython
+requires a 32bit version of python.
+See `this page <http://www.vpython.org/contents/download_mac.html>`_ for more
+info.
+Else, do not install VPython (it is not mandatory).
+
+Install...
+
+- `python 2.7 <http://www.python.org/>`_ (or if you want to try, python 3.2),
+- `numpy <http://numpy.scipy.org/>`_; Ensure to choose the same python version,
+- `h5py <http://alfven.org/wp/hdf5-for-python/>`_,
+- `matplotlib <http://matplotlib.org/>`_,
+- `VPython <http://www.vpython.org/>`_.
+
+...from Macports
+~~~~~~~~~~~~~~~~
+
+Mac OS ships with python 2.5, 2.6 and numpy pre-installed. The other
+packages can be easily installed using  `macports <http://www.macports.org>`_::
+
+  sudo port install py27-ipython  py27-numpy  py27-h5py  py27-matplotlib
+
+
+
+Installing arboris-python
+-------------------------
+
+When you have downloaded Arboris-python, go in the new directory,
+open a terminal and run::
+
+  sudo python setup.py install
+
+if you have no administration rights, you can install locally::
+
+  python setup.py install --user
+
+
+
+For windows
+===========
+
+Installing dependancies
+-----------------------
+
+...manually
+~~~~~~~~~~~
+
+Install...
+
+- `python 2.7 <http://www.python.org/>`_, or if you want to try, python 3.2,
+- `numpy <http://numpy.scipy.org/>`_; Ensure to choose the same python version,
+- `h5py <http://alfven.org/wp/hdf5-for-python/>`_,
+- `matplotlib <http://matplotlib.org/>`_,
+- `VPython <http://www.vpython.org/>`_.
+
+For windows 64bits, these modules are available in this unofficial
+`website <http://www.lfd.uci.edu/~gohlke/pythonlibs/>`_.
+
+
+...from Python(x,y)
+~~~~~~~~~~~~~~~~~~~
+
+All these programs (and many others) are conveniently packaged by the
+`Python(x,y) <http://www.pythonxy.com>`_ project, you may install them
+from there.
+
+
+Installing arboris-python
+-------------------------
+
+When you have downloaded Arboris-python, open a command prompt in
+the arboris-python folder (shift + right click on windows 7) and run::
+
+  setup.py install
+
+
+
+
+
+
+
+
+
 
 
 
