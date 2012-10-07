@@ -400,7 +400,7 @@ class SocketCom(Observer):
 
     def finish(self):
         try:
-            self.conn.send(b"close connection")
+            self.conn.send("close_connection")
             self.s.close()
         except socket.error:
             pass
@@ -410,7 +410,7 @@ class DaenimCom(SocketCom):
     """
     """
     def __init__(self, daefile=None, daenim_path=None, host="127.0.0.1", port=5000, timeout=3, \
-                 options = "", precision=5, flat=False, name=None):
+                 options = "", flat=False, name=None):
         """
         """
         SocketCom.__init__(self, host, port, timeout, name)
@@ -423,7 +423,6 @@ class DaenimCom(SocketCom):
         self.app_call = \
               [daenim_path, daefile, "-socket", self.host, str(self.port)] + \
                shlex.split(options)
-        self.precision = precision
         self.flat = flat
         self.world = None
 
@@ -467,18 +466,14 @@ class DaenimCom(SocketCom):
             H = f.pose if self.flat else f.bpose
             msg += self.packing_transform(f.name, H)
 
-
-        msg += b"update done"
         try:
             self.conn.send(msg)
-            self.conn.recv(2)
         except socket.error:
             print("connection lost")
 
 
     def packing_transform(self, _name, _H):
-        bytes_name = _name.encode()     #this convert is made to have compatibility between python2.x and python3.x
-        res = struct.pack('64s12f', bytes_name, *[float(v) for v in _H[0:3, :].reshape(12)])
+        res = " ".join([_name] + map(str, _H[0:3, :].reshape(12)))+"\n"
         return res
 
 
