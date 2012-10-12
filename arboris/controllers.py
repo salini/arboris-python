@@ -46,9 +46,6 @@ class WeightController(Controller):
     def update(self, dt=None):
         gforce = zeros(self._wndof)
         for b in self._bodies:
-            H_bc = principalframe(b.mass)
-            R_gb = b.pose[0:3, 0:3]
-            H_bc[0:3, 0:3] = R_gb.T
             g = dot(Hg.iadjoint(b.pose), self._gravity_dtwist)
             gforce += dot(b.jacobian.T, dot(b.mass, g))
         return (gforce, self.impedance)
