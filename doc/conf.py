@@ -46,7 +46,7 @@ copyright = '2009, Sebastien BARTHELEMY'
 # other places throughout the built documents.
 #
 # The short X.Y version.
-version = '0.1'
+version = '0.2'
 # The full version, including alpha/beta/rc tags.
 # get the release from arboris/__init__.py
 f = open('../VERSION.txt', "r")
