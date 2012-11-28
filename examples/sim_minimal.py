@@ -5,7 +5,7 @@
 
 from arboris.core import World, simulate, NamedObjectsList
 from numpy import array, arange
-
+import os
 
 ########################################################
 ## WORLD BUILDING
@@ -62,17 +62,20 @@ obs.append(PickleLogger("sim.pkl", mode="wb", flat=True))
 
 try:
     from arboris.observers import DaenimCom
+    from arboris.visu_collada import get_daenim_path
+    import subprocess
+    subprocess.Popen([get_daenim_path()]) #check if daenim is installed
     obs.append(DaenimCom("scene.dae", flat=True))
 except:
     print("WARNING: cannot use DaenimCom. daenim may not be installed.")
-    print("This program is not mandatory, but useful for visualization")
+    print("This program is not mandatory, but useful for visualization.")
 
 try:
     from arboris.observers import VPythonObserver
     obs.append(VPythonObserver())
 except:
     print("WARNING: cannot use VPythonObserver. vpython may not be installed.")
-    print("This module is not mandatory, but useful for visualization")
+    print("This module is not mandatory, but useful for visualization.")
 
 
 ########################################################
@@ -90,8 +93,15 @@ print(obs[0].get_summary())
 
 from arboris.visu_collada import write_collada_animation
 try:
-    write_collada_animation("anim_h5.dae", "scene.dae", "sim.h5")
-    write_collada_animation("anim_pkl.dae", "scene.dae", "sim.pkl")
+    if os.path.exists("sim.h5"):
+        write_collada_animation("anim_h5.dae", "scene.dae", "sim.h5")
 except:
-    pass
+    print("Cannot create animation from hdf5 file.")
+
+try:
+    if os.path.exists("sim.pkl"):
+        write_collada_animation("anim_pkl.dae", "scene.dae", "sim.pkl")
+except:
+    print("Cannot create animation from pickle file.")
+
 

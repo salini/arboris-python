@@ -524,8 +524,6 @@ class VPythonObserver(Observer):
 
 
 
-from time import time as _time
-
 class CoMObserver(Observer):
     """
     """
@@ -534,7 +532,7 @@ class CoMObserver(Observer):
         self.user_bodies = bodies
         self.compute_Jacobians = compute_Jacobians
 
-    def init(self, world, timeline):
+    def init(self, world, timeline=None):
         self.H_body_com = []
         self.mass       = []
         self.bodies = [b for b in self.user_bodies if b.mass[5,5]>0]
@@ -546,9 +544,6 @@ class CoMObserver(Observer):
         self._CoMPosition  = zeros(3)
         self._CoMJacobian  = zeros((3, world.ndof))
         self._CoMdJacobian = zeros((3, world.ndof))
-        
-        self.total_time = 0.
-        self.tot = len(timeline)-1
 
     def update(self, dt):
         self._CoMPosition[:]  = 0.
