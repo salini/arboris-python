@@ -646,7 +646,7 @@ class RecordFrameTwist(_Recorder):
         self.frame = frame
 
     def update(self, dt):
-        self.save_data(self.frame.pose)
+        self.save_data(self.frame.twist)
 
 
 class RecordConstForce(_Recorder):
