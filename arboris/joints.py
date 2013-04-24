@@ -58,6 +58,40 @@ class FreeJoint(Joint):
         self.gvel = gvel
         self.gpos = dot(self.gpos, exp( dt*self.gvel))
 
+
+class FixedJoint(Joint):
+
+    """Fixed joint (0-dof)
+    """
+    def __init__(self, name=None):
+        """
+        """
+        Joint.__init__(self, name)
+
+    @property
+    def ndof(self):
+        return 0
+
+    @property
+    def pose(self):
+        return eye(4)
+
+    @property
+    def twist(self):
+        return zeros(6)
+
+    @property
+    def jacobian(self):
+        return zeros((6,0))
+
+    @property
+    def djacobian(self):
+        return zeros((6, 0))
+
+    def integrate(self, gvel, dt):
+        pass
+
+
 class RzRyRxJoint(LinearConfigurationSpaceJoint):
     """Ball and socket (3-dof) joint implemented with 3 serial hinges
 
