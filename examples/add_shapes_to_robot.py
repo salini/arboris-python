@@ -24,11 +24,11 @@ w.register(WeightController())
 ##### Add observers
 from arboris.observers import PerfMonitor, Hdf5Logger
 
-from arboris.visu.dae_writer import write_collada_scene, write_collada_animation, add_shapes_from_dae
+from arboris.visu.dae_writer import write_collada_scene, write_collada_animation, add_shapes_to_dae
 from arboris.visu import wsDaenimCom
 flat = False
 write_collada_scene(w, "./scene.dae", flat=flat)
-add_shapes_from_dae("./scene.dae", "./icub_simple.dae")
+add_shapes_to_dae("./scene.dae", "./icub_simple.dae")
 
 obs = []
 

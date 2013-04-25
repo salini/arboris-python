@@ -41,7 +41,7 @@ write_collada_scene(w, "./scene.dae", flat=flat)
 shapes_info = [
     ["Arm", "icub_simple.dae#head"],                                     # parent frame, child shape node id
     ["Forearm", "icub_simple.dae#head", transl(0,0.3,0)],                # parent frame, child shape node id, H_frame_shape
-    ["EndEffector", "icub_simple.dae",  transl(0,0.3,0), (0.3,0.3,0.3)], # parent frame, child shape file   , H_frame_shape, shape_scale
+    ["EndEffector", "icub_simple.dae#head",  transl(0,0.3,0), (0.3,0.3,0.3)], # parent frame, child shape file   , H_frame_shape, shape_scale
 ]
 add_shapes_to_dae("./scene.dae", shapes_info)     # add argument output_file="out.dae" if you want to keep original dae file
 
@@ -60,7 +60,7 @@ obs.append(h5obs)
 from arboris.core import simulate
 from numpy import arange
 
-timeline = arange(0, 5.00, 0.005)
+timeline = arange(0, .05, 0.005)
 simulate(w, timeline, obs)
 
 

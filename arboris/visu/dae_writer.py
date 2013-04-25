@@ -143,48 +143,33 @@ def write_collada_animation_from_transforms(collada_animation, collada_scene, ti
 
 
 
-
-
-
-
 def add_shapes_to_dae(input_file, added_shapes, output_file=None):
     """
     """
-    def _save_all_geometryNode_dependencies(src_node, dest_dae):
-        if isinstance(src_node, collada.scene.GeometryNode):
-            if src_node.geometry.id not in dest_dae.geometries:
-                print "copy geo:", src_node.geometry.id
-                dest_dae.geometries.append(src_node.geometry)
-            for mat_node in src_node.materials:
-                if mat_node.target.id not in dest_dae.materials:
-                    dest_dae.materials.append(mat_node.target)
-                if mat_node.target.effect.id not in dest_dae.effects:
-                    dest_dae.effects.append(mat_node.target.effect)
-        
-        elif isinstance(src_node, collada.scene.Node):
-            for child in src_node.children:
-                _save_all_geometryNode_dependencies(child, dest_dae)
-        
-        elif isinstance(src_node, collada.scene.Scene):
-            for child in src_node.nodes:
-                _save_all_geometryNode_dependencies(child, dest_dae)
-
-
     if output_file is None:
         output_file = input_file
 
     dae = collada.Collada(input_file)
     dae_nodes = _get_all_nodes(dae.scene)
 
-    if isinstance(added_shapes, str):   #it mean that this is an entire collada file
+    if isinstance(added_shapes, str):
+        #it means that this is an entire collada file
         shapes_dae       = collada.Collada(added_shapes)
         shapes_dae_nodes = _get_all_nodes(shapes_dae.scene)
 
         for node_id, node in dae_nodes.items():
             if node_id in shapes_dae_nodes:
-                child_shape_node = collada.scene.Node("", children = shapes_dae_nodes[node_id].children)
-                node.children.append(child_shape_node)
-                _save_all_geometryNode_dependencies(child_shape_node, dae)
+                #create node that will contain scale, transform and instance_node
+                instance_node = _get_void_node() 
+                node.children.append(instance_node)
+                
+                child_shape_node = collada.scene.Node(_get_good_id_uri(added_shapes+".."+node_id), children = shapes_dae_nodes[node_id].children)
+                
+                _save_all_descendant_geometryNode(child_shape_node, dae)
+                instance_node.children.append(collada.scene.NodeNode(child_shape_node))
+                if child_shape_node.id not in dae.nodes:
+                    dae.nodes.append(child_shape_node)
+
             else:
                 print "warning: cannot find shapes for node: '",node_id, "'"
 
@@ -194,30 +179,41 @@ def add_shapes_to_dae(input_file, added_shapes, output_file=None):
             shape_file, sep, shape_id  = shape_path.partition("#")
             shapes_dae       = collada.Collada(shape_file)
             shapes_dae_nodes = _get_all_nodes(shapes_dae.scene)
-        
-            if parent_node_id not in dae_nodes: #check if parent exist
+
+             #check whether parent exist
+            if parent_node_id not in dae_nodes:
                 print "warning: cannot find node in input file: '", parent_node_id, "'"
-                continue
 
-            if shape_id == "": #it means that user selects all the scene children
-                child_shape_node = collada.scene.Node("", children = shapes_dae.scene.nodes)
-                dae_nodes[parent_node_id].children.append(child_shape_node)
-                _save_all_geometryNode_dependencies(child_shape_node, dae)
-
-            elif shape_id not in shapes_dae_nodes: #check that shape exists
+             #check whether shape exists
+            elif (shape_id != "") and (shape_id not in shapes_dae_nodes):
                 print "warning: cannot find shape in collada file: '", shape_id, "'"
-                continue
-            
-            else:   #in this case, the shape_path is on the form: 'shape_file.dae#shape_id'
-                child_shape_node = collada.scene.Node("", children = shapes_dae_nodes[shape_id].children)
-                dae_nodes[parent_node_id].children.append(child_shape_node)
-                _save_all_geometryNode_dependencies(child_shape_node, dae)
 
-            if len(mesh_info) >= 3:
-                child_shape_node.transforms.append(collada.scene.MatrixTransform(mesh_info[2].flatten())) #add a matrix tranform Node
+            else:
+                 #create node that will contain scale, transform and instance_node
+                instance_node = _get_void_node()
+                dae_nodes[parent_node_id].children.append(instance_node)
 
-            if len(mesh_info) >= 4:
-                child_shape_node.transforms.append(collada.scene.ScaleTransform(*mesh_info[3])) #add a scale tranform Node
+                 #it means that user selects all the scene children
+                if shape_id == "":
+                    child_shape_node = collada.scene.Node(shape_id, children = shapes_dae.scene.nodes)
+
+                #in this case, the shape_path is on the form: 'shape_file.dae#shape_id'
+                else:
+                    child_shape_node = collada.scene.Node(_get_good_id_uri(shape_path), children = shapes_dae_nodes[shape_id].children)
+
+                _save_all_descendant_geometryNode(child_shape_node, dae)
+                instance_node.children.append(collada.scene.NodeNode(child_shape_node))
+                if child_shape_node.id not in dae.nodes:
+                    dae.nodes.append(child_shape_node)
+
+                if len(mesh_info) >= 3:
+                     #add a matrix tranform Node
+                    instance_node.transforms.append(collada.scene.MatrixTransform(mesh_info[2].flatten()))
+
+                if len(mesh_info) >= 4:
+                     #add a scale tranform Node
+                    instance_node.transforms.append(collada.scene.ScaleTransform(*mesh_info[3]))
+
 
     _write_pycollada_in_file(dae, output_file)
 
@@ -244,7 +240,8 @@ def _get_all_nodes(root):
             collect.update( _get_all_nodes(n) )
 
     elif isinstance(root, collada.scene.Node):
-        collect[root.id] = root
+        if root.id is not None:
+            collect[root.id] = root
         for c in root.children:
             collect.update( _get_all_nodes(c) )
     
@@ -252,30 +249,55 @@ def _get_all_nodes(root):
 
 
 
+def _get_void_node(children=None):
+    node = collada.scene.Node("", children=children)
+    node.id = None
+    node.xmlnode.attrib.pop("name", None)
+    node.xmlnode.attrib.pop("id"  , None)
+    return node
 
 
+def _save_all_descendant_geometryNode(src_node, dest_dae):
+    """
+    """
+    if isinstance(src_node, collada.scene.GeometryNode):
+        if src_node.geometry.id not in dest_dae.geometries:
+            dest_dae.geometries.append(src_node.geometry)
+        for mat_node in src_node.materials:
+            if mat_node.target.id not in dest_dae.materials:
+                dest_dae.materials.append(mat_node.target)
+            if mat_node.target.effect.id not in dest_dae.effects:
+                dest_dae.effects.append(mat_node.target.effect)
+    
+    elif isinstance(src_node, collada.scene.Node):
+        for child in src_node.children:
+            _save_all_descendant_geometryNode(child, dest_dae)
+    
+    elif isinstance(src_node, collada.scene.Scene):
+        for child in src_node.nodes:
+            _save_all_descendant_geometryNode(child, dest_dae)
 
 
+def _get_good_id_uri(uri):
+    """
+    """
+    return "node_"+uri.replace("\\", "_").replace("/", "_").replace("#", "..").replace(":", "..")
 
 
 
 class wsDaenimColladaDriver(arboris._visu.DrawerDriver):
-    """ It is a collada driver dedicated to webDaenim, meaning that it produced
+    """ It is a collada driver dedicated to wsDaenim, meaning that it produces
     a light collada, with minimal information.
     """
     def __init__(self, filename, scale=1., options=None):
         """
         """
         arboris._visu.DrawerDriver.__init__(self, scale)
-        self.filename = filename
-        self.dae = collada.Collada()
-        
-        self.ground_node = collada.scene.Node("ground")
-        self.scene = collada.scene.Scene("myscene", [self.ground_node])
-        self.dae.scenes.append(self.scene)
-        self.dae.scene = self.scene
+        self.filename   = filename
+
+        self.dae        = collada.Collada()
         self.shapes_dae = collada.Collada(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'simple_shapes.dae') )
-        
+
         self._materials = {}
         self._matnode_i = 0
         self._names     = []
@@ -283,9 +305,11 @@ class wsDaenimColladaDriver(arboris._visu.DrawerDriver):
     def init(self):
         pass
 
-    def _get_valid_name(self, name):
+    def _get_collada_node(self, name):
         if not name:
-            return ""
+            node = _get_void_node()
+            return node
+
         new_name = name
         if new_name in self._names:
             for i in range(100):
@@ -294,7 +318,8 @@ class wsDaenimColladaDriver(arboris._visu.DrawerDriver):
                     break
             print "warning: name collision: "+name+": modify name to "+new_name
         self._names.append(new_name)
-        return new_name
+        node = collada.scene.Node(new_name)
+        return node
 
     def _set_up_axis(self, up):
         """Add an up_axis element."""
@@ -323,7 +348,7 @@ class wsDaenimColladaDriver(arboris._visu.DrawerDriver):
 
     def _add_new_geometry(self, name, color, geom):
         """ TODO"""
-        node = collada.scene.Node(name)
+        node = self._get_collada_node(name)
         matnode = self._add_new_material(color)
         geom_instance = collada.scene.GeometryNode(geom, [matnode])
         node.children.append(geom_instance)
@@ -331,6 +356,10 @@ class wsDaenimColladaDriver(arboris._visu.DrawerDriver):
 
     def add_ground(self, up):
         self._set_up_axis(up)
+        self.ground_node = collada.scene.Node("ground")
+        self.scene = collada.scene.Scene("myscene", [self.ground_node])
+        self.dae.scenes.append(self.scene)
+        self.dae.scene = self.scene
         return self.ground_node
 
     def finish(self):
@@ -342,15 +371,13 @@ class wsDaenimColladaDriver(arboris._visu.DrawerDriver):
             parent.children.append(child)
 
     def create_transform(self, pose, is_constant, name=None):
-        name = self._get_valid_name(name)
-        node = collada.scene.Node(name)
+        node = self._get_collada_node(name)
         tranform_matrix = collada.scene.MatrixTransform(pose.flatten())
         tranform_matrix.xmlnode.set("sid", "matrix")
         node.transforms.append(tranform_matrix)
         return node
 
     def create_ellipsoid(self, radii, color, name=None):
-        name = self._get_valid_name(name)
         if self.dae.geometries.get("sphere_geometry-mesh") is None:
             self.dae.geometries.append(self.shapes_dae.geometries.get("sphere_geometry-mesh"))
         sphere_geom = self.dae.geometries.get("sphere_geometry-mesh")
@@ -360,7 +387,6 @@ class wsDaenimColladaDriver(arboris._visu.DrawerDriver):
         return node
 
     def create_box(self, half_extents, color, name=None):
-        name = self._get_valid_name(name)
         if self.dae.geometries.get("box_geometry-mesh") is None:
             self.dae.geometries.append(self.shapes_dae.geometries.get("box_geometry-mesh"))
         box_geom = self.dae.geometries.get("box_geometry-mesh")
@@ -370,7 +396,6 @@ class wsDaenimColladaDriver(arboris._visu.DrawerDriver):
         return node
 
     def create_cylinder(self, length, radius, color, name=None):
-        name = self._get_valid_name(name)
         if self.dae.geometries.get("cylinder_geometry-mesh") is None:
             self.dae.geometries.append(self.shapes_dae.geometries.get("cylinder_geometry-mesh"))
         cylinder_geom = self.dae.geometries.get("cylinder_geometry-mesh")
