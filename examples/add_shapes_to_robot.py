@@ -25,7 +25,7 @@ w.register(WeightController())
 from arboris.observers import PerfMonitor, Hdf5Logger
 
 from arboris.visu.dae_writer import write_collada_scene, write_collada_animation, add_shapes_to_dae
-from arboris.visu import wsDaenimCom
+from arboris.visu import pydaenimCom
 flat = False
 write_collada_scene(w, "./scene.dae", flat=flat)
 add_shapes_to_dae("./scene.dae", "./icub_simple.dae")
@@ -33,7 +33,7 @@ add_shapes_to_dae("./scene.dae", "./icub_simple.dae")
 obs = []
 
 pobs = PerfMonitor(True)
-dobs = wsDaenimCom("./scene.dae", flat=flat)
+dobs = pydaenimCom("./scene.dae", flat=flat)
 h5obs = Hdf5Logger("sim.h5", mode="w", flat=flat)
 obs.append(pobs)
 obs.append(dobs)
@@ -45,7 +45,7 @@ obs.append(h5obs)
 from arboris.core import simulate
 from numpy import arange
 
-timeline = arange(0, 1.03, 0.005)
+timeline = arange(0, 1.0, 0.005)
 simulate(w, timeline, obs)
 
 

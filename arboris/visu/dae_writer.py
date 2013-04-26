@@ -8,6 +8,7 @@ import os
 import warnings
 
 from arboris.core import World, name_all_elements
+from arboris.massmatrix import principalframe, transport
 import arboris._visu
 
 import collada
@@ -298,6 +299,10 @@ class wsDaenimColladaDriver(arboris._visu.DrawerDriver):
         self.dae        = collada.Collada()
         self.shapes_dae = collada.Collada(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'simple_shapes.dae') )
 
+        # create library_physics_models
+        self.physics_model = E.physics_model(id="world")
+        self.dae.xmlnode.getroot().append(E.library_physics_models(self.physics_model))
+
         self._materials = {}
         self._matnode_i = 0
         self._names     = []
@@ -408,7 +413,23 @@ class wsDaenimColladaDriver(arboris._visu.DrawerDriver):
         pass
 
     def create_inertia(self, inertia, color, name=""):
-        pass
+        H_body_com  = principalframe(inertia)
+        Mcom        = transport(inertia, H_body_com)
+        mass        = Mcom[5,5]
+        m_o_inertia = Mcom [[0,1,2], [0,1,2]]
+        self.physics_model.append(
+            E.rigid_body(
+                E.technique_common(
+                    E.dynamic("true"),
+                    E.mass(str(mass)),
+                    E.mass_frame(
+                        collada.scene.MatrixTransform(H_body_com.flatten()).xmlnode,
+                    ),
+                    E.inertia(" ".join(map(str, m_o_inertia))),
+                ),
+            sid=name
+            )
+        )
 
     def create_frame_arrows(self):
         pass

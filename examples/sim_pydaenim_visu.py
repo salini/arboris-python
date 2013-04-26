@@ -54,8 +54,8 @@ obs.append(PerfMonitor(True))
 from arboris.observers import PickleLogger
 obs.append(PickleLogger("sim.pkl", mode="wb", flat=True))
 
-from arboris.visu import wsDaenimCom
-obs.append(wsDaenimCom("scene.dae", flat=True))
+from arboris.visu import pydaenimCom
+obs.append(pydaenimCom("scene.dae", flat=True))
 
 
 ########################################################

@@ -7,28 +7,27 @@ moving in a three.js instance...
 """
 
 
-
-import dae_writer
-
-
 from arboris.core import Observer
+
+import pydaenim
+
+from threading import Timer
 import json
 
-import wsdaenim
-from threading import Timer
 
 
-class wsDaenimCom(Observer):
+
+class pydaenimCom(Observer):
     """
     """
     def __init__(self, colladafile, host="localhost", port=5000, timeout=5, flat=False, name=None):
         Observer.__init__(self, name)
         self.flat = flat
         
-        self.websocket = wsdaenim.wsDaenimWebSocket(host, port, timeout)
+        self.websocket = pydaenim.pydaenimWebSocket(host, port, timeout)
         
         kwargs = {"host":self.websocket.host, "port":self.websocket.port}
-        Timer(0.1, wsdaenim.create_wsdaenimPlayer, (colladafile,), kwargs).start()
+        Timer(0.1, pydaenim.create_pydaenimViewer, (colladafile,), kwargs).start()
         
         self.websocket.listen()
 
