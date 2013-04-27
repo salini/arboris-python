@@ -165,6 +165,7 @@ def add_shapes_to_dae(input_file, added_shapes, output_file=None):
                 node.children.append(instance_node)
                 
                 child_shape_node = collada.scene.Node(_get_good_id_uri(added_shapes+".."+node_id), children = shapes_dae_nodes[node_id].children)
+                child_shape_node.transforms.extend( shapes_dae_nodes[node_id].transforms )
                 
                 _save_all_descendant_geometryNode(child_shape_node, dae)
                 instance_node.children.append(collada.scene.NodeNode(child_shape_node))
@@ -211,6 +212,7 @@ def add_shapes_to_dae(input_file, added_shapes, output_file=None):
                 #in this case, the shape_path is on the form: 'shape_file.dae#shape_id'
                 else:
                     child_shape_node = collada.scene.Node(_get_good_id_uri(shape_path), children = shapes_dae_nodes[shape_id].children)
+                    child_shape_node.transforms.extend( shapes_dae_nodes[shape_id].transforms )
 
                 _save_all_descendant_geometryNode(child_shape_node, dae)
                 instance_node.children.append(collada.scene.NodeNode(child_shape_node))

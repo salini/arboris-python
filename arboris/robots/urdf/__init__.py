@@ -8,7 +8,10 @@ from arboris.robots.urdf import urdf_parser
 import arboris
 import arboris.joints
 
+from arboris.homogeneousmatrix import rotz, roty, rotx
+
 import numpy as np
+np.set_printoptions(suppress=True)
 
 import scipy.linalg
 
@@ -25,16 +28,19 @@ def closest_rotation_matrix(Rapp):
 def roll_pitch_yaw_to_rotation_matrix(roll, pitch, yaw):
     """
     """
-    c1,s1 = np.cos(roll) , np.sin(roll)
-    c2,s2 = np.cos(pitch), np.sin(pitch)
-    c3,s3 = np.cos(yaw)  , np.sin(yaw)
+#    c1,s1 = np.cos(roll) , np.sin(roll)
+#    c2,s2 = np.cos(pitch), np.sin(pitch)
+#    c3,s3 = np.cos(yaw)  , np.sin(yaw)
 
-    R = np.array([[c2*c3           , - c2*s3         , s2     ],
-                  [c1*s3 - s1*s2*c3, c1*c3 - s1*s1*s3, - s1*c2],
-                  [s1*s3 - c1*s2*c3, s1*c3 + c1*s2*s3, c1*c2  ]])
+#    R = np.array([[c2*c3           , - c2*s3         , s2     ],
+#                  [c1*s3 - s1*s2*c3, c1*c3 - s1*s1*s3, - s1*c2],
+#                  [s1*s3 - c1*s2*c3, s1*c3 + c1*s2*s3, c1*c2  ]])
 
-    return closest_rotation_matrix(R)
+#    return closest_rotation_matrix(R)
 
+    #R = np.dot( rotx(roll), np.dot( roty(pitch), rotz(yaw) ) )[0:3,0:3]
+    R = np.dot( rotz(yaw), np.dot( roty(pitch), rotx(roll) ) )[0:3,0:3]
+    return R
 
 def rotation_matrix_to_roll_pitch_yaw(R):
     """
@@ -46,7 +52,7 @@ def rotation_matrix_to_roll_pitch_yaw(R):
     return np.array([r, p, y])
 
 
-def to_arboris( obj ):
+def to_arboris( obj , default=None):
     """
     """
     print "obj:", obj.__class__ #, obj
@@ -59,8 +65,12 @@ def to_arboris( obj ):
 
     elif isinstance(obj, urdf_parser.Inertial):
         m = obj.mass
+        H_com_body = to_arboris(obj.origin, np.eye(4))
         xx, yy, zz, xy, xz, yz = [obj.matrix["i"+n] for n in ["xx", "yy", "zz", "xy", "xz", "yz"]]
-        H_com_body = to_arboris(obj.origin)
+        m  = max(1e-6, m)
+        xx = max(1e-6, xx)
+        yy = max(1e-6, yy)
+        zz = max(1e-6, zz)
         M_com = np.array([[xx, xy, xz, 0., 0., 0.],
                           [xy, yy, yz, 0., 0., 0.],
                           [xz, yz, zz, 0., 0., 0.],
@@ -78,7 +88,7 @@ def to_arboris( obj ):
         joint = {}
         joint["parent"]         = obj.parent
         joint["child"]          = obj.child
-        joint["H_parent_child"] = to_arboris(obj.origin)
+        joint["H_parent_child"] = to_arboris(obj.origin, np.eye(4))
         axis = map(float, obj.axis.split()) if len(obj.axis.split())==3 else obj.axis
 
         if   obj.joint_type == urdf_parser.Joint.REVOLUTE:
@@ -90,7 +100,7 @@ def to_arboris( obj ):
                 joint["type"] = arboris.joints.RzJoint(name=obj.name)
             else:
                 joint["H_child_joint"] = arboris.homogeneousmatrix.zaligned(axis)
-                joint["type"]          = arboris.joints.RzJoint(obj.name)
+                joint["type"]          = arboris.joints.RzJoint(name=obj.name)
 
         elif obj.joint_type == urdf_parser.Joint.PRISMATIC:
             if   (axis in ["x", "X"]) or ( np.allclose(axis, [1,0,0])):
@@ -101,7 +111,7 @@ def to_arboris( obj ):
                 joint["type"] = arboris.joints.TzJoint(name=obj.name)
             else:
                 joint["H_child_joint"] = arboris.homogeneousmatrix.zaligned(axis)
-                joint["type"]          = arboris.joints.TzJoint(obj.name)
+                joint["type"]          = arboris.joints.TzJoint(name=obj.name)
         
         elif obj.joint_type == urdf_parser.Joint.FIXED:
             joint["type"] = arboris.joints.FixedJoint(name=obj.name)
@@ -117,13 +127,13 @@ def to_arboris( obj ):
 
     elif isinstance(obj, urdf_parser.Visual):
         visual              = to_arboris(obj.geometry)
-        visual["transform"] = to_arboris(obj.origin)
+        visual["transform"] = to_arboris(obj.origin, np.eye(4))
         #material     = to_arboris(obj.material)
         return visual
 
     elif isinstance(obj, urdf_parser.Collision):
         collision              = to_arboris(obj.geometry)
-        collision["transform"] = to_arboris(obj.origin)
+        collision["transform"] = to_arboris(obj.origin, np.eye(4))
         return collision
 
     elif isinstance(obj, urdf_parser.Mesh):
@@ -146,6 +156,9 @@ def to_arboris( obj ):
         scale     = [obj.radius, obj.radius, obj.length]
         return {"mesh": mesh_path,  "scale": scale}
 
+    elif isinstance(obj, None.__class__):
+        if default is not None:
+            return default
 
     else:
         print "WARNING: Cannot load object", obj.__class__, obj
@@ -205,7 +218,7 @@ class URDFConverter(object):
 
             if "H_child_joint" in joint: # it means the the axis is not along x, y or z
                 H_parent_joint = np.dot( joint["H_parent_child"], joint["H_child_joint"])
-                H_joint_child  = joint["H_child_joint"]
+                H_child_joint  =         joint["H_child_joint"]
                 parent_joint_frame = arboris.core.SubFrame( parent, H_parent_joint )
                 child_joint_frame  = arboris.core.SubFrame( child,  H_child_joint  )
             else:
@@ -247,7 +260,6 @@ class URDFConverter(object):
                 if ("mesh" not in body_shape):
                     body_shape["mesh"] = urdf_path + body_shape["mesh_from_urdf"]
 
-                print body_shape["frame"], body_shape["mesh"]
                 visual_mapping.append( body_shape )
 
         return visual_mapping
