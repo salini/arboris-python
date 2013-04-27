@@ -279,4 +279,25 @@ class URDFConverter(object):
 
         return visual_mapping
 
+    def get_collision_shapes(self):
+        """
+        """
+        visual_mapping = []
+        urdf_path = os.path.dirname(self.urdf_file_name) + os.sep
+
+        for body_name, urdf_body in self.robot.links.items():
+            name = self.prefix + body_name + self.suffix
+
+            if urdf_body.collision is not None:
+
+                body_shape = to_arboris(urdf_body.collision)
+                body_shape["frame"] = name
+
+                if ("mesh" not in body_shape):
+                    body_shape["mesh"] = urdf_path + body_shape["mesh_from_urdf"]
+
+                visual_mapping.append( body_shape )
+
+        return visual_mapping
+
 
