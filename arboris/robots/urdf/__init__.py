@@ -7,38 +7,27 @@ from arboris.robots.urdf import urdf_parser
 
 import arboris
 import arboris.joints
+import arboris.shapes
 
 from arboris.homogeneousmatrix import rotz, roty, rotx
 
 import numpy as np
 np.set_printoptions(suppress=True)
 
-import scipy.linalg
+#import scipy.linalg
 
 import os
 
 import arboris.visu
 arboris_simple_shapes_path = os.path.dirname(arboris.visu.__file__) + os.sep + "simple_shapes.dae"
 
-
-def closest_rotation_matrix(Rapp):
-    return np.dot(Rapp,  np.linalg.inv( scipy.linalg.sqrtm(np.dot(Rapp.T, Rapp)) ) )
+#def closest_rotation_matrix(Rapp):
+#    return np.dot(Rapp,  np.linalg.inv( scipy.linalg.sqrtm(np.dot(Rapp.T, Rapp)) ) )
 
 
 def roll_pitch_yaw_to_rotation_matrix(roll, pitch, yaw):
     """
     """
-#    c1,s1 = np.cos(roll) , np.sin(roll)
-#    c2,s2 = np.cos(pitch), np.sin(pitch)
-#    c3,s3 = np.cos(yaw)  , np.sin(yaw)
-
-#    R = np.array([[c2*c3           , - c2*s3         , s2     ],
-#                  [c1*s3 - s1*s2*c3, c1*c3 - s1*s1*s3, - s1*c2],
-#                  [s1*s3 - c1*s2*c3, s1*c3 + c1*s2*s3, c1*c2  ]])
-
-#    return closest_rotation_matrix(R)
-
-    #R = np.dot( rotx(roll), np.dot( roty(pitch), rotz(yaw) ) )[0:3,0:3]
     R = np.dot( rotz(yaw), np.dot( roty(pitch), rotx(roll) ) )[0:3,0:3]
     return R
 
@@ -55,7 +44,7 @@ def rotation_matrix_to_roll_pitch_yaw(R):
 def to_arboris( obj , default=None):
     """
     """
-    print "obj:", obj.__class__ #, obj
+    #print "obj:", obj.__class__ #, obj
     
     if   isinstance(obj, urdf_parser.Link):
         body = arboris.core.Body()
@@ -139,22 +128,22 @@ def to_arboris( obj , default=None):
     elif isinstance(obj, urdf_parser.Mesh):
         mesh_path = obj.filename
         scale = 1 if obj.scale is None else map(float, obj.scale.split())
-        return {"mesh_from_urdf": mesh_path,  "scale": scale}
+        return {"shape": None, "mesh_from_urdf": mesh_path,  "scale": scale}
 
     elif isinstance(obj, urdf_parser.Box):
         mesh_path = arboris_simple_shapes_path + "#simple_box_node"
         scale     = obj.dims
-        return {"mesh": mesh_path,  "scale": scale}
+        return {"shape": "box", "mesh": mesh_path,  "scale": scale}
 
     elif isinstance(obj, urdf_parser.Sphere):
         mesh_path = arboris_simple_shapes_path + "#simple_sphere_node"
         scale     = obj.radius
-        return {"mesh": mesh_path,  "scale": scale}
+        return {"shape": "sphere", "mesh": mesh_path,  "scale": scale}
 
     elif isinstance(obj, urdf_parser.Cylinder):
         mesh_path = arboris_simple_shapes_path + "#simple_cylinder_node"
         scale     = [obj.radius, obj.radius, obj.length]
-        return {"mesh": mesh_path,  "scale": scale}
+        return {"shape": "cylinder", "mesh": mesh_path,  "scale": scale}
 
     elif isinstance(obj, None.__class__):
         if default is not None:
@@ -199,14 +188,40 @@ class URDFConverter(object):
         if self.robot is None:
             raise ValueError, "no URDF file has been loaded"
 
+        # save all bodies
         for body_name, urdf_body in self.robot.links.items():
             name = self.prefix + body_name + self.suffix
 
             body = to_arboris(urdf_body)
             body.name = name
-
             list_of_bodies[name] = body
 
+        # save all shapes for collision; we only want physics shapes, not visual shapes
+        # visual shapes can be loaded later with function 'get_visual_shapes'
+        for body_name, urdf_body in self.robot.links.items():
+            name = self.prefix + body_name + self.suffix
+
+            collision = to_arboris(urdf_body.collision, None)
+            
+            if collision and (collision["shape"] is not None):
+
+                H_body_shape = collision["transform"]
+                shape_frame = arboris.core.SubFrame( list_of_bodies[name], H_body_shape )
+
+                if   collision["shape"] == "box":
+                    half_dims = np.array(collision["scale"])/2.
+                    shape = arboris.shapes.Box( shape_frame, half_dims )
+                elif collision["shape"] == "sphere":
+                    radius = collision["scale"]
+                    shape = arboris.shapes.Sphere( shape_frame, radius )
+                elif collision["shape"] == "cylinder":
+                    length = collision["scale"][2]
+                    radius = collision["scale"][0]
+                    shape = arboris.shapes.Cylinder( shape_frame, length, radius )
+
+                world.register(shape)
+
+        # save all joints
         for joint_name, urdf_joint in self.robot.joints.items():
             name = self.prefix + joint_name + self.suffix
 
@@ -228,7 +243,7 @@ class URDFConverter(object):
 
             world.add_link( parent_joint_frame, joint["type"], child_joint_frame )
 
-
+        # connect the root robot with the ground frame
         root_body = list_of_bodies[self.robot.get_root()]
         ground = world.ground
         if self.H_init is not None:
