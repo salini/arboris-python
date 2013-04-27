@@ -176,7 +176,17 @@ def add_shapes_to_dae(input_file, added_shapes, output_file=None):
 
     else:
         for mesh_info in added_shapes:
-            parent_node_id, shape_path = mesh_info[0:2]
+        
+            if isinstance(mesh_info, dict):
+                mesh_data = [mesh_info["frame"], mesh_info["mesh"]]
+                if "transform" in mesh_info:
+                    mesh_data.append(mesh_info["transform"])
+                if "scale" in mesh_info:
+                    mesh_data.append(mesh_info["scale"])
+            else:
+                mesh_data = mesh_info
+
+            parent_node_id, shape_path = mesh_data[0:2]
             shape_file, sep, shape_id  = shape_path.partition("#")
             shapes_dae       = collada.Collada(shape_file)
             shapes_dae_nodes = _get_all_nodes(shapes_dae.scene)
@@ -207,13 +217,17 @@ def add_shapes_to_dae(input_file, added_shapes, output_file=None):
                 if child_shape_node.id not in dae.nodes:
                     dae.nodes.append(child_shape_node)
 
-                if len(mesh_info) >= 3:
-                     #add a matrix tranform Node
-                    instance_node.transforms.append(collada.scene.MatrixTransform(mesh_info[2].flatten()))
+                if len(mesh_data) >= 3:
+                    #add a matrix tranform Node
+                    H_frame_shape = mesh_data[2]
+                    instance_node.transforms.append(collada.scene.MatrixTransform(H_frame_shape.flatten()))
 
-                if len(mesh_info) >= 4:
-                     #add a scale tranform Node
-                    instance_node.transforms.append(collada.scene.ScaleTransform(*mesh_info[3]))
+                if len(mesh_data) >= 4:
+                    #add a scale tranform Node
+                    scale = mesh_data[3]
+                    if isinstance(scale, (int, float, long)):
+                        scale = [scale]*3
+                    instance_node.transforms.append(collada.scene.ScaleTransform(*scale))
 
 
     _write_pycollada_in_file(dae, output_file)
