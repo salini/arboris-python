@@ -46,7 +46,7 @@ HuMAnS_tags = (
         'Right foot toe tip', # HuMAnS id: 1
         'Right foot heel', # HuMAnS id: 2
         'Right foot phalange 5', # HuMAnS id: 3
-        'Right foot Phalange 1', # HuMAnS id: 4
+        'Right foot phalange 1', # HuMAnS id: 4
         'Right foot lateral malleolus', # HuMAnS id: 5
         'Femoral lateral epicondyle', # HuMAnS id: 6
         'Right great trochanter', # HuMAnS id: 7

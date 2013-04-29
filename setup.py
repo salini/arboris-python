@@ -1,9 +1,12 @@
 # coding: utf-8
 __author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 
-from distutils.core import setup
+from distutils.core import setup, Command
 import os.path
 import subprocess
+
+import os, sys, string, shutil, errno
+from site import USER_BASE
 
 def get_version():
     """
@@ -53,6 +56,7 @@ def get_version():
         version = get_version_from_file()
     return version
 
+
 cmdclass = {}
 try:
     # add a command for building the html doc
@@ -61,7 +65,57 @@ try:
 except ImportError:
     pass
 
-readme = open('README.txt', 'r')
+
+def force_symlink(file1, file2):
+    try:
+        os.symlink(file1, file2)
+    except OSError, e:
+        if e.errno == errno.EEXIST:
+            shutil.rmtree(file2)
+            os.symlink(file1, file2)
+
+class develop(Command):
+    description = "Create symbolic link instead of installing files"
+    user_options = [
+            ('prefix=', None, "installation prefix"),
+            ('uninstall', None, "uninstall development files")
+            ]
+
+    def initialize_options(self):
+        self.prefix = None
+        self.uninstall = 0
+
+    def finalize_options(self):
+        self.py_version = (string.split(sys.version))[0]
+        if self.prefix is None:
+            self.prefix = USER_BASE
+        self.prefix = os.path.expanduser(self.prefix)
+
+    def run(self):
+        out_dir = os.path.join(self.prefix, "lib", "python"+self.py_version[0:3], "site-packages")
+        if not os.path.isdir(out_dir):
+            os.makedirs(out_dir)
+
+        out_dir = os.path.join(out_dir, "arboris")
+        src_dir = os.path.join(os.getcwd(), "arboris" )
+        if self.uninstall == 1:
+            if os.path.islink(out_dir):
+                print "Removing symlink "+out_dir
+                os.remove(out_dir)
+            else:
+                print "Not in dev mode, nothing to do"
+        else:
+            if os.path.islink(out_dir):
+                print "Already in dev mode"
+            else:
+                print "Creating symlink "+src_dir+" -> "+out_dir
+                force_symlink(src_dir, out_dir)
+
+cmdclass['develop'] = develop
+
+
+
+readme = open('README.md', 'r')
 setup(name='arboris',
       version=get_version(),
       maintainer=unicode('Joseph SALINI & Sébastien BARTHÉLEMY', 'utf-8'),
@@ -83,6 +137,6 @@ setup(name='arboris',
               'Operating System :: OS Independent',
               'Programming Language :: Python',
               'Topic :: Scientific/Engineering :: Physics'],
-        requires=['numpy'],
+        requires=['numpy', 'pycollada', 'pydaenim'],
       cmdclass=cmdclass)
 readme.close()
