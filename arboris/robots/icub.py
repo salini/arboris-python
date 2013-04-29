@@ -347,7 +347,6 @@ def add(w, is_fixed=False, create_shapes=True, create_contacts=True):
     if create_contacts is True:
         ## contact shapes creation
         for name, data in shapes_data.items():
-            print name
             parent, dims, Hpf = data
             sf = SubFrame(bodies[parent], Hpf, name=name)
             if len(dims) == 3:      # check the type of shape: len =3: box
