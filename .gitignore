@@ -9,3 +9,6 @@
 /VERSION.txt
 /build/
 /dist/
+
+*.dae
+*.h5

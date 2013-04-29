@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 
 """
-This thest_arboris_coonection is a test to create an Arboris observer to
-communicate with a html page. This page will be update to show the robot
-moving in a three.js instance...
 """
 
 
@@ -14,7 +11,10 @@ import pydaenim
 from threading import Timer
 import json
 
-
+from arboris.core import World
+from   arboris.visu.dae_writer import write_collada_scene
+import tempfile
+import os
 
 
 class pydaenimCom(Observer):
@@ -66,3 +66,22 @@ class pydaenimCom(Observer):
 
     def finish(self):
         pass
+
+
+
+def view(world, browser=None, **kwargs):
+    """
+    """
+    if isinstance(world, World):
+
+        tempdir = tempfile.gettempdir()
+        collada_path = tempdir+os.sep+"temp_scene.dae"
+
+        write_collada_scene(world, collada_path)
+
+    elif isinstance(world, basestring):
+        collada_path = world
+
+    pydaenim.create_pydaenimViewer(collada_path, browser, **kwargs)
+
+
