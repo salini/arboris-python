@@ -8,6 +8,7 @@ from arboris.robots.urdf import urdf_parser
 import arboris
 import arboris.joints
 import arboris.shapes
+import arboris.constraints
 
 from arboris.homogeneousmatrix import rotz, roty, rotx
 
@@ -82,32 +83,32 @@ def to_arboris( obj , default=None):
 
         if   obj.joint_type == urdf_parser.Joint.REVOLUTE:
             if   (axis in ["x", "X"]) or ( np.allclose(axis, [1,0,0])):
-                joint["type"] = arboris.joints.RxJoint(name=obj.name)
+                joint["type"] = arboris.joints.RxJoint
             elif (axis in ["y", "Y"]) or ( np.allclose(axis, [0,1,0])):
-                joint["type"] = arboris.joints.RyJoint(name=obj.name)
+                joint["type"] = arboris.joints.RyJoint
             elif (axis in ["z", "Z"]) or ( np.allclose(axis, [0,0,1])):
-                joint["type"] = arboris.joints.RzJoint(name=obj.name)
+                joint["type"] = arboris.joints.RzJoint
             else:
                 joint["H_child_joint"] = arboris.homogeneousmatrix.zaligned(axis)
-                joint["type"]          = arboris.joints.RzJoint(name=obj.name)
+                joint["type"]          = arboris.joints.RzJoint
 
         elif obj.joint_type == urdf_parser.Joint.PRISMATIC:
             if   (axis in ["x", "X"]) or ( np.allclose(axis, [1,0,0])):
-                joint["type"] = arboris.joints.TxJoint(name=obj.name)
+                joint["type"] = arboris.joints.TxJoint
             elif (axis in ["y", "Y"]) or ( np.allclose(axis, [0,1,0])):
-                joint["type"] = arboris.joints.TyJoint(name=obj.name)
+                joint["type"] = arboris.joints.TyJoint
             elif (axis in ["z", "Z"]) or ( np.allclose(axis, [0,0,1])):
-                joint["type"] = arboris.joints.TzJoint(name=obj.name)
+                joint["type"] = arboris.joints.TzJoint
             else:
                 joint["H_child_joint"] = arboris.homogeneousmatrix.zaligned(axis)
-                joint["type"]          = arboris.joints.TzJoint(name=obj.name)
+                joint["type"]          = arboris.joints.TzJoint
         
         elif obj.joint_type == urdf_parser.Joint.FIXED:
-            joint["type"] = arboris.joints.FixedJoint(name=obj.name)
+            joint["type"] = arboris.joints.FixedJoint
 
         elif obj.joint_type == urdf_parser.Joint.FLOATING:
             print "WARNING: urdf containt free joint; this joint is deprecated."
-            joint["type"] = arboris.joints.FreeJoint(name=obj.name)
+            joint["type"] = arboris.joints.FreeJoint
 
         else:
             raise KeyError, "Joint type: '"+obj.joint_type+"' is unknown or not not implemented yet."
@@ -128,7 +129,7 @@ def to_arboris( obj , default=None):
     elif isinstance(obj, urdf_parser.Mesh):
         mesh_path = obj.filename
         scale = 1 if obj.scale is None else map(float, obj.scale.split())
-        return {"shape": None, "mesh_from_urdf": mesh_path,  "scale": scale}
+        return {"shape": "mesh", "mesh_from_urdf": mesh_path,  "scale": scale}
 
     elif isinstance(obj, urdf_parser.Box):
         mesh_path = arboris_simple_shapes_path + "#simple_box_node"
@@ -157,7 +158,7 @@ def to_arboris( obj , default=None):
 class URDFConverter(object):
     """
     """
-    def __init__(self, urdf_file_name=None, world=None, H_init=None, fixed_base=False, prefix="", suffix="", root_joint_name="root_joint"):
+    def __init__(self, urdf_file_name=None, world=None, H_init=None, fixed_base=False, prefix="", suffix="", root_joint_name="root_joint", save_joint_limits=True):
         """
         """
         self.urdf_file_name = urdf_file_name
@@ -167,7 +168,8 @@ class URDFConverter(object):
 
         self.prefix = prefix
         self.suffix = suffix
-        self.root_joint_name = root_joint_name
+        self.root_joint_name   = root_joint_name
+        self.save_joint_limits = save_joint_limits
 
         if urdf_file_name is not None:
             self.parseURDF(urdf_file_name)
@@ -190,20 +192,18 @@ class URDFConverter(object):
 
         # save all bodies
         for body_name, urdf_body in self.robot.links.items():
+
             name = self.prefix + body_name + self.suffix
 
             body = to_arboris(urdf_body)
             body.name = name
             list_of_bodies[name] = body
 
-        # save all shapes for collision; we only want physics shapes, not visual shapes
-        # visual shapes can be loaded later with function 'get_visual_shapes'
-        for body_name, urdf_body in self.robot.links.items():
-            name = self.prefix + body_name + self.suffix
-
+            # save all shapes for collision; we only want physical shapes, not visual shapes
+            # visual shapes can be loaded later with function 'get_visual_shapes'
             collision = to_arboris(urdf_body.collision, None)
             
-            if collision and (collision["shape"] is not None):
+            if collision and (collision["shape"] is not "mesh"):
 
                 H_body_shape = collision["transform"]
                 shape_frame = arboris.core.SubFrame( list_of_bodies[name], H_body_shape )
@@ -221,15 +221,17 @@ class URDFConverter(object):
 
                 world.register(shape)
 
+
         # save all joints
         for joint_name, urdf_joint in self.robot.joints.items():
+
             name = self.prefix + joint_name + self.suffix
 
             joint = to_arboris(urdf_joint)
             joint["type"].name = name
 
             parent = list_of_bodies[joint["parent"]]
-            child  = list_of_bodies[joint["child"]]
+            child  = list_of_bodies[joint["child"] ]
 
             if "H_child_joint" in joint: # it means the the axis is not along x, y or z
                 H_parent_joint = np.dot( joint["H_parent_child"], joint["H_child_joint"])
@@ -241,11 +243,29 @@ class URDFConverter(object):
                 parent_joint_frame = arboris.core.SubFrame( parent, H_parent_joint )
                 child_joint_frame  = child
 
-            world.add_link( parent_joint_frame, joint["type"], child_joint_frame )
+            joint_instance = joint["type"](name=name)
+            world.add_link( parent_joint_frame, joint_instance, child_joint_frame )
 
-        # connect the root robot with the ground frame
+            # save all joints limits if it has been requested
+            if self.save_joint_limits is True:
+
+                if urdf_joint.joint_type in [urdf_parser.Joint.REVOLUTE, urdf_parser.Joint.PRISMATIC]:
+                    lower = urdf_joint.limits.lower
+                    upper = urdf_joint.limits.upper
+                    
+                    if (lower is not None) and (upper is not None):
+                        constraint = arboris.constraints.JointLimits(joint_instance, lower, upper)
+                        
+                        world.register(constraint)
+
+                else:
+                    print "WARNING: cannot save joint limit constraint for joint "+joint_name+" ("+urdf_joint.joint_type+")"
+
+
+        # connect the root body of the robot with the ground frame
         root_body = list_of_bodies[self.robot.get_root()]
         ground = world.ground
+
         if self.H_init is not None:
             ground = arboris.core.SubFrame( world.ground, self.H_init)
 
@@ -299,5 +319,47 @@ class URDFConverter(object):
                 visual_mapping.append( body_shape )
 
         return visual_mapping
+
+
+    def get_joint_limits(self):
+        """
+        """
+        joint_limits = {}
+
+        for joint_name, urdf_joint in self.robot.joints.items():
+
+            name = self.prefix + joint_name + self.suffix
+
+            lower = urdf_joint.limits.lower
+            upper = urdf_joint.limits.upper
+            if (lower is not None) and (upper is not None):
+                joint_limits[name] = (lower, upper)
+
+        return joint_limits
+
+    def get_effort_limits(self):
+        """
+        """
+        effort_limits = {}
+
+        for joint_name, urdf_joint in self.robot.joints.items():
+
+            name = self.prefix + joint_name + self.suffix
+            effort_limits[name] = urdf_joint.limits.effort
+
+        return joint_limits
+
+    def get_velocity_limits(self):
+        """
+        """
+        velocity_limits = {}
+
+        for joint_name, urdf_joint in self.robot.joints.items():
+
+            name = self.prefix + joint_name + self.suffix
+            velocity_limits[name] = urdf_joint.limits.velocity
+
+        return velocity_limits
+
 
 
