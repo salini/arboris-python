@@ -53,7 +53,7 @@ class pydaenimCom(Observer):
 
         for f in self.world.itermovingsubframes():
             H = f.pose if self.flat else f.bpose
-            frame_dict[f.name] =  list(H.pose[0:3, :].reshape(12))
+            frame_dict[f.name] =  list(H[0:3, :].reshape(12))
 
         msg_list.append(frame_dict)
         msg = json.dumps(msg_list, separators=(',',':'))
