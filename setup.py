@@ -115,7 +115,7 @@ cmdclass['develop'] = develop
 
 
 
-readme = open('README.md', 'r')
+readme = open('README.txt', 'r')
 setup(name='arboris',
       version=get_version(),
       maintainer=unicode('Joseph SALINI & Sébastien BARTHÉLEMY', 'utf-8'),
@@ -126,8 +126,11 @@ setup(name='arboris',
       long_description=unicode(readme.read(), 'utf-8'),
       license='LGPL',
       packages=['arboris',
-                'arboris.robots'],
-      package_data={'arboris': ['shapes.dae', 'scene.dae']},
+                'arboris.robots',
+                'arboris.robots.urdf',
+                'arboris.visu'],
+      package_data={'arboris': ['shapes.dae', 'scene.dae'],
+                    'arboris.visu': ['simple_shapes.dae']},
       classifiers=[
               'Development Status :: 4 - Beta',
               'Environment :: Console',
