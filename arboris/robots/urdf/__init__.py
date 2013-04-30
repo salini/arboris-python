@@ -10,7 +10,7 @@ import arboris.joints
 import arboris.shapes
 import arboris.constraints
 
-from arboris.homogeneousmatrix import rotz, roty, rotx
+from arboris.homogeneousmatrix import rotzyx, rotzyx_angles
 
 import numpy as np
 np.set_printoptions(suppress=True)
@@ -29,17 +29,17 @@ arboris_simple_shapes_path = os.path.dirname(arboris.visu.__file__) + os.sep + "
 def roll_pitch_yaw_to_rotation_matrix(roll, pitch, yaw):
     """
     """
-    R = np.dot( rotz(yaw), np.dot( roty(pitch), rotx(roll) ) )[0:3,0:3]
+    R = rotzyx(yaw, pitch, roll)[0:3,0:3]
     return R
 
 def rotation_matrix_to_roll_pitch_yaw(R):
     """
     """
-    r =   np.arctan2(R[1,2], R[2,2])
-    p = - np.arcsin( R[0,2])
-    y =   np.arctan2(R[0,1], R[0,0])
+    H = np.eye(4)
+    H[0:3,0:3] = R
+    yaw, pitch, roll = rotzyx_angles(H)
 
-    return np.array([r, p, y])
+    return np.array([roll, pitch, yaw])
 
 
 def to_arboris( obj , default=None):
