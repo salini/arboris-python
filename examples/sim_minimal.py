@@ -43,39 +43,28 @@ w.register(WeightController())
 ########################################################
 ## OBSERVERS
 ########################################################
-from arboris.visu_collada import write_collada_scene
-write_collada_scene(w, "scene.dae", flat=True)
+obs = []
 
 from arboris.observers import PerfMonitor
-obs = []
-obs.append(PerfMonitor(True))
+obs.append(PerfMonitor(True))               # to print simulation time
 
-try:
-    from arboris.observers import Hdf5Logger
-    obs.append(Hdf5Logger("sim.h5", mode="w", flat=True))
-except ImportError:
-    print("WARNING: cannot use Hdf5Logger. h5py may not be installed.")
-    print("This module is not mandatory, but useful to save simulation data")
+
+from arboris.observers import Hdf5Logger
+obs.append(Hdf5Logger("sim.h5", mode="w", flat=True))       # to save simulation data in hdf5 file ...
 
 from arboris.observers import PickleLogger
-obs.append(PickleLogger("sim.pkl", mode="wb", flat=True))
+obs.append(PickleLogger("sim.pkl", mode="wb", flat=True))   # ... or in pickle file
 
-try:
-    from arboris.observers import DaenimCom
-    from arboris.visu_collada import get_daenim_path
-    import subprocess
-    subprocess.Popen([get_daenim_path()]) #check if daenim is installed
-    obs.append(DaenimCom("scene.dae", flat=True))
-except:
-    print("WARNING: cannot use DaenimCom. daenim may not be installed.")
-    print("This program is not mandatory, but useful for visualization.")
 
-try:
-    from arboris.observers import VPythonObserver
-    obs.append(VPythonObserver())
-except:
-    print("WARNING: cannot use VPythonObserver. vpython may not be installed.")
-    print("This module is not mandatory, but useful for visualization.")
+from arboris.visu.dae_writer import write_collada_scene
+from arboris.visu import pydaenimCom                        # visualize with pydaenim ...
+write_collada_scene(w, "scene.dae", flat=True)
+obs.append(pydaenimCom("scene.dae", flat=True))
+
+from arboris.visu.visu_collada import write_collada_scene as visu_collada_scene
+from arboris.visu.visu_collada import DaenimCom             # ... or with daenim program if installed
+visu_collada_scene(w, "scene_daenim.dae", flat=True)
+obs.append(DaenimCom("scene_daenim.dae", flat=True))
 
 
 ########################################################
@@ -91,17 +80,11 @@ simulate(w, arange(0, 1., dt), obs)
 
 print(obs[0].get_summary())
 
-from arboris.visu_collada import write_collada_animation
-try:
-    if os.path.exists("sim.h5"):
-        write_collada_animation("anim_h5.dae", "scene.dae", "sim.h5")
-except:
-    print("Cannot create animation from hdf5 file.")
+from arboris.visu.dae_writer import write_collada_animation
+write_collada_animation("anim_h5.dae", "scene.dae", "sim.h5")
+write_collada_animation("anim_pkl.dae", "scene.dae", "sim.pkl")
 
-try:
-    if os.path.exists("sim.pkl"):
-        write_collada_animation("anim_pkl.dae", "scene.dae", "sim.pkl")
-except:
-    print("Cannot create animation from pickle file.")
-
+from arboris.visu.visu_collada import write_collada_animation as visu_collada_animation
+visu_collada_animation("anim_daenim_h5.dae", "scene_daenim.dae", "sim.h5")
+visu_collada_animation("anim_daenim_pkl.dae", "scene_daenim.dae", "sim.pkl")
 

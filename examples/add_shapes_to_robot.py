@@ -28,7 +28,7 @@ from arboris.visu.dae_writer import write_collada_scene, write_collada_animation
 from arboris.visu import pydaenimCom
 flat = False
 write_collada_scene(w, "./scene.dae", flat=flat)
-add_shapes_to_dae("./scene.dae", "./icub_simple.dae")
+add_shapes_to_dae("./scene.dae", "./dae/icub_simple.dae")
 
 obs = []
 
