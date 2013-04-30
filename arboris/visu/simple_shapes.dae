@@ -10,8 +10,117 @@
     <unit name="meter" meter="1"/>
     <up_axis>Z_UP</up_axis>
   </asset>
-  <library_images/>
+  <library_materials>
+		<material id="Red">
+			<instance_effect url="#Red-fx"/>
+		</material>
+		<material id="Green">
+			<instance_effect url="#Green-fx"/>
+		</material>
+		<material id="Blue">
+			<instance_effect url="#Blue-fx"/>
+		</material>
+		<material id="Grey">
+			<instance_effect url="#Grey-fx"/>
+		</material>
+	</library_materials>
+	<library_effects>
+		<effect id="Red-fx">
+			<profile_COMMON>
+				<technique sid="blender">
+					<constant>
+						<emission>
+							<color>1. 0. 0. 1.</color>
+						</emission>
+					</constant>
+				</technique>
+			</profile_COMMON>
+		</effect>
+		<effect id="Green-fx">
+			<profile_COMMON>
+				<technique sid="blender">
+					<constant>
+						<emission>
+							<color>0. 1. 0. 1.</color>
+						</emission>
+					</constant>
+				</technique>
+			</profile_COMMON>
+		</effect>
+		<effect id="Blue-fx">
+			<profile_COMMON>
+				<technique sid="blender">
+					<constant>
+						<emission>
+							<color>0. 0. 1. 1.</color>
+						</emission>
+					</constant>
+				</technique>
+			</profile_COMMON>
+		</effect>
+		<effect id="Grey-fx">
+			<profile_COMMON>
+				<technique sid="blender">
+					<phong>
+						<diffuse>
+							<color>.5 .5 .5 1.</color>
+						</diffuse>
+					</phong>
+				</technique>
+			</profile_COMMON>
+		</effect>
+	</library_effects>
   <library_geometries>
+  	<geometry id="frame_arrows_geometry-mesh">
+		<mesh>
+			<source id="frame_arrows_geometry_positions">
+				<float_array count="12" id="frame_arrows_geometry_positions_array">0. 0. 0. 1. 0. 0. 0. 1. 0. 0. 0. 1.</float_array>
+				<technique_common>
+					<accessor count="4" source="#frame_arrows_geometry_positions_array" stride="3">
+						<param name="X" type="float"/>
+						<param name="Y" type="float"/>
+						<param name="Z" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<vertices id="frame_arrows_geometry_vertices">
+				<input semantic="POSITION" source="#frame_arrows_geometry_positions"/>
+			</vertices>
+			<lines count="1" material="x_axis">
+				<input offset="0" semantic="VERTEX" source="#frame_arrows_geometry_vertices"/>
+				<p>0 1</p>
+			</lines>
+			<lines count="1" material="y_axis">
+				<input offset="0" semantic="VERTEX" source="#frame_arrows_geometry_vertices"/>
+				<p>0 2</p>
+			</lines>
+			<lines count="1" material="z_axis">
+				<input offset="0" semantic="VERTEX" source="#frame_arrows_geometry_vertices"/>
+				<p>0 3</p>
+			</lines>
+		</mesh>
+	</geometry>
+	<geometry id="line_geometry-mesh">
+		<mesh>
+			<source id="line_geometry_positions">
+				<float_array count="6" id="line_geometry_positions_array">0 0 0 0 0 1</float_array>
+				<technique_common>
+					<accessor count="2" source="#line_geometry_positions_array" stride="3">
+						<param name="X" type="float"/>
+						<param name="Y" type="float"/>
+						<param name="Z" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<vertices id="line_geometry_vertices">
+				<input semantic="POSITION" source="#line_geometry_positions"/>
+			</vertices>
+			<lines count="1" material="material">
+				<input offset="0" semantic="VERTEX" source="#line_geometry_vertices"/>
+				<p>0 1</p>
+			</lines>
+		</mesh>
+	</geometry>
     <geometry id="box_geometry-mesh" name="box_geometry">
       <mesh>
         <source id="box_geometry-mesh-positions">
@@ -149,6 +258,26 @@
       <extra><technique profile="MAYA"><double_sided>1</double_sided></technique></extra>
     </geometry>
   </library_geometries>
+  <library_nodes>
+  	<node id="frame_arrows" name="frame_arrows" type="NODE">
+		<instance_geometry url="#frame_arrows_geometry-mesh">
+			<bind_material>
+				<technique_common>
+					<instance_material symbol="x_axis" target="#Red"/>
+					<instance_material symbol="y_axis" target="#Green"/>
+					<instance_material symbol="z_axis" target="#Blue"/>
+				</technique_common>
+			</bind_material>
+		</instance_geometry>
+		<extra type="Node">
+			<technique profile="OpenSceneGraph">
+				<Descriptions>
+					<Description>frame</Description>
+				</Descriptions>
+			</technique>
+		</extra>
+	</node>
+  </library_nodes>
   <library_visual_scenes>
     <visual_scene id="Scene" name="Scene">
       <node id="simple_box_position" name="simple_box_position" type="NODE">
@@ -173,6 +302,16 @@
         <translate sid="location">0 9 0</translate>
         <node id="simple_plane_node" name="simple_plane_node" type="NODE">
         	<instance_geometry url="#plane_geometry-mesh"/>
+        </node>
+      </node>
+      <node id="simple_frame_arrows_position" name="simple_frame_arrows_position" type="NODE">
+        <translate sid="location">0 12 0</translate>
+        <instance_node url="#frame_arrows"/>
+      </node>
+      <node id="simple_line_position" name="simple_line_position" type="NODE">
+        <translate sid="location">0 14 0</translate>
+        <node id="simple_line_node" name="simple_line_node" type="NODE">
+        	<instance_geometry url="#line_geometry-mesh"/>
         </node>
       </node>
     </visual_scene>

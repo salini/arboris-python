@@ -61,7 +61,7 @@ class pydaenimCom(Observer):
         try:
             self.websocket.send_message(msg)
         except:
-            print("webDaenimCom not connected")
+            print("pydaenimCom not connected")
 
 
     def finish(self):

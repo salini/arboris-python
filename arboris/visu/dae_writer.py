@@ -9,13 +9,14 @@ import warnings
 
 from arboris.core import World, name_all_elements
 from arboris.massmatrix import principalframe, transport
-import arboris._visu
+from arboris.visu.world_drawer import Drawer, DrawerDriver, ColorGenerator
+from arboris.homogeneousmatrix import rotzyx_angles
 
 import collada
-from collada.common import E, tag
+from   collada.common import E, tag
 
 import numpy as np
-from numpy import all as np_all
+from   numpy import all as np_all
 
 
 import pickle as pkl
@@ -36,16 +37,20 @@ def write_collada_scene(world, dae_filename, scale=1, options=None, flat=False, 
         nonflatlist = [j.frames[1] for j in world.getjoints()]
         name_all_elements(nonflatlist, True)
     name_all_elements(world.itermovingsubframes(), True)
+    
+    if color_generator is None:
+        color_generator = ColorGenerator( nb_colors=len(world.getbodies()) )
+    
     world.update_geometric()
     
-    drawer = arboris._visu.Drawer(wsDaenimColladaDriver(dae_filename, scale, options), flat, color_generator)
+    drawer = Drawer(pydaenimColladaDriver(dae_filename, scale, options), flat, color_generator)
     world.parse(drawer)
     drawer.finish()
 
 
 
 
-def write_collada_animation(collada_animation, collada_scene, sim_file, file_type=None, hdf5_group="/"):
+def write_collada_animation(collada_animation, collada_scene, sim_file, file_type=None, hdf5_group="/", precision=8):
     """Combine a collada scene and an HDF5 file into a collada animation.
 
     :param collada_animation: path of the output collada animation file
@@ -56,6 +61,8 @@ def write_collada_animation(collada_animation, collada_scene, sim_file, file_typ
     :type hdf5_file: str
     :param hdf5_group: subgroup within the HDF5 file. Defaults to "/".
     :type hdf5_group: str
+    :param precision: rounding precision when saving animation data.
+    :type precision: int
     """
     if file_type is None:
         file_type = sim_file.split(".")[-1]
@@ -82,11 +89,11 @@ def write_collada_animation(collada_animation, collada_scene, sim_file, file_typ
         except IOError:
             raise IOError("Cannot load file '"+sim_file+"'. It may not be a pickle file.")
 
-    write_collada_animation_from_transforms(collada_animation, collada_scene, timeline, transforms)
+    write_collada_animation_from_transforms(collada_animation, collada_scene, timeline, transforms, precision)
 
 
 
-def write_collada_animation_from_transforms(collada_animation, collada_scene, timeline, transforms):
+def write_collada_animation_from_transforms(collada_animation, collada_scene, timeline, transforms, precision):
     """
     """
     def _create_anim_src_elem(anim_name, src_data, src_suffix, src_type, param_name, param_type):
@@ -96,7 +103,13 @@ def write_collada_animation_from_transforms(collada_animation, collada_scene, ti
         
         idName += "-array"
         count = len(src_data)/16 if param_type=="float4x4" else len(src_data)
-        src_elem.append( E(src_type+"_array", " ".join(map(str, src_data)), id=idName, count=str(count)) )
+        
+        if src_type == "float":
+            str_src_data = " ".join([str(round(val, precision)) for val in src_data])+" "
+            str_src_data = str_src_data.replace(".0 ", " ")
+        else:
+            str_src_data = " ".join(map(str, src_data))
+        src_elem.append( E(src_type+"_array", str_src_data, id=idName, count=str(count)) )
         
         src_elem.append( E.technique_common(
                             E.accessor(
@@ -140,7 +153,6 @@ def write_collada_animation_from_transforms(collada_animation, collada_scene, ti
         anim_lib.append( _create_anim_elem(name, timeline, val) )
 
     _write_pycollada_in_file(dae, collada_animation)
-
 
 
 
@@ -302,14 +314,14 @@ def _get_good_id_uri(uri):
 
 
 
-class wsDaenimColladaDriver(arboris._visu.DrawerDriver):
+class pydaenimColladaDriver(DrawerDriver):
     """ It is a collada driver dedicated to wsDaenim, meaning that it produces
     a light collada, with minimal information.
     """
     def __init__(self, filename, scale=1., options=None):
         """
         """
-        arboris._visu.DrawerDriver.__init__(self, scale)
+        DrawerDriver.__init__(self, scale)
         self.filename   = filename
 
         self.dae        = collada.Collada()
@@ -317,10 +329,9 @@ class wsDaenimColladaDriver(arboris._visu.DrawerDriver):
 
         # create library_physics_models
         self.physics_model = E.physics_model(id="world")
-        self.dae.xmlnode.getroot().append(E.library_physics_models(self.physics_model))
+        self.dae.xmlnode.getroot().insert(1, E.library_physics_models(self.physics_model)) # insert just after asset
 
         self._materials = {}
-        self._matnode_i = 0
         self._names     = []
 
     def init(self):
@@ -355,16 +366,15 @@ class wsDaenimColladaDriver(arboris._visu.DrawerDriver):
     def _add_new_material(self, color):
         """ Add a new color with effect and material."""
         if color in self._materials:
-            mat = self._materials[color]
+            idx, mat = self._materials[color]
         else:
-            i = str(len(self._materials))
-            effect = collada.material.Effect("effect_"+i, [], "phong", diffuse=(0,0,0), specular=color)
-            mat = collada.material.Material("material_"+i, "material", effect)
+            idx = str(len(self._materials))
+            effect = collada.material.Effect("effect_"+idx, [], "phong", diffuse=color)
+            mat    = collada.material.Material("material_"+idx, "material", effect)
             self.dae.effects.append(effect)
             self.dae.materials.append(mat)
-            self._materials[color] = mat
-        matNode = collada.scene.MaterialNode("material_node_"+str(self._matnode_i), mat, inputs=[])
-        self._matnode_i +=1
+            self._materials[color] = idx, mat
+        matNode = collada.scene.MaterialNode("material", mat, inputs=[])
         return matNode
 
     def _add_new_geometry(self, name, color, geom):
@@ -378,6 +388,11 @@ class wsDaenimColladaDriver(arboris._visu.DrawerDriver):
     def add_ground(self, up):
         self._set_up_axis(up)
         self.ground_node = collada.scene.Node("ground")
+        
+        tranform_matrix = collada.scene.MatrixTransform(np.eye(4).flatten())
+        tranform_matrix.xmlnode.set("sid", "matrix")
+        self.ground_node.transforms.append(tranform_matrix)
+        
         self.scene = collada.scene.Scene("myscene", [self.ground_node])
         self.dae.scenes.append(self.scene)
         self.dae.scene = self.scene
@@ -432,14 +447,20 @@ class wsDaenimColladaDriver(arboris._visu.DrawerDriver):
         H_body_com  = principalframe(inertia)
         Mcom        = transport(inertia, H_body_com)
         mass        = Mcom[5,5]
-        m_o_inertia = Mcom [[0,1,2], [0,1,2]]
+        m_o_inertia = Mcom[[0,1,2], [0,1,2]]
+        position    = H_body_com[0:3,3]
+        yaw, pitch, roll = np.degrees( rotzyx_angles(H_body_com) ) # in degrees for collada specification
+
         self.physics_model.append(
             E.rigid_body(
                 E.technique_common(
                     E.dynamic("true"),
                     E.mass(str(mass)),
                     E.mass_frame(
-                        collada.scene.MatrixTransform(H_body_com.flatten()).xmlnode,
+                        E.translate(" ".join(map(str, position))  , sid="location"),
+                        E.rotate(" ".join(map(str, [0,0,1,yaw]))  , sid="rotationZ"),
+                        E.rotate(" ".join(map(str, [0,1,0,pitch])), sid="rotationY"),
+                        E.rotate(" ".join(map(str, [1,0,0,roll])) , sid="rotationX"),
                     ),
                     E.inertia(" ".join(map(str, m_o_inertia))),
                 ),

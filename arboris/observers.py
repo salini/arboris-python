@@ -23,12 +23,6 @@ except ImportError:
     pass
 
 import tempfile
-import arboris._visu
-from arboris.visu_collada import get_daenim_path, write_collada_scene
-try:
-    from arboris.visu_vpython import VPythonDriver
-except ImportError:
-    pass
 
 from abc import ABCMeta, abstractmethod, abstractproperty
 
@@ -402,125 +396,8 @@ class SocketCom(Observer):
         try:
             self.conn.send("close_connection")
             self.s.close()
-        except socket.error:
+        except:
             pass
-
-
-class DaenimCom(SocketCom):
-    """
-    """
-    def __init__(self, daefile=None, daenim_path=None, host="127.0.0.1", port=5000, timeout=3, \
-                 options = "", flat=False, name=None):
-        """
-        """
-        SocketCom.__init__(self, host, port, timeout, name)
-        
-        self.daefile = daefile
-
-        if daenim_path is None:
-            daenim_path = get_daenim_path()
-
-        self.app_call = \
-              [daenim_path, daefile, "-socket", self.host, str(self.port)] + \
-               shlex.split(options)
-        self.flat = flat
-        self.world = None
-
-    def init(self, world, timeline):
-        """
-        """
-        if self.daefile is None:
-            tmp_daefile = tempfile.mkstemp(suffix='scene.dae', text=True)[1]
-            write_collada_scene(world, tmp_daefile, flat=self.flat)
-            self.app_call[1] = tmp_daefile
-
-        try:
-            subprocess.Popen(self.app_call)
-        except OSError:
-            raise OSError("Cannot find program "+self.app_call[0]+". Please check where the arboris viewer (daenim) is installed on your computer.")
-        SocketCom.init(self, world, timeline)
-        self.world = world
-        sleep(.1)
-        if self.flat:
-            name_all_elements(self.world.getbodies(), True)
-        else:
-            nonflatlist = [j.frames[1] for j in self.world.getjoints()]
-            name_all_elements(nonflatlist, True)
-        name_all_elements(self.world.itermovingsubframes(), True)
-
-    def update(self, dt):
-        """
-        """
-        if self.flat:
-            msg = b""
-            for b in self.world.getbodies():
-                H = b.pose
-                msg += self.packing_transform(b.name, H)
-        else:
-            msg = ""
-            for j in self.world.getjoints():
-                H = j.pose
-                msg += self.packing_transform(j.frames[1].name, H)
-
-        for f in self.world.itermovingsubframes():
-            H = f.pose if self.flat else f.bpose
-            msg += self.packing_transform(f.name, H)
-
-        try:
-            self.conn.send(msg)
-        except socket.error:
-            print("connection lost")
-
-
-    def packing_transform(self, _name, _H):
-        res = " ".join([_name] + map(str, _H[0:3, :].reshape(12)))+"\n"
-        return res
-
-
-class VPythonObserver(Observer):
-    def __init__(self, scale=1, options=None, flat=False, color_generator=None, name=None):
-        Observer.__init__(self, None)
-        try:
-            self.driver = VPythonDriver(scale, options)
-        except NameError:
-            raise ImportError("vpython cannot be imported. Please check that vpython is installed on your computer.")
-        self.drawer = arboris._visu.Drawer(self.driver, flat, color_generator)
-        self.flat = flat
-
-    def init(self, world, timeline):
-        Observer.init(self, world, timeline)
-        self.driver.init()
-        self.world = world
-        if self.flat:
-            name_all_elements(world.getbodies(), True)
-        else:
-            nonflatlist = [j.frames[1] for j in world.getjoints()]
-            name_all_elements(nonflatlist, True)
-        name_all_elements(world.itermovingsubframes(), True)
-
-        world.update_geometric()
-        world.parse(self.drawer)
-        self.drawer.finish()
-
-
-
-    def update(self, dt):
-        self.driver.check_keyboard()
-        if self. flat is True:
-            for b in self.world.getbodies():
-                self.driver.update_transform(b.name, b.pose)
-            for f in self.world.itermovingsubframes():
-                self.driver.update_transform(f.name, f.pose)
-        else:
-            for j in self.world.getjoints():
-                self.driver.update_transform(j.frames[1].name, j.pose)
-            for f in self.world.itermovingsubframes():
-                self.driver.update_transform(f.name, f.bpose)
-
-    def finish(self):
-        pass
-
-
 
 
 
