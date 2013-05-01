@@ -10,7 +10,7 @@ import arboris.joints
 import arboris.shapes
 import arboris.constraints
 
-from arboris.homogeneousmatrix import rotzyx, rotzyx_angles
+from arboris.homogeneousmatrix import rotzyx, rotzyx_angles, inv
 
 import numpy as np
 np.set_printoptions(suppress=True)
@@ -55,7 +55,7 @@ def to_arboris( obj , default=None):
 
     elif isinstance(obj, urdf_parser.Inertial):
         m = obj.mass
-        H_com_body = to_arboris(obj.origin, np.eye(4))
+        H_body_com = to_arboris(obj.origin, np.eye(4))
         xx, yy, zz, xy, xz, yz = [obj.matrix["i"+n] for n in ["xx", "yy", "zz", "xy", "xz", "yz"]]
         m  = max(1e-6, m)
         xx = max(1e-6, xx)
@@ -67,7 +67,7 @@ def to_arboris( obj , default=None):
                           [0., 0., 0., m , 0., 0.],
                           [0., 0., 0., 0., m , 0.],
                           [0., 0., 0., 0., 0., m ]])
-        return arboris.massmatrix.transport(M_com, H_com_body)
+        return arboris.massmatrix.transport(M_com, inv(H_body_com) )
 
     elif isinstance(obj, urdf_parser.Pose):
         H          = arboris.homogeneousmatrix.transl( *obj.position)
