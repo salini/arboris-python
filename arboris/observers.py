@@ -124,7 +124,7 @@ class PerfMonitor(Observer):
 
     """
     def __init__(self, log=False, name=None):
-        Observer.__init__(self, None)
+        Observer.__init__(self, name)
         if log:
             self._logger = logging.getLogger(self.__class__.__name__)
         else:

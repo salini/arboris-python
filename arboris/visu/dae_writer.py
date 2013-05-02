@@ -10,7 +10,7 @@ import warnings
 from arboris.core import World, name_all_elements
 from arboris.massmatrix import principalframe, transport
 from arboris.visu.world_drawer import Drawer, DrawerDriver, ColorGenerator
-from arboris.homogeneousmatrix import rotzyx_angles
+from arboris.homogeneousmatrix import rotzyx_angles, zaligned
 
 import collada
 from   collada.common import E, tag
@@ -441,7 +441,18 @@ class pydaenimColladaDriver(DrawerDriver):
         return node
 
     def create_plane(self, coeffs, color, name=""):
-        pass
+        if self.dae.geometries.get("plane_geometry-mesh") is None:
+            self.dae.geometries.append(self.shapes_dae.geometries.get("plane_geometry-mesh"))
+        plane_geom = self.dae.geometries.get("plane_geometry-mesh")
+        
+        H = zaligned(coeffs[0:3])
+        H[0:3, 3] = coeffs[3] * coeffs[0:3]
+        plane_he = self._options["plane half extents"]
+        
+        node = self._add_new_geometry(name, color, plane_geom)
+        node.transforms.append(collada.scene.MatrixTransform(H.flatten()))
+        node.transforms.append(collada.scene.ScaleTransform(plane_he[0], plane_he[1], 0.))
+        return node
 
     def create_inertia(self, inertia, color, name=""):
         H_body_com  = principalframe(inertia)
