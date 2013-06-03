@@ -6,7 +6,6 @@ from numpy import array, zeros, dot, ix_
 from numpy.linalg import norm
 import arboris.homogeneousmatrix as Hg
 from arboris.joints import LinearConfigurationSpaceJoint
-from arboris.massmatrix import principalframe
 
 class WeightController(Controller):
     """A contoller which applies weight to joints.
@@ -27,28 +26,29 @@ class WeightController(Controller):
 
     """
     def __init__(self, gravity=-9.81, name=None):
-        self.gravity = float(gravity)
         Controller.__init__(self, name=name)
-        self._bodies = None
-        self._wndof = None
+        self.gravity         = float(gravity)
+        self._bodies         = None
+        self._wndof          = None
         self._gravity_dtwist = None
+        self._impedance      = None
 
 
     def init(self, world):
         assert isinstance(world, World)
         self._bodies = [x for x in world.ground.iter_descendant_bodies() \
                         if norm(x.mass>0.)]
-        self._wndof = world.ndof
-        self._gravity_dtwist = zeros(6)
+        self._wndof               = world.ndof
+        self._gravity_dtwist      = zeros(6)
         self._gravity_dtwist[3:6] = float(self.gravity)*world.up
-        self.impedance = zeros( (self._wndof, self._wndof) )
+        self._impedance           = zeros( (self._wndof, self._wndof) )
 
     def update(self, dt=None):
         gforce = zeros(self._wndof)
         for b in self._bodies:
             g = dot(Hg.iadjoint(b.pose), self._gravity_dtwist)
             gforce += dot(b.jacobian.T, dot(b.mass, g))
-        return (gforce, self.impedance)
+        return (gforce, self._impedance)
 
 
 class ProportionalDerivativeController(Controller):

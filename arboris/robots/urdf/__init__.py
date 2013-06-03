@@ -79,7 +79,7 @@ def to_arboris( obj , default=None):
         joint["parent"]         = obj.parent
         joint["child"]          = obj.child
         joint["H_parent_child"] = to_arboris(obj.origin, np.eye(4))
-        axis = map(float, obj.axis.split()) if len(obj.axis.split())==3 else obj.axis
+        axis = [float(v) for v in obj.axis.split()] if len(obj.axis.split())==3 else obj.axis
 
         if   obj.joint_type == urdf_parser.Joint.REVOLUTE:
             if   (axis in ["x", "X"]) or ( np.allclose(axis, [1,0,0])):
@@ -128,7 +128,7 @@ def to_arboris( obj , default=None):
 
     elif isinstance(obj, urdf_parser.Mesh):
         mesh_path = obj.filename
-        scale = 1 if obj.scale is None else map(float, obj.scale.split())
+        scale = 1 if obj.scale is None else [float(v) for v in obj.scale.split()]
         return {"shape": "mesh", "mesh_from_urdf": mesh_path,  "scale": scale}
 
     elif isinstance(obj, urdf_parser.Box):
@@ -162,6 +162,7 @@ class URDFConverter(object):
         """
         """
         self.urdf_file_name = urdf_file_name
+        self.robot          = None
         
         self.fixed_base = fixed_base
         self.H_init     = H_init
@@ -347,7 +348,7 @@ class URDFConverter(object):
             name = self.prefix + joint_name + self.suffix
             effort_limits[name] = urdf_joint.limits.effort
 
-        return joint_limits
+        return effort_limits
 
     def get_velocity_limits(self):
         """

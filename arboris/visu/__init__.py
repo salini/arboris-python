@@ -22,7 +22,8 @@ class pydaenimCom(Observer):
     """
     def __init__(self, colladafile, host="localhost", port=5000, timeout=5, flat=False, name=None):
         Observer.__init__(self, name)
-        self.flat = flat
+        self.flat  = flat
+        self.world = None
         
         self.websocket = pydaenim.pydaenimWebSocket(host, port, timeout)
         

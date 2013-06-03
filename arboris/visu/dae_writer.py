@@ -20,10 +20,8 @@ from   numpy import all as np_all
 
 
 import pickle as pkl
-try:
-    import h5py
-except ImportError:
-    pass
+import h5py
+
 
 
 
@@ -331,8 +329,10 @@ class pydaenimColladaDriver(DrawerDriver):
         self.physics_model = E.physics_model(id="world")
         self.dae.xmlnode.getroot().insert(1, E.library_physics_models(self.physics_model)) # insert just after asset
 
-        self._materials = {}
-        self._names     = []
+        self.ground_node = None
+        self.scene       = None
+        self._materials  = {}
+        self._names      = []
 
     def init(self):
         pass

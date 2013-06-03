@@ -20,7 +20,7 @@ initialized.
 
 >>> from arboris.core import World
 >>> from arboris.robots import simplearm
->>> from arboris.visu_collada import write_collada_scene
+>>> from arboris.visu.dae_writer import write_collada_scene
 >>>
 >>> w = World()
 >>> simplearm.add_simplearm(w)
@@ -38,7 +38,7 @@ If ``True``, the structure is flatten, and bodies are considered independent.
 Save simulation results in collada animation
 --------------------------------------------
 
-First of all, you have to save a collada_scene, as described above.
+First of all, you have to save a collada scene, as described above.
 Then you have to an obsever to save the simulation data. To do so, use the
 ``PickleLogger`` or the ``Hdf5Logger``, then simulate
 
@@ -46,79 +46,20 @@ Then you have to an obsever to save the simulation data. To do so, use the
 >>>
 >>> obs = []
 >>> obs.append(PickleLogger("sim.pkl", flat=True))  # this one
->>> obs.append(Hdf5Logger("sim.h5", flat=True))     # or this one if you have h5py installed
+>>> obs.append(Hdf5Logger("sim.h5", flat=True))     # or this one
 >>>
 >>> simulate(w, timeline, obs)
 
 Be sure that the ``flat`` argument is the same that in the ``collada_write_scene``.
 When the simulation is finished, you can write a collada animation
 
->>> from arboris.visu_collada import write_collada_animation
+>>> from arboris.visu.dae_writer import write_collada_animation
 >>>
 >>> write_collada_animation("anim_pkl.dae", "scene.dae", "sim.pkl") # this one
->>> write_collada_animation("anim_h5.dae", "scene.dae", "sim.h5")   # or this one if you have h5py installed
+>>> write_collada_animation("anim_h5.dae", "scene.dae", "sim.h5")   # or this one
 
 
 
-Visualize with VPython
-======================
-
-Arboris-python can use the VPython module to display the current scene.
-Although it may slown down the simulation speed, it is an easy way to show 
-the running simulation and to replay the simulation result.
-
-
-View the world
---------------
-
-The current world can be displayed as follows
-
->>> from arboris.core import World
->>> from arboris.robots import simplearm
->>> from arboris.visu_vpython import view
->>>
->>> w = World()
->>> simplearm.add_simplearm(w)
->>> view(w)
-
-Warning: after ``view``, the script stops.
-
-
-View simulation
----------------
-
-The simulation is shown through an observer. The ``simulate`` function updates
-the visualization at each computation step in the simulation loop.
-
->>> from arboris.core import World, simulate
->>> from arboris.robots import simplearm
->>> from arboris.observers import VPythonObserver
->>> from numpy import arange
->>>
->>> w = World()
->>> simplearm.add_simplearm(w)
->>> w.getjoints()[0].gvel[:] = .5
->>>
->>> obs = []
->>> obs.append(VPythonObserver())
->>>
->>> simulate(w, arange(0, 1, .01), obs)
-
-
-View saved collada file (scene & animation)
--------------------------------------------
-
-You can display a scene or replay an animation saved in a collada file.
-
->>> from arboris.visu_vpython import view_collada_file
->>> view_collada_file('anim.dae')
-
-Note that you can directly call this function in bash as follows
-
-
-.. code-block:: bash
-
-   python -c "import arboris.visu_vpython as v; v.view_collada_file('anim.dae')"
 
 
 
@@ -127,7 +68,7 @@ Visualize with Daenim
 
 Unlike Vpython, `daenim <http://github.com/sbarthelemy/daenim>`_ is not a
 python module.
-It a C++ program `based on OpenSceneGraph <www.openscenegraph.org>`_ that can
+It is a C++ program `based on OpenSceneGraph <www.openscenegraph.org>`_ that can
 read collada file and can communicate with arboris-python to display
 the running simulation.
 Of course, the following does not work if daenim is not installed on your
@@ -141,7 +82,7 @@ The current world is shown with daenim, through the function ``view`` as follows
 
 >>> from arboris.core import World
 >>> from arboris.robots import simplearm
->>> from arboris.visu_collada import write_collada_scene, view
+>>> from arboris.visu.visu_collada import write_collada_scene, view
 >>>
 >>> w = World()
 >>> simplearm.add_simplearm(w)
@@ -155,7 +96,7 @@ View simulation
 Arboris-python can update the daenim visualization by communicating with ports.
 The communication is possible through the observer ``DaenimCom``
 
->>> from arboris.observers import DaenimCom
+>>> from arboris.visu.visu_collada import DaenimCom
 >>>
 >>> obs = []
 >>> obs.append(DaenimCom())
@@ -178,7 +119,7 @@ View saved collada file (scene & animation)
 
 You can display a scene or replay an animation saved in a collada file.
 
->>> from arboris.visu_collada import view
+>>> from arboris.visu.visu_collada import view
 >>>
 >>> view("scene.dae")
 >>> view("anim.dae")

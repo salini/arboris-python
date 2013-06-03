@@ -231,7 +231,7 @@ def get_bodies_data():
     }
 
 
-def get_bodies_shapes_data(shapes_from_inertia=True):
+def get_bodies_shapes_data():
     """
     """
     bodies_shapes_data = {}

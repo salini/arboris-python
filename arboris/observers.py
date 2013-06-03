@@ -6,35 +6,23 @@ __author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>",
 
 from numpy import dot, zeros, arange
 
-from arboris.core import Observer, MovingSubFrame, name_all_elements, LinearConfigurationSpaceJoint
+from arboris.core import Observer, MovingSubFrame, name_all_elements
 from arboris.massmatrix import principalframe
 from arboris.collisions import choose_solver
 from arboris.homogeneousmatrix import iadjoint, dAdjoint
 
-try:
-    from pylab import plot, show, legend, xlabel, ylabel, title
-except ImportError:
-    pass
+
+from pylab import plot, show, legend, xlabel, ylabel, title
+
 
 import pickle as pkl
-try:
-    import h5py
-except ImportError:
-    pass
-
-import tempfile
-
-from abc import ABCMeta, abstractmethod, abstractproperty
+import h5py
 
 
-from time import time as _time, sleep
+from time import time as _time
 import socket
-import subprocess, shlex
 import logging
 logging.basicConfig(level=logging.DEBUG)
-
-import struct
-import os
 
 
 class EnergyMonitor(Observer):
@@ -174,36 +162,48 @@ max computation time (s): {3}""".format(
 class _SaveLogger(Observer):
     """ TODO
     """
-    def __init__(self, save_state=False, save_transforms=True,
-                       flat=False, save_model=False, name=None):
+    def __init__(self, save_transforms=True, save_state=False, save_model=False,
+                       flat=False,  name=None):
         Observer.__init__(self, name)
         # what to save
-        self._save_state = save_state
         self._save_transforms = save_transforms
-        self._flat = flat
-        self._save_model = save_model
+        self._save_state      = save_state
+        self._save_model      = save_model
+        self._flat            = flat
+        
+        # recorded values
+        self._world          = None
+        self._nb_steps       = 0
+        self._current_step   = 0
+        self._root           = {}
+        self._timeline       = []
+        self._arb_transforms = {}
+        self._transforms     = {}
+        self._gpositions     = {}
+        self._gvelocities    = {}
+        self._model          = {}
 
     def init(self, world, timeline):
-        self._world = world
-        self._nb_steps = len(timeline)-1
+        self._world        = world
+        self._nb_steps     = len(timeline)-1
         self._current_step = 0
-
-        self._root = {}
-        self._timeline = zeros(self._nb_steps)
+        self._root         = {}
+        self._timeline     = zeros(self._nb_steps)
         self._root["timeline"] = self._timeline
+
         if self._save_state:
-            self._gpositions = {}
-            self._root['gpositions'] = self._gpositions
-            self._gvelocities = {}
+            self._gpositions          = {}
+            self._gvelocities         = {}
+            self._root['gpositions']  = self._gpositions
             self._root['gvelocities'] = self._gvelocities
             name_all_elements(self._world.getjoints(), check_unicity=True)
             for j in self._world.getjoints():
-                self._gpositions[j.name] = zeros((self._nb_steps,)+j.gpos.shape[:])
+                self._gpositions[j.name]  = zeros((self._nb_steps,)+j.gpos.shape[:])
                 self._gvelocities[j.name] = zeros((self._nb_steps, j.ndof))
 
         if self._save_transforms:
-            self._arb_transforms = {}
-            self._transforms = {}
+            self._arb_transforms     = {}
+            self._transforms         = {}
             self._root['transforms'] = self._transforms
             if self._flat:
                 name_all_elements(self._world.iterbodies(), True)
@@ -215,20 +215,22 @@ class _SaveLogger(Observer):
                 for j in  self._world.getjoints():
                     self._arb_transforms[j.frames[1].name] = j
             name_all_elements(self._world.itermovingsubframes(), True)
+
             for f in self._world.itermovingsubframes():
                 self._arb_transforms[f.name] = f
+
             for k in self._arb_transforms.keys():
                 self._transforms[k] = zeros((self._nb_steps, 4,4))
 
         if self._save_model:
             ndof = self._world.ndof
-            self._model = {}
-            self._root['model'] = self._model
-            self._model["gvel"] = zeros((self._nb_steps, ndof))
-            self._model["mass"] = zeros((self._nb_steps, ndof, ndof))
+            self._model               = {}
+            self._root['model']       = self._model
+            self._model["gvel"]       = zeros((self._nb_steps, ndof))
+            self._model["mass"]       = zeros((self._nb_steps, ndof, ndof))
             self._model["admittance"] = zeros((self._nb_steps, ndof, ndof))
             self._model["nleffects"]  = zeros((self._nb_steps, ndof, ndof))
-            self._model["gforce"] = zeros((self._nb_steps, ndof))
+            self._model["gforce"]     = zeros((self._nb_steps, ndof))
 
     def update(self, dt):
         """Save the current data (state...).
@@ -263,9 +265,9 @@ class _SaveLogger(Observer):
 class PickleLogger(_SaveLogger):
     """ TODO
     """
-    def __init__(self, filename, mode='wb', save_state=False,
-                 save_transforms=True, flat=False, save_model=False, protocol=0, name=None):
-        _SaveLogger.__init__(self, save_state, save_transforms, flat, save_model, name)
+    def __init__(self, filename, mode='wb', save_transforms=True, save_state=False,
+                  save_model=False, flat=False, protocol=0, name=None):
+        _SaveLogger.__init__(self, save_transforms, save_state, save_model, flat, name)
         self._filename = filename
         self._mode = mode
         self._protocol = protocol
@@ -337,9 +339,9 @@ class Hdf5Logger(_SaveLogger):
     (``Joint.frames[1].name``).
 
     """
-    def __init__(self, filename, group="/", mode='a', save_state=False,
-                 save_transforms=True, flat=False, save_model=False, name=None):
-        _SaveLogger.__init__(self, save_state, save_transforms, flat, save_model, name)
+    def __init__(self, filename, group="/", mode='a', save_transforms=True,
+                   save_state=False, save_model=False, flat=False, name=None):
+        _SaveLogger.__init__(self, save_transforms, save_state, save_model, flat, name)
         try:
             self._file = h5py.File(filename, mode)  # hdf5 file handlers
         except NameError:
@@ -396,7 +398,7 @@ class SocketCom(Observer):
         try:
             self.conn.send("close_connection")
             self.s.close()
-        except:
+        except socket.error:
             pass
 
 
@@ -409,15 +411,23 @@ class CoMObserver(Observer):
         self.user_bodies = bodies
         self.compute_Jacobians = compute_Jacobians
 
+        self.H_body_com    = []
+        self.mass          = []
+        self.bodies        = []
+        self.total_mass    = 0.
+        self._CoMPosition  = zeros(3)
+        self._CoMJacobian  = zeros((3, 0))
+        self._CoMdJacobian = zeros((3, 0))
+
     def init(self, world, timeline=None):
         self.H_body_com = []
         self.mass       = []
-        self.bodies = [b for b in self.user_bodies if b.mass[5,5]>0]
+        self.bodies     = [b for b in self.user_bodies if b.mass[5,5]>0]
         for b in self.bodies:
             self.H_body_com.append(principalframe(b.mass))
             self.mass.append(b.mass[5,5])
 
-        self.total_mass = sum(self.mass)
+        self.total_mass    = sum(self.mass)
         self._CoMPosition  = zeros(3)
         self._CoMJacobian  = zeros((3, world.ndof))
         self._CoMdJacobian = zeros((3, world.ndof))
@@ -467,16 +477,16 @@ class CoMObserver(Observer):
 class _Recorder(Observer):
     """
     """
-    __metaclass__ = ABCMeta
 
     def __init__(self, name=None):
         Observer.__init__(self, name)
+        self._record = []
+        self._index = 0
 
     def init(self, world, timeline):
         self._record = [None]*(len(timeline)-1)
         self._index = 0
 
-    @abstractmethod
     def update(self, dt):
         pass
 

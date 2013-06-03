@@ -287,10 +287,10 @@ class LinearConfigurationSpaceJoint(Joint):
 class JointsList(NamedObjectsList):
     def __init__(self, iterable):
         NamedObjectsList.__init__(self, iterable)
+        self._dof = slice(0, 0)
         self._init_dof()
 
     def _init_dof(self):
-        self._dof = slice(0, 0)
         for obj in self:
             if isinstance(obj, Joint):
                 assert obj.dof.step in (None, 1)
@@ -1166,7 +1166,7 @@ class Body(NamedObject, Frame):
 
     def iter_descendant_bodies(self):
         """Iterate over all descendant bodies, with a depth-first strategy"""
-        for b in map(lambda j: j.frame1.body, self.childrenjoints):
+        for b in [j.frame1.body for j in self.childrenjoints]:
             yield b
             for bb in b.iter_descendant_bodies():
                 yield bb

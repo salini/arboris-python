@@ -2,10 +2,13 @@
 
 # This document has been created by thomas moulard.
 # It has been download from (https://github.com/laas/robot_model_py)
-# It has been modified by joseph salini (just one comment) to skip rospy import
+
+# It has been modified by joseph salini (just one comment) to skip rospy import.
+# Also replace rospy.logwarn by warnings
 
 import string
 #import rospy
+import warnings
 import xml.dom.minidom
 from xml.dom.minidom import Document
 
@@ -40,14 +43,14 @@ def short(doc, name, key, value):
     return element
 
 def children(node):
-    children = []
+    _children = []
     for child in node.childNodes:
         if child.nodeType is node.TEXT_NODE \
                 or child.nodeType is node.COMMENT_NODE:
             continue
         else:
-            children.append(child)
-    return children
+            _children.append(child)
+    return _children
 
 class Collision(object):
     def __init__(self, geometry=None, origin=None):
@@ -64,7 +67,7 @@ class Collision(object):
                 c.origin = Pose.parse(child)
             else:
                 if verbose:
-                    rospy.logwarn("Unknown collision element '%s'"%child.localName)
+                    warnings.warn("Unknown collision element '%s'"%child.localName)
         return c
 
     def to_xml(self, doc):
@@ -126,7 +129,7 @@ class Dynamics(object):
 
 class Geometry(object):
     def __init__(self):
-        None
+        pass
 
     @staticmethod
     def parse(node, verbose=True):
@@ -141,13 +144,14 @@ class Geometry(object):
             return Mesh.parse(shape)
         else:
             if verbose:
-                rospy.logwarn("Unknown shape %s"%child.localName)
+                warnings.warn("Unknown shape %s"%shape.localName)
 
     def __str__(self):
         return "Geometry abstract class"
 
 class Box(Geometry):
     def __init__(self, dims=None):
+        Geometry.__init__(self)
         if dims is None:
             self.dims = None
         else:
@@ -171,6 +175,7 @@ class Box(Geometry):
 
 class Cylinder(Geometry):
     def __init__(self, radius=0.0, length=0.0):
+        Geometry.__init__(self)
         self.radius = radius
         self.length = length
 
@@ -194,6 +199,7 @@ class Cylinder(Geometry):
 
 class Sphere(Geometry):
     def __init__(self, radius=0.0):
+        Geometry.__init__(self)
         self.radius = radius
 
     @staticmethod
@@ -214,6 +220,7 @@ class Sphere(Geometry):
 
 class Mesh(Geometry):
     def __init__(self, filename=None, scale=None):
+        Geometry.__init__(self)
         self.filename = filename
         self.scale = scale
 
@@ -225,7 +232,7 @@ class Mesh(Geometry):
             s = None
         else:
             xyz = node.getAttribute('scale').split()
-            scale = map(float, xyz)
+            s = map(float, xyz)
         return Mesh(fn, s)
 
     def to_xml(self, doc):
@@ -341,7 +348,7 @@ class Joint(object):
                 joint.mimic = JointMimic.parse(child)
             else:
                 if verbose:
-                    rospy.logwarn("Unknown joint element '%s'"%child.localName)
+                    warnings.warn("Unknown joint element '%s'"%child.localName)
         return joint
 
     def to_xml(self, doc):
@@ -381,7 +388,7 @@ class Joint(object):
         elif self.joint_type == Joint.FIXED:
             s += "Type: fixed\n"
         else:
-            rospy.logwarn("unknown joint type")
+            warnings.warn("unknown joint type")
 
         s +=  "Axis: {0}\n".format(self.axis)
         s +=  "Origin:\n{0}\n".format(reindent(str(self.origin), 1))
@@ -498,7 +505,7 @@ class Link(object):
                 link.inertial = Inertial.parse(child)
             else:
                 if verbose:
-                    rospy.logwarn("Unknown link element '%s'"%child.localName)
+                    warnings.warn("Unknown link element '%s'"%child.localName)
         return link
 
     def to_xml(self, doc):
@@ -535,7 +542,7 @@ class Material(object):
                 material.texture = child.getAttribute('filename')
             else:
                 if verbose:
-                    rospy.logwarn("Unknown material element '%s'"%child.localName)
+                    warnings.warn("Unknown material element '%s'"%child.localName)
 
         return material
 
@@ -638,7 +645,7 @@ class Visual(object):
                 v.material = Material.parse(child, verbose)
             else:
                 if verbose:
-                    rospy.logwarn("Unknown visual element '%s'"%child.localName)
+                    warnings.warn("Unknown visual element '%s'"%child.localName)
         return v
 
     def to_xml(self, doc):
@@ -685,12 +692,12 @@ class URDF(object):
             elif node.localName == 'material':
                 urdf.add_material( Material.parse(node, verbose) )
             elif node.localName == 'gazebo':
-                None #Gazebo not implemented yet
+                pass #Gazebo not implemented yet
             elif node.localName == 'transmission':
-                None #transmission not implemented yet
+                pass #transmission not implemented yet
             else:
                 if verbose:
-                    rospy.logwarn("Unknown robot element '%s'"%node.localName)
+                    warnings.warn("Unknown robot element '%s'"%node.localName)
         return urdf
 
     @staticmethod
@@ -699,16 +706,16 @@ class URDF(object):
         f = open(filename, 'r')
         return URDF.parse_xml_string(f.read(), verbose)
 
-    @staticmethod
-    def load_from_parameter_server(key = 'robot_description', verbose=True):
-        """
-        Retrieve the robot model on the parameter server
-        and parse it to create a URDF robot structure.
+#    @staticmethod
+#    def load_from_parameter_server(key = 'robot_description', verbose=True):
+#        """
+#        Retrieve the robot model on the parameter server
+#        and parse it to create a URDF robot structure.
 
-        Warning: this requires roscore to be running.
-        """
-        import rospy
-        return URDF.parse_xml_string(rospy.get_param(key), verbose)
+#        Warning: this requires roscore to be running.
+#        """
+#        import rospy
+#        return URDF.parse_xml_string(rospy.get_param(key), verbose)
 
     def add_material(self, material):
         self.elements.append(material)
@@ -792,11 +799,4 @@ class URDF(object):
 
         return s
 
-        self.name = name
-        self.elements = []
-        self.links = {}
-        self.joints = {}
-        self.materials = {}
 
-        self.parent_map = {}
-        self.child_map = {}

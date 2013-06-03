@@ -1,30 +1,22 @@
 # coding=utf-8
 
 
-from numpy import all as np_all, array, linalg
+from numpy import array, linalg
 
 from arboris.massmatrix import principalframe, transport
 from arboris.homogeneousmatrix import zaligned
 
 from arboris.core import World, name_all_elements
-from arboris.visu.world_drawer import Drawer, DrawerDriver, ColorGenerator
+from arboris.visu.world_drawer import Drawer, ColorGenerator
 
 import collada
-from collada.common import E, tag
+from collada.common import E
 
 
 import subprocess
 import os
 import tempfile
 import warnings
-
-import pickle as pkl
-try:
-    import h5py
-except ImportError:
-    pass
-
-import socket
 
 
 
