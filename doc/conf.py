@@ -184,42 +184,63 @@ latex_documents = [
 #latex_use_parts = False
 
 # Additional stuff for the LaTeX preamble.
-#latex_preamble = ''
-latex_preamble = r"""\providecommand{\SO}{\text{SO}}
-\providecommand{\pre}[2][{}]{\vphantom{#2}^{#1}\!#2}
-\providecommand{\twist}[1][{}]{\vphantom{V}^{#1}\!V}
-\providecommand{\dtwist}[1][{}]{\vphantom{V}^{#1}\!\dot{V}}
-\providecommand{\J}[1][{}]{\vphantom{J}^{#1}\!J}
-\providecommand{\dJ}[1][{}]{\vphantom{J}^{#1}\!\dot{J}}
-\providecommand{\wrench}[1][{}]{\vphantom{W}^{#1}\!W}
-\providecommand{\Ad}[1][{}]{\,\vphantom{Ad}^{#1}\!\!Ad}
-\providecommand{\dAd}[1][{}]{\,\vphantom{Ad}^{#1}\!\!\dot{Ad}}
-\providecommand{\GPos}{Q}
-\providecommand{\GPosSet}{\bar{\mathcal{Q}}}
-\providecommand{\GVel}{\nu}
-\providecommand{\dGVel}{\dot{\nu}}
-\providecommand{\GAcc}{\dot{\nu}}
-\providecommand{\GForce}{\gamma}
 
+
+latex_preamble = r"""
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\newcommand{\tens}[1]   {#1}
-\newcommand{\vect}[1]   {\mbox{\boldmath${#1}$}}
-\newcommand{\argmin}[1] {\underset{#1}{\operatorename{argmin}}}
-\newcommand{\diag}      {\mathop{\mathrm{diag}}}
-\newcommand{\norm}[1]   {\ensuremath{\left\lVert #1 \right\rVert}}
-\newcommand{\tp}        {\ensuremath{^{\mathsf{T}}}}
-\renewcommand{\skew}[1] {\ensuremath{\widehat{#1}}}
+\newcommand{\tens}[1]           {#1}
+\newcommand{\vect}[1]           {\mbox{\boldmath${#1}$}}
+\newcommand{\argmin}[1]         {\underset{#1}{\operatorename{argmin}}}
+\newcommand{\diag}              {\mathop{\mathrm{diag}}}
+\newcommand{\norm}[1]           {\left\lVert #1 \right\rVert}
+\newcommand{\tp}                {^{\mathsf{T}}}
+\renewcommand{\skew}[1]         {\widehat{#1}}
 
-\newcommand{\HM}{\ensuremath{\tens{H}}}				%homogenous matrix
-\newcommand{\Rot}{\ensuremath{\tens{R}}}			%rotation matrix
+\newcommand{\dt}                {\delta t}                  %dt
 
-\newcommand{\Frame}[1]{\ensuremath{\Psi_{#1}}}	%frame
-\newcommand{\R}[1]{\ensuremath{\mathbb{R}^{#1}}}
-\newcommand{\Id}[1]{\ensuremath{\tens{I}_{#1}}}
-\newcommand{\In}{\ensuremath{\tens{\mathcal{I}}}}
+\newcommand{\ft}[2]             {_{#1,#2}}                  %from to: generaly to write: H_(i,j) or Ad_(i,j) (H from i to j)
+\newcommand{\rt}[2]             {_{#1/#2}}                  %first relative to second
+\newcommand{\icf}[2][{}]        {\vphantom{#2}^{#1}\!#2}    %in coordinate frame
 
+\newcommand{\pt}[1][p]          {\vect{#1}}                 %point in space
+\newcommand{\ve}[1][u]          {\vect{#1}}                 %vector in space
 
+\newcommand{\force}[1][{}]      {\icf[#1]{\vect{f}}}        %one generalized force
+\newcommand{\linforce}[1][{}]   {\force[#1]}                %translational force in wrench
+\newcommand{\rotforce}[1][{}]   {\icf[#1]{\vect{\tau}}}     %rotational force in wrench
+\newcommand{\wrench}[1][{}]     {\icf[#1]{\vect{W}}}        %wrench
+
+\newcommand{\vel}[1][{}]        {\icf[#1]{\vect{v}}}        %one generalized velocity
+\newcommand{\linvel}[1][{}]     {\vel[#1]}                  %translational velocity in twist
+\newcommand{\rotvel}[1][{}]     {\icf[#1]{\vect{\omega}}}   %rotational velocity in twist
+\newcommand{\twist}[1][{}]      {\icf[#1]{\vect{V}}}        %twist
+\newcommand{\dtwist}[1][{}]     {\icf[#1]{\dot{\vect{V}}}}  %derivative of twist
+
+\newcommand{\HM}                {\tens{H}}                  %homogeneous matrix
+\newcommand{\Rot}               {\tens{R}}                  %rotation matrix
+\newcommand{\Ad}                {\tens{Ad}}                 %adjoint matrix
+\newcommand{\dAd}               {\dot{\Ad}}                 %derivative adjoint matrix
+
+\newcommand{\J}[1][{}]          {\icf[#1]{\tens{J}}}        %jacobian matrix
+\newcommand{\dJ}[1][{}]         {\icf[#1]{\dot{\tens{J}}}}  %derivative jacobian matrix
+
+\newcommand{\Frame}[1][{}]      {\Psi_{#1}}                 %frame
+\newcommand{\R}[1]              {\mathbb{R}^{#1}}           %real space
+\newcommand{\Id}[1]             {\tens{I}_{#1}}             %identity
+\newcommand{\In}[1][{}]         {\icf[#1]{\tens{\mathcal{I}}}}  %inertia
+
+\newcommand{\torque}            {\vect{\tau}}               %torque
+\newcommand{\q}                 {\vect{q}}                  %generalized coordinate q
+\newcommand{\dq}                {\dot{\vect{q}}}            %generalized velocity dq
+\newcommand{\ddq}               {\ddot{\vect{q}}}           %generalized acceleration ddq
+
+\newcommand{\GPos}              {Q}
+\newcommand{\GPosSet}           {\bar{\mathcal{Q}}}
+\newcommand{\GVel}              {\nu}
+\newcommand{\dGVel}             {\dot{\nu}}
+\newcommand{\GAcc}              {\dot{\nu}}
+\newcommand{\GForce}            {\gamma}
 
 """
 
@@ -234,3 +255,8 @@ pngmath_latex_preamble = latex_preamble
 #Misc
 #====
 todo_include_todos = True
+
+
+autoclass_content = 'both'
+
+

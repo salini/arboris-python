@@ -897,28 +897,28 @@ class World(NamedObject):
           time interval.
 
         This (constraint-free) model must be completed by constraints
-        forces `\pre[c]f`, which are mapped to generalized forces
-        by the constraint jacobian `\pre[c]J_c\tp`:
+        forces `\force[c]`, which are mapped to generalized forces
+        by the constraint jacobian `\J[c]_c\tp`:
 
         .. math::
             \GVel(t+dt)
             &= Y(t)
             \left( \frac{M(t)}{dt} \GVel(t) + \GForce(t)
-                + \sum_{c} \; \pre[c]J_{c}\tp(t) \; \pre[c]f(t)
+                + \sum_{c} \; \J[c]_{c}\tp(t) \; \force[c](t)
             \right)
 
         one can also define the constraint velocity  as:
-        `\pre[c]v = \pre[c]J_c \; \GVel` so that:
+        `\vel[c] = \J[c]_c \; \GVel` so that:
 
         .. math::
-            \pre[c]v(t+dt)
-            &= \pre[c]J_c(t) \; \GVel(t+dt)\\
-            &= \pre[c]J_c(t) \; Y(t)
+            \vel[c](t+dt)
+            &= \J[c]_c(t) \; \GVel(t+dt)\\
+            &= \J[c]_c(t) \; Y(t)
             \left(
                 \frac{M(t)}{dt} \GVel(t) + \; \GForce(t)
             \right)
-            + \sum_d \; \pre[c]J_c(t) \; Y(t) \; \pre[d]J_d\tp(t)
-            \; \pre[d]f(t)
+            + \sum_d \; \J[c]_c(t) \; Y(t) \; \J[d]_d\tp(t)
+            \; \force[d](t)
 
         one can define the (global) constraints velocity `v'`,
         force `f'`, jacobian matrix `J'`
@@ -927,19 +927,19 @@ class World(NamedObject):
         .. math::
             v'(t) =
             \begin{bmatrix}
-                \pre[0]v(t)\\ \vdots \\ \pre[c]v(t) \\ \vdots
+                \vel[0](t)\\ \vdots \\ \vel[c](t) \\ \vdots
             \end{bmatrix}
             \hspace{50px}
             f'(t) =
             \begin{bmatrix}
-                \pre[0]f(t)\\ \vdots \\ \pre[c]f(t) \\ \vdots
+                \force[0](t)\\ \vdots \\ \force[c](t) \\ \vdots
             \end{bmatrix}
             \hspace{50px}
             J'(t) =
             \begin{bmatrix}
-                \pre[0]J_0(t)\\
+                \J[0]_0(t)\\
                 \vdots\\
-                \pre[c]J_c(t)\\
+                \J[c]_c(t)\\
                 \vdots
             \end{bmatrix}
             \hspace{50px}
@@ -961,8 +961,8 @@ class World(NamedObject):
         - compute `J`, `v`  and `Y`,
 
         - iterate over each constraint object in order to compute
-          `\pre[c]f`. At each iteration the force is
-          updated by `\Delta\pre[c]f`
+          `\force[c]`. At each iteration the force is
+          updated by `\Delta\force[c]`
 
         - eventually add each active constraint generalized force to
           world :attr:`~arboris.core.World._gforce` property.
@@ -1055,7 +1055,9 @@ class World(NamedObject):
 class _SubFrame(NamedObject, Frame):
 
     def __init__(self, body, bpose=None, name=None):
-        """Create a frame rigidly fixed to a body.
+        """ Create a frame rigidly fixed to a body.
+
+        **Example:**
 
         >>> b = Body()
         >>> f = SubFrame(b, Hg.rotz(3.14/3.),'Brand New Frame')
@@ -1063,7 +1065,7 @@ class _SubFrame(NamedObject, Frame):
         The ``body`` argument must be a member of the ``Body`` class:
         >>> f = SubFrame(None, Hg.rotz(3.14/3.))
         Traceback (most recent call last):
-            ...
+        ...
         ValueError: The ``body`` argument must be an instance of the ``Boby`` class
 
         The ``bpose`` argument must be an homogeneous matrix:
@@ -1071,7 +1073,7 @@ class _SubFrame(NamedObject, Frame):
         >>> from numpy import ones
         >>> f = SubFrame(b, ones((4,4)))
         Traceback (most recent call last):
-            ...
+        ...
         AssertionError
 
         """
@@ -1295,13 +1297,13 @@ class Body(NamedObject, Frame):
 
         .. math::
 
-            \twist[c]_{c/g} &= \Ad[c]_p \; \twist[p]_{p/g} + \twist[c]_{c/p} \\
-            &= \Ad[c]_p \; \twist[p]_{p/g} + \Ad[c]_n \; \twist[n]_{n/r} \\
-            &= \Ad[c]_p \; \J[p]_{p/g} \; \GVel
-               + \Ad[c]_n \; \J[n]_{n/r} \; \GVel_j \\
+            \twist[c]_{c/g} &= \Ad\ft{c}{p} \; \twist[p]_{p/g} + \twist[c]_{c/p} \\
+            &= \Ad\ft{c}{p} \; \twist[p]_{p/g} + \Ad\ft{c}{n} \; \twist[n]_{n/r} \\
+            &= \Ad\ft{c}{p} \; \J[p]_{p/g} \; \GVel
+               + \Ad\ft{c}{n} \; \J[n]_{n/r} \; \GVel_j \\
             &= \J[c]_{c/g} \; \GVel
 
-        where  `\twist[n]_{n/r}` isgiven by the joint
+        where  `\twist[n]_{n/r}` is given by the joint
         :attr:`~arboris.core.Joint.twist` attribute.
         `\GVel_j` is the generalized velocity of the joint `j` and is
         related to the world generalized velocity by trivial projection
@@ -1315,9 +1317,9 @@ class Body(NamedObject, Frame):
         therefore, the child body jacobian is
 
         .. math::
-            \J[c]_{c/g} &= \Ad[c]_p \; \J[p]_{p/g} +
+            \J[c]_{c/g} &= \Ad\ft{c}{p} \; \J[p]_{p/g} +
             \begin{bmatrix}
-            0 & \cdots & 0 & \Ad[c]_n \; \J[n]_{n/r} & 0 & \cdots & 0
+            0 & \cdots & 0 & \Ad\ft{c}{n} \; \J[n]_{n/r} & 0 & \cdots & 0
             \end{bmatrix} \\
 
         where `\J[n]_{n/r}` is given by the joint
@@ -1325,11 +1327,11 @@ class Body(NamedObject, Frame):
         expression leads to the child body acceleration:
 
         .. math::
-            \dtwist[c]_{c/g} &= \dAd[c]_p \; \J[p]_{p/g} \; \GVel
-            + \Ad[c]_p \; \dJ[p]_{p/g} \; \GVel
-            + \Ad[c]_p \; \J[p]_g \; \dGVel
-            + \Ad[c]_n \; \dJ[n]_{n/r} \; \GVel_j
-            + \Ad[c]_n \; \J[n]_{m/r} \dGVel_j \\
+            \dtwist[c]_{c/g} &= \dAd\ft{c}{p} \; \J[p]_{p/g} \; \GVel
+            + \Ad\ft{c}{p} \; \dJ[p]_{p/g} \; \GVel
+            + \Ad\ft{c}{p} \; \J[p]_g \; \dGVel
+            + \Ad\ft{c}{n} \; \dJ[n]_{n/r} \; \GVel_j
+            + \Ad\ft{c}{n} \; \J[n]_{m/r} \dGVel_j \\
             &= \J[c]_{c/g} \; \dGVel + \dJ[c]_{c/g} \; \GVel
 
         the expression of the child body hessian is then obtained by
@@ -1337,22 +1339,22 @@ class Body(NamedObject, Frame):
 
         .. math::
             \dJ[c]_{c/g} \; \GVel
-            &= \dAd[c]_p \; \J[p]_{p/g} \; \GVel
-            + \Ad[c]_p \; \dJ[p]_{p/g} \; \GVel
-            + \Ad[c]_n \; \dJ[n]_{n/r} \; \GVel_j \\
+            &= \dAd\ft{c}{p} \; \J[p]_{p/g} \; \GVel
+            + \Ad\ft{c}{p} \; \dJ[p]_{p/g} \; \GVel
+            + \Ad\ft{c}{n} \; \dJ[n]_{n/r} \; \GVel_j \\
 
             \dJ[c]_{c/g}
-            &= \dAd[c]_p \; \J[p]_{p/g} + \Ad[c]_p \; \dJ[p]_{p/g} +
+            &= \dAd\ft{c}{p} \; \J[p]_{p/g} + \Ad\ft{c}{p} \; \dJ[p]_{p/g} +
             \begin{bmatrix}
-            0 & \cdots & 0 & (\Ad[c]_n \; \dJ[n]_{n/r}) & 0 & \cdots & 0
+            0 & \cdots & 0 & (\Ad\ft{c}{n} \; \dJ[n]_{n/r}) & 0 & \cdots & 0
             \end{bmatrix}
 
         with
 
         .. math::
-            \dAd[c]_p &= \Ad[c]_n \; \dAd[n]_r \; \Ad[r]_p
+            \dAd\ft{c}{p} &= \Ad\ft{c}{n} \; \dAd\ft{n}{r} \; \Ad\ft{r}{p}
 
-        and where `\dAd[n]_r` and `\dJ[n]_{n/r}` are respectively given by
+        and where `\dAd\ft{n}{r}` and `\dJ[n]_{n/r}` are respectively given by
         the joint :attr:`~arboris.core.Joint.idadjoint` and
         :attr:`~arboris.core.Joint.djacobian` attributes.
 

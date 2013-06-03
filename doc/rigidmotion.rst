@@ -5,10 +5,10 @@ Rigid Motion
 Frames and rigid bodies
 =======================
 
-A frame `\Frame{}` is *an abstract class* which defines the position and
+A frame `\Frame` is *an abstract class* which defines the position and
 orientation of a particular part of the system.
-The frame class has three concrete subclasses, :class:`arboris.core.Body`, 
-:class:`arboris.core.SubFrame` and :class:`arboris.core.MovingSubFrame`.
+The frame class has three concrete subclasses, :class:`~arboris.core.Body`, 
+:class:`~arboris.core.SubFrame` and :class:`~arboris.core.MovingSubFrame`.
 
 
 The Body class incorporates the inertia and viscosity properties of some
@@ -16,12 +16,12 @@ rigid parts. In a general manner, the inertia matrix is defined as follows
 
 .. math::
     \begin{bmatrix}
-        \pre[b]{\In} & m \skew{r}   \\
-        m \skew{r}\tp       & m \Id{}
+          \In[b]        & m \skew{\ve[r]}   \\
+        m \skew{r}\tp   & m \Id{}
     \end{bmatrix}
 
-where `r` represents the center of mass location relative to `b` the body frame
-`\Frame{b}`, `\skew{\bullet}` is skew-symetric matrix and `\bullet\tp` is
+where `\ve[r]` represents the center of mass location relative to `b` the body
+frame `\Frame{b}`, `\skew{\bullet}` is skew-symetric matrix and `\bullet\tp` is
 transposition.
 Bodies can have some subframes to locate some specific locations, as shown in
 the image below where `b` has 2 subframes, `\Frame{sf1}` and `\Frame{sf2}`.
@@ -42,14 +42,12 @@ An homogeneous matrix `\HM` is a matrix of the form
 .. math::
     \HM = 
     \begin{bmatrix}
-        \Rot & p \\
-        \begin{smallmatrix}
-            0 & 0 & 0
-        \end{smallmatrix} & 1
+        \Rot    & \pt \\
+        \ve[0]  & 1
     \end{bmatrix}
     \in \R{4\times4}
 
-with `\Rot^{-1}=\Rot \tp \in \R{3\times3}` and `p \in \R{3\times1}`.
+with `\Rot^{-1}=\Rot \tp \quad \in \R{3\times3}` and `\pt \in \R{3}`.
 
 The *pose* (position and orientation, also known as the *configuration*)
 of a (right-handed) coordinate frame `\Frame{b}` regarding to a reference 
@@ -59,15 +57,13 @@ homogeneous matrix
 .. math::
     \HM_{ab} = 
     \begin{bmatrix}
-        \Rot_{ab} & p_{ab} \\
-        \begin{smallmatrix}
-            0 & 0 & 0
-        \end{smallmatrix} & 1
+        \Rot\ft{a}{b}   & p\ft{a}{b} \\
+        \ve[0]          & 1
     \end{bmatrix}
 
 with:
 
-- `p_{ab}` defined as the `3 \times 1` column vector of coordinates of 
+- `\pt\ft{a}{b}` defined as the `3 \times 1` column vector of coordinates of 
   the origin of `\Frame{b}` expressed in `\Frame{a}`.
 
 - `\Rot_{ab}` defined as the `3 \times 3` matrix with the columns equal to
@@ -78,19 +74,15 @@ with:
 The inverse pose is computed as follows
 
  .. math::
-    \HM_{ba} = \HM_{ab}^{-1} =
+    \HM\ft{b}{a} = \HM\ft{a}{b}^{-1} =
     \begin{bmatrix}
-        \Rot_{ba} & p_{ba} \\
-        \begin{smallmatrix}
-            0 & 0 & 0
-        \end{smallmatrix} & 1
+        \Rot\ft{b}{a} & \pt\ft{b}{a} \\
+        \ve[0] & 1
     \end{bmatrix}
     =
     \begin{bmatrix}
-        \Rot_{ab}\tp & -\Rot_{ab}\tp p_{ab} \\
-        \begin{smallmatrix}
-            0 & 0 & 0
-        \end{smallmatrix} & 1
+        \Rot\ft{a}{b}\tp    & - \Rot\ft{a}{b}\tp \pt\ft{a}{b} \\
+        \ve[0]              & 1
     \end{bmatrix}
 
 Velocity of a coordinate frame
@@ -99,24 +91,24 @@ Velocity of a coordinate frame
 The velocity of a rigid body can be described by a twist.
 
 .. math::
-    \twist[c]_{a/b} = 
+    \twist[c]\rt{a}{b} = 
     \begin{bmatrix}
-        \pre[c]\omega_{a/b}\\
-        \pre[c]v_{a/b}\\
+        \rotvel[c]\rt{a}{b} \\
+        \linvel[c]\rt{a}{b} \\
     \end{bmatrix}
 
-The adjoint matrix `\Ad_{ab}` which depends on the homogeneous matrix `\HM_{ab}`
+The adjoint matrix `\Ad\ft{a}{b}` which depends on the homogeneous matrix `\HM\ft{a}{b}`
 describes the twist displacement from `\Frame{a}` to `\Frame{b}`
 
 .. math::
-    \Ad_{cd} = 
+    \Ad\ft{c}{d} = 
     \begin{bmatrix}
-        \Rot_{cd}  & 0 \\
-        \skew{p}_{cd} \Rot_{cd} & \Rot_{cd}
+        \Rot\ft{c}{d}                       & 0 \\
+        \skew{\pt}\ft{c}{d} \Rot\ft{c}{d}   & \Rot\ft{c}{d}
     \end{bmatrix}
     %
     \hspace{100px}
-    \twist[c]_{a/b} = \Ad_{cd} \cdot \twist[d]_{a/b}
+    \twist[c]\rt{a}{b} = \Ad\ft{c}{d} \cdot \twist[d]\rt{a}{b}
 
 
 TODO: add adjoint matrix and relative velocities formulas
@@ -125,15 +117,15 @@ Wrenches
 ========
 
 A generalized force acting on a rigid body consist in a linear component
-(pure force) `f` and angular component (pure moment) `\tau`. The 
-pair force/moment is named a *wrench* and can be represented using 
+(pure force) `\linforce` and angular component (pure moment) `\rotforce`.
+The pair force/moment is named a *wrench* and can be represented using 
 a vector in `\R{6}`:
 
 .. math::
     \wrench[c] = 
     \begin{bmatrix}
-        \pre[c]\tau(t)\\
-        \pre[c]f(t)\\
+        \rotforce[c] \\
+        \linforce[c] \\
     \end{bmatrix}
     
 
@@ -141,7 +133,7 @@ The displacement of a wrench from a frame to another is done through the use of
 the adjoint matrix
 
  .. math::
-    \wrench[c] = \Ad_{dc}\tp \cdot \wrench[d]
+    \wrench[c] = \Ad\ft{d}{c}\tp \cdot \wrench[d]
 
 Acceleration of a coordinate frame
 ==================================
@@ -153,29 +145,29 @@ Newton-Euler equations for a rigid body
 
 .. math::
     \begin{bmatrix}
-        \pre[b]{\mathcal{I}} & 0   \\
-        0                   & m I
+        \In[b]    & 0   \\
+        0         & m \Id{}
     \end{bmatrix}
     \begin{bmatrix}
-        \pre[b]{\dot{\omega}}_{b/g}(t) \\
-        \pre[b]{\dot{v}}_{b/g}(t)
+        \icf[b]{\dot{\rotvel}}\rt{b}{g}(t) \\
+        \icf[b]{\dot{\linvel}}\rt{b}{g}(t)
     \end{bmatrix}
     +
     \begin{bmatrix}
-        0 & \pre[b]\omega_{b/g}(t) \times \pre[b]{\mathcal{I}} \\
-        0 & \pre[b]\omega_{b/g}(t) \times
+        0 & \rotvel[b]\rt{b}{g}(t) \times \In[b] \\
+        0 & \rotvel[b]\rt{b}{g}(t) \times
     \end{bmatrix}
     \begin{bmatrix}
-        \pre[b]\omega_{b/g}(t) \\
-        \pre[b]v_{b/g}(t)
+        \rotvel[b]\rt{b}{g}(t) \\
+        \linvel[b]\rt{b}{g}(t)
     \end{bmatrix}
     =
     \begin{bmatrix}
-        \pre[b]\tau(t)\\
-        \pre[b]f(t)\\
+        \rotforce[b](t)\\
+        \linforce[b](t)\\
     \end{bmatrix}
     
-where `\pre[b]{\mathcal{I}}` is the body inertial tensor, expressed 
+where `\In[b]` is the body inertial tensor, expressed 
 in the body frame, `b`
 
 Implementation

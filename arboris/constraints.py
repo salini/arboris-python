@@ -1,15 +1,17 @@
 # coding=utf-8
 
-"""Constraints solvers, used in the Gauss-Seidel solver."""
+""" Constraints solvers, used in the Gauss-Seidel solver.
+
+"""
 
 __author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 
-from numpy import array, zeros, eye, dot, diag, logical_and, arange
+from numpy        import array, zeros, eye, dot, diag, logical_and, arange
 from numpy.linalg import solve, eigvals, pinv
 import arboris.homogeneousmatrix as Hg
-from arboris.core import MovingSubFrame, Constraint, Shape, World
-from arboris.joints import LinearConfigurationSpaceJoint
-from arboris.collisions import choose_solver
+from   arboris.core       import MovingSubFrame, Constraint, Shape, World
+from   arboris.joints     import LinearConfigurationSpaceJoint
+from   arboris.collisions import choose_solver
 
 point_contact_proximity = 0.02
 joint_limits_proximity = 0.01
@@ -129,7 +131,7 @@ class BallAndSocketConstraint(Constraint):
         \end{bmatrix}
 
     The constraint jacobian is then given by
-    `( \Ad[0]_1 \; \pre[1]J_{1/g} - \pre[0]J_{0/g} )`
+    `( \Ad\ft{0}{1} \; \J[1]\rt{1}{g} - \J[0]\rt{0}{g} )`
 
     In order to solve the constraint, an adjustement `\Delta f` of the
     constraint force is computed by the ``solve`` method.
@@ -302,7 +304,7 @@ class PointContact(Constraint):
 
 
 class SoftFingerContact(PointContact):
-    r"""This class implements a "soft-finger" point contact constraint.
+    r"""This class implements a *soft-finger* point contact constraint.
 
     Let's consider two convex objects (shapes) and attach a frame to each of
     them in such a way that:

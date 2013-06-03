@@ -1,20 +1,36 @@
 # coding=utf-8
-"""Collision solvers...
+
+""" Collision solvers.
 
 """
 
 __author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 
 from numpy.linalg import norm
-from numpy import zeros, argmin, dot, sign, arange
+from numpy        import zeros, argmin, dot, sign, arange
 import arboris.homogeneousmatrix as Hg
-from arboris.core import Shape
-from arboris.shapes import Plane, Point, Box, Sphere
+from   arboris.core   import Shape
+from   arboris.shapes import Plane, Point, Box, Sphere
 import warnings
 
 
 def choose_solver(shape0, shape1):
     """Choose a suitable solver for the two shapes.
+
+    :param shape0: first shape to select the proper solver.
+    :type  shape0: :class:`~arboris.core.Shape`
+    :param shape1: second shape.
+    :type  shape1: :class:`~arboris.core.Shape`
+    :return: a tuple ((shape0', shape1'), solver). the shapes are the same as
+             in inputs arguments, but they can be sorted differently.
+
+    For now, the number of solvers is limited. Implemented solvers are:
+
+    * Sphere / Sphere
+    * Sphere / Point
+    * Sphere / Plane
+    * Sphere / Box
+    * Point / Plane
 
     """
     assert isinstance(shape0, Shape)
@@ -67,7 +83,10 @@ def choose_solver(shape0, shape1):
     return (shapes, solver)
 
 def sphere_sphere_collision(shapes):
-    """
+    """ Return collision information between 2 spheres.
+
+    :param shapes: a tuple (:class:`~arboris.shapes.Sphere`, :class:`~arboris.shapes.Sphere`)
+    :return: see :meth:`_sphere_sphere_collision` for more information on returned data.
 
     """
     assert isinstance(shapes[0], Sphere)
@@ -78,7 +97,10 @@ def sphere_sphere_collision(shapes):
                                     shapes[1].radius)
 
 def sphere_point_collision(shapes):
-    """
+    """ Return collision information between a sphere and a point.
+
+    :param shapes: a tuple (:class:`~arboris.shapes.Sphere`, :class:`~arboris.shapes.Point`)
+    :return: see :meth:`_sphere_sphere_collision` for more information on returned data.
 
     """
     assert isinstance(shapes[0], Sphere)
@@ -89,6 +111,12 @@ def sphere_point_collision(shapes):
                                     0.)
 
 def box_sphere_collision(shapes):
+    """ Return collision information between a box and a sphere.
+
+    :param shapes: a tuple (:class:`~arboris.shapes.Box`, :class:`~arboris.shapes.Sphere`)
+    :return: see :meth:`_box_sphere_collision` for more information on returned data.
+
+    """
     assert isinstance(shapes[0], Box)
     assert isinstance(shapes[1], Sphere)
     return _box_sphere_collision(shapes[0].frame.pose,
@@ -97,11 +125,20 @@ def box_sphere_collision(shapes):
                                  shapes[1].radius)
 
 def box_point_collision(shapes):
+    """ Return collision information between a box and a point.
+
+    :param shapes: a tuple (:class:`~arboris.shapes.Box`, :class:`~arboris.shapes.Point`)
+    :return: see :meth:`_box_sphere_collision` for more information on returned data.
+    
+    .. warning:: This method may raise error while looking for normal vectors,
+                 especially when point is close to box edges.
+
+    """
     assert isinstance(shapes[0], Box)
     assert isinstance(shapes[1], Point)
     warnings.warn("""
     The Box/Point collision is implemented, but it may raise error while
-    looking for normal vectors, particularly when point is close to edges.
+    looking for normal vectors, especially when point is close to box edges.
     You should use Box/Sphere collision instead.
     """)
     return _box_sphere_collision(shapes[0].frame.pose,
@@ -110,6 +147,12 @@ def box_point_collision(shapes):
                                  0.0)
 
 def plane_sphere_collision(shapes):
+    """ Return collision information between a plane and a sphere.
+
+    :param shapes: a tuple (:class:`~arboris.shapes.Plane`, :class:`~arboris.shapes.Sphere`)
+    :return: see :meth:`_plane_sphere_collision` for more information on returned data.
+
+    """
     assert isinstance(shapes[0], Plane)
     assert isinstance(shapes[1], Sphere)
     return _plane_sphere_collision(shapes[0].frame.pose,
@@ -118,6 +161,12 @@ def plane_sphere_collision(shapes):
                                    shapes[1].radius)
 
 def plane_point_collision(shapes):
+    """ Return collision information between a plane and a point.
+
+    :param shapes: a tuple (:class:`~arboris.shapes.Plane`, :class:`~arboris.shapes.Point`)
+    :return: see :meth:`_plane_sphere_collision` for more information on returned data.
+
+    """
     assert isinstance(shapes[0], Plane)
     assert isinstance(shapes[1], Point)
     return _plane_sphere_collision(shapes[0].frame.pose,
@@ -126,7 +175,19 @@ def plane_point_collision(shapes):
                                    0.)
 
 def _sphere_sphere_collision(p_g0, radius0, p_g1, radius1):
-    """
+    """ Get information on sphere/sphere collision.
+    
+    :param p_g0: position of the center of sphere0 relative to the ground
+    :type  p_g0: (3,)-array
+    :param float radius0: radius of sphere0
+    :param p_g1: position of the center of sphere1 relative to the ground
+    :type  p_g1: (3,)-array
+    :param float radius1: radius of sphere1
+    :return: a tuple (*sdist*, *H_gc0*, *H_gc1*) with:
+
+            * *sdist*: the minimal distance between the two spheres
+            * *H_gc0*: the pose from the ground to the closest contact point on sphere 0 (normal along z)
+            * *H_gc1*: the pose from the ground to the closest contact point on sphere 1 (normal along z)
 
     .. image:: img/sphere_sphere_collision.svg
        :width: 300px
@@ -175,15 +236,23 @@ def _sphere_sphere_collision(p_g0, radius0, p_g1, radius1):
     return (sdist, H_gc0, H_gc1)
 
 def _plane_sphere_collision(H_g0, coeffs0, p_g1, radius1):
-    """
-    :param H_g0: pose of the plane `H_{g0}`
-    :type H_g0: (4,4) array
+    """ Get information on plane/sphere collision.
+    
+    :param H_g0: pose of the center of the plane relative to the ground
+    :type  H_g0: (4,4)-array
     :param coeffs0: coefficients from the plane equation
-    :type coeffs0: (4,) array
-    :param p_g1: center of the sphere
-    :type p_g1: (3,) array
-    :param radius1: radius of the sphere
-    :type radius1: float
+    :type  coeffs0: (4,)-array
+    :param p_g1: position of center of the sphere relative to the ground
+    :type  p_g1: (3,)-array
+    :param float radius1: radius of the sphere
+    :return: a tuple (*sdist*, *H_gc0*, *H_gc1*) with:
+
+            * *sdist*: the minimal distance between the plane and the sphere
+            * *H_gc0*: the pose from the ground to the closest contact point on plane 0 (normal along z)
+            * *H_gc1*: the pose from the ground to the closest contact point on sphere 1 (normal along z)
+
+    .. image:: img/plane_sphere_collision.svg
+       :width: 300px
 
     **Tests:**
 
@@ -221,15 +290,20 @@ def _plane_sphere_collision(H_g0, coeffs0, p_g1, radius1):
     return (sdist, H_gc0, H_gc1)
 
 def _box_sphere_collision(H_g0, half_extents0, p_g1, radius1):
-    """
-    :param H_g0: pose of the box `H_{g0}`
-    :type H_g0: (4,4) array
+    """ Get information on box/sphere collision.
+
+    :param H_g0: pose of the center of the box relative to the ground
+    :type H_g0: (4,4)-array
     :param half_extents0: half lengths of the box
-    :type half_extents0: (3,) array
-    :param p_g1: center of the sphere
+    :type half_extents0: (3,)-array
+    :param p_g1: position of the center of the sphere relative to the ground
     :type p_g1: (3,) array
-    :param radius1: radius of the sphere
-    :type radius1: float
+    :param float radius1: radius of the sphere
+    :return: a tuple (*sdist*, *H_gc0*, *H_gc1*) with:
+
+            * *sdist*: the minimal distance between the box and the sphere
+            * *H_gc0*: the pose from the ground to the closest contact point on box 0 (normal along z)
+            * *H_gc1*: the pose from the ground to the closest contact point on sphere 1 (normal along z)
 
     .. image:: img/box_sphere_collision.svg
        :width: 300px

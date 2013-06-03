@@ -9,12 +9,13 @@ import numpy
 tol = 1e-9
 
 def transl(t_x, t_y, t_z):
-    """Homogeneous matrix of a translation.
+    """ Homogeneous matrix of a translation.
 
     :param float t_x, t_y, t_z: coordinates of the translation vector in 3d space
-    :return: ((4,4) array) homogeneous matrix of the translation
+    :return: homogeneous matrix of the translation
+    :rtype: (4,4)-array
 
-    Example:
+    **Example:**
 
     >>> transl(1., 2., 3.)
     array([[ 1.,  0.,  0.,  1.],
@@ -31,9 +32,15 @@ def transl(t_x, t_y, t_z):
 
 
 def rotzyx(angle_z, angle_y, angle_x):
-    """Homogeneous transformation matrix from pitch-roll-yaw angles
+    """ Homogeneous transformation matrix from roll-pitch-yaw angles.
 
-    In short:  R = Rz * Ry * Rx
+    :param float angle_z: yaw angle in radian
+    :param float angle_y: pitch angle in radian
+    :param float angle_x: roll angle in radian
+    :return: homogeneous matrix of the roll-pitch-yaw orientation
+    :rtype: (4,4)-array
+    
+    In short, return: \Rot = \Rot_{z} * \Rot_{y} * \Rot_{x}
 
     **Example:**
 
@@ -59,9 +66,14 @@ def rotzyx(angle_z, angle_y, angle_x):
 
 
 def rotzy(angle_z, angle_y):
-    """Homogeneous transformation matrix from pitch-roll-yaw angles)
+    """ Homogeneous transformation matrix from pitch-yaw angles.
 
-    In short:  R = Rz * Ry
+    :param float angle_z: yaw angle in radian
+    :param float angle_y: pitch angle in radian
+    :return: homogeneous matrix of the pitch-yaw orientation
+    :rtype: (4,4)-array
+    
+    In short, return: \Rot = \Rot_{z} * \Rot_{y}
 
     Example:
 
@@ -84,9 +96,14 @@ def rotzy(angle_z, angle_y):
 
 
 def rotzx(angle_z, angle_x):
-    """Homogeneous transformation matrix from pitch-roll-yaw angles)
+    """ Homogeneous transformation matrix from roll-yaw angles.
 
-    In short:  R = Rz * Rx
+    :param float angle_z: yaw angle in radian
+    :param float angle_x: roll angle in radian
+    :return: homogeneous matrix of the roll-yaw orientation
+    :rtype: (4,4)-array
+    
+    In short, return: \Rot = \Rot_{z} * \Rot_{x}
 
     **Example:**
 
@@ -109,9 +126,14 @@ def rotzx(angle_z, angle_x):
 
 
 def rotyx(angle_y, angle_x):
-    """Homogeneous transformation matrix from pitch-roll-yaw angles)
+    """ Homogeneous transformation matrix from roll-pitch angles.
 
-    In short:  R = Ry * Rx
+    :param float angle_y: pitch angle in radian
+    :param float angle_x: roll angle in radian
+    :return: homogeneous matrix of the roll-pitch orientation
+    :rtype: (4,4)-array
+    
+    In short, return: \Rot = \Rot_{y} * \Rot_{x}
 
     **Example:**
 
@@ -133,7 +155,11 @@ def rotyx(angle_y, angle_x):
          [ 0., 0.   , 0.   , 1.]])
 
 def rotx(angle):
-    """Homogeneous matrix of a rotation around the x-axis
+    """ Homogeneous matrix of a rotation around the x-axis.
+
+    :param float angle: angle around x-axis in radian
+    :return: homogeneous matrix
+    :rtype: (4,4)-array
 
     **Example:**
 
@@ -153,7 +179,11 @@ def rotx(angle):
     return H
 
 def roty(angle):
-    """Homogeneous matrix of a rotation around the y-axis
+    """ Homogeneous matrix of a rotation around the y-axis.
+
+    :param float angle: angle around y-axis in radian
+    :return: homogeneous matrix
+    :rtype: (4,4)-array
 
     **Example:**
 
@@ -173,7 +203,11 @@ def roty(angle):
     return H
 
 def rotz(angle):
-    """Homogeneous matrix of a rotation around the z-axis
+    """ Homogeneous matrix of a rotation around the z-axis.
+
+    :param float angle: angle around z-axis in radian
+    :return: homogeneous matrix
+    :rtype: (4,4)-array
 
     **Example:**
 
@@ -193,11 +227,12 @@ def rotz(angle):
     return H
 
 def zaligned(vec):
-    """Returns an homogeneous matrix whose z-axis is colinear vith `vec`.
+    """ Returns an homogeneous matrix whose z-axis is colinear vith *vec*.
 
     :param vec: input vector, assumed to be normalized
-    :type vec: (3,) array
-    :return: ((4,4) array) homogeneous matrix of the frame
+    :type  vec: (3,)-array
+    :return: homogeneous matrix of the frame aligned with vec
+    :rtype: (4,4)-array
 
     **Example:**
 
@@ -225,26 +260,61 @@ def zaligned(vec):
     return H
 
 def ishomogeneousmatrix(H, _tol=tol):
-    """Return true if input is an homogeneous matrix.
+    """ Return true if input is an homogeneous matrix.
+
+    :param H: the homogeneous matrix to check
+    :type  H: (4,4)-array
+    :param float _tol: the tolerance for the rotation matrix determinant
+    :return: True if homogeneous matrix, False otherwise
+
     """
     return (H.shape == (4, 4)) \
         and (numpy.abs(numpy.linalg.det(H[0:3, 0:3])-1) <= _tol) \
         and (H[3, 0:4]==[0, 0, 0, 1]).all()
 
 def pdot(H, point):
-    """Frame change for a point.
+    r""" Frame displacement for a point.
+
+    :param H: the homogeneous matrix to check
+    :type  H: (4,4)-array
+    :param point: point one wants to displace
+    :type  point: (3,)-array
+    :return: the displaced point
+    :rtype: (3,)-array
+
+    `\icf[a]{\pt} = \HM\ft{a}{b}  \icf[b]{\pt}`, where `\HM\ft{a}{b}` is the
+    homogeneous matrix from `\Frame{a}` to `\Frame{b}`, and `\icf[b]{\pt}` is
+    the point expressed in `\Frame{b}`.
+
     """
     assert ishomogeneousmatrix(H)
     return dot(H[0:3, 0:3], point) + H[0:3, 3]
 
 def vdot(H, vec):
-    """Frame change for a vector.
+    r""" Frame displacement for a vector.
+
+    :param H: the homogeneous matrix to check
+    :type  H: (4,4)-array
+    :param vec: point one wants to displace
+    :type  vec: (3,)-array
+    :return: the displaced point
+    :rtype: (3,)-array
+
+    `\icf[a]{\ve} = \Rot\ft{a}{b}  \icf[b]{\ve}`, where `\Rot\ft{a}{b}` is the
+    rotation matrix from `\Frame{a}` to `\Frame{b}`, and `\icf[b]{\ve}` is
+    the vector expressed in `\Frame{b}`.
+
     """
     assert ishomogeneousmatrix(H)
     return dot(H[0:3, 0:3], vec)
 
 def inv(H):
-    """Invert an homogeneous matrix.
+    """ Invert a homogeneous matrix.
+
+    :param H: the homogeneous matrix to invert
+    :type  H: (4,4)-array
+    :return: inverted homogeneous matrix
+    :rtype: (4,4)-array
 
     **Example:**
 
@@ -270,11 +340,12 @@ def inv(H):
     return invH
 
 def adjoint(H):
-    """Adjoint of the homogeneous matrix.
+    """ Adjoint of the homogeneous matrix.
 
     :param H: homogeneous matrix
-    :type H: (4,4) array
-    :return: ((6,6) array) adjoint matrix
+    :type  H: (4,4)-array
+    :return: adjoint matrix
+    :rtype: (6,6)-array
 
     **Example:**
 
@@ -297,7 +368,7 @@ def adjoint(H):
            [-0.9937305 ,  1.50137907,  4.66458577,  0.35373751, -0.86575984,
              0.35401931]])
     """
-    assert ishomogeneousmatrix(H), H
+    assert ishomogeneousmatrix(H)
     R = H[0:3, 0:3]
     p = H[0:3, 3]
     pxR = dot(
@@ -306,7 +377,7 @@ def adjoint(H):
              [ p[2],     0, -p[0]],
              [-p[1],  p[0],     0]]),
         R)
-    
+
     Ad = zeros((6,6))
     Ad[0:3,0:3] = R
     Ad[3:6,0:3] = pxR
@@ -315,12 +386,12 @@ def adjoint(H):
 
 
 def iadjoint(H):
-    """Return the adjoint ((6,6) array) of the inverse homogeneous matrix.
+    """ Return the adjoint ((6,6) array) of the inverse homogeneous matrix.
     """
     return adjoint(inv(H))
 
 def dAdjoint(Ad, T):
-    """Return the derivative of an Adjoint with respect to time
+    """ Return the derivative of an Adjoint with respect to time.
 
     definition from arboris-matlab
     if H is defined as follow:
@@ -344,11 +415,14 @@ def dAdjoint(Ad, T):
     return dot(Ad, MT)
 
 def rotzyx_angles(H):
-    """Returns the angles such that `H[0:3, 0:3] = R_z(a_z) R_y(a_y) R_x(a_x)`
+    """ Returns the roll-pitch-yaw angles corresponding to the rotation matrix of `\HM`.
 
     :param H: homogeneous matrix
-    :type H: (4,4) array
-    :return: ((3,) array) angles of roll pitch yaw
+    :type  H: (4,4)-array
+    :return: angles of roll pitch yaw
+    :rtype: (3,)-array
+
+    Returns the angles such that `H[0:3, 0:3] = R_z(a_z) R_y(a_y) R_x(a_x)`.
 
     **Example:**
 
@@ -370,3 +444,5 @@ def rotzyx_angles(H):
         ay = arctan2(-H[2, 0], cz*H[0, 0] + sz*H[1, 0])
         ax = arctan2(sz*H[0, 2] - cz*H[1, 2], cz*H[1, 1] - sz*H[0, 1])
     return (az, ay, ax)
+
+
