@@ -20,7 +20,7 @@ import os
 class pydaenimCom(Observer):
     """
     """
-    def __init__(self, colladafile, host="localhost", port=5000, timeout=5, flat=False, name=None):
+    def __init__(self, colladafile, host="127.0.0.1", port=5000, timeout=5, flat=False, name=None):
         Observer.__init__(self, name)
         self.flat  = flat
         self.world = None
