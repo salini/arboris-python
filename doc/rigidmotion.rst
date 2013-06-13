@@ -16,11 +16,11 @@ rigid parts. In a general manner, the inertia matrix is defined as follows
 
 .. math::
     \begin{bmatrix}
-          \In[b]        & m \skew{\ve[r]}   \\
+          \In[b]        & m \skew{\vec{r}}   \\
         m \skew{r}\tp   & m \Id{}
     \end{bmatrix}
 
-where `\ve[r]` represents the center of mass location relative to `b` the body
+where `\vec{r}` represents the center of mass location relative to `b` the body
 frame `\Frame{b}`, `\skew{\bullet}` is skew-symetric matrix and `\bullet\tp` is
 transposition.
 Bodies can have some subframes to locate some specific locations, as shown in
@@ -37,17 +37,17 @@ the image below where `b` has 2 subframes, `\Frame{sf1}` and `\Frame{sf2}`.
 Position of a coordinate frame
 ==============================
 
-An homogeneous matrix `\HM` is a matrix of the form
+An homogeneous matrix `\H` is a matrix of the form
 
 .. math::
-    \HM = 
+    \H = 
     \begin{bmatrix}
-        \Rot    & \pt \\
-        \ve[0]  & 1
+        \R       & \pt \\
+        \vec{0}  & 1
     \end{bmatrix}
-    \in \R{4\times4}
+    \in \Real{4\times4}
 
-with `\Rot^{-1}=\Rot \tp \quad \in \R{3\times3}` and `\pt \in \R{3}`.
+with `\R^{-1}=\R \tp \quad \in \Real{3\times3}` and `\pt \in \Real{3}`.
 
 The *pose* (position and orientation, also known as the *configuration*)
 of a (right-handed) coordinate frame `\Frame{b}` regarding to a reference 
@@ -55,18 +55,18 @@ of a (right-handed) coordinate frame `\Frame{b}` regarding to a reference
 homogeneous matrix
 
 .. math::
-    \HM_{ab} = 
+    \H_{ab} = 
     \begin{bmatrix}
-        \Rot\ft{a}{b}   & p\ft{a}{b} \\
-        \ve[0]          & 1
+        \R_{ab}  & \pt_{ab} \\
+        \vec{0}  & 1
     \end{bmatrix}
 
 with:
 
-- `\pt\ft{a}{b}` defined as the `3 \times 1` column vector of coordinates of 
+- `\pt_{ab}` defined as the `3 \times 1` column vector of coordinates of 
   the origin of `\Frame{b}` expressed in `\Frame{a}`.
 
-- `\Rot_{ab}` defined as the `3 \times 3` matrix with the columns equal to
+- `\R_{ab}` defined as the `3 \times 3` matrix with the columns equal to
   the coordinates of the three unit vectors along the frame axes of 
   `\Frame{b}` expressed in `\Frame{a}`.
 
@@ -74,15 +74,15 @@ with:
 The inverse pose is computed as follows
 
  .. math::
-    \HM\ft{b}{a} = \HM\ft{a}{b}^{-1} =
+    \H_{ba} = \H_{ab}^{-1} =
     \begin{bmatrix}
-        \Rot\ft{b}{a} & \pt\ft{b}{a} \\
-        \ve[0] & 1
+        \R_{ba}     & \pt_{ba} \\
+        \vec{0}     & 1
     \end{bmatrix}
     =
     \begin{bmatrix}
-        \Rot\ft{a}{b}\tp    & - \Rot\ft{a}{b}\tp \pt\ft{a}{b} \\
-        \ve[0]              & 1
+        \R_{ab}\tp  & - \R_{ab}\tp \pt_{ab} \\
+        \vec{0}     & 1
     \end{bmatrix}
 
 Velocity of a coordinate frame
@@ -91,24 +91,24 @@ Velocity of a coordinate frame
 The velocity of a rigid body can be described by a twist.
 
 .. math::
-    \twist[c]\rt{a}{b} = 
+    \twist[c]_{a/b} = 
     \begin{bmatrix}
-        \rotvel[c]\rt{a}{b} \\
-        \linvel[c]\rt{a}{b} \\
+        \rotvel[c]_{a/b} \\
+        \linvel[c]_{a/b} \\
     \end{bmatrix}
 
-The adjoint matrix `\Ad\ft{a}{b}` which depends on the homogeneous matrix `\HM\ft{a}{b}`
+The adjoint matrix `\Ad_{ab}` which depends on the homogeneous matrix `\H_{ab}`
 describes the twist displacement from `\Frame{a}` to `\Frame{b}`
 
 .. math::
-    \Ad\ft{c}{d} = 
+    \Ad_{cd} = 
     \begin{bmatrix}
-        \Rot\ft{c}{d}                       & 0 \\
-        \skew{\pt}\ft{c}{d} \Rot\ft{c}{d}   & \Rot\ft{c}{d}
+        \R_{cd}                   & 0       \\
+        \skew{\pt}_{cd} \R_{cd}   & \R_{cd}
     \end{bmatrix}
     %
     \hspace{100px}
-    \twist[c]\rt{a}{b} = \Ad\ft{c}{d} \cdot \twist[d]\rt{a}{b}
+    \twist[c]_{a/b} = \Ad_{cd} \cdot \twist[d]_{a/b}
 
 
 TODO: add adjoint matrix and relative velocities formulas
@@ -119,7 +119,7 @@ Wrenches
 A generalized force acting on a rigid body consist in a linear component
 (pure force) `\linforce` and angular component (pure moment) `\rotforce`.
 The pair force/moment is named a *wrench* and can be represented using 
-a vector in `\R{6}`:
+a vector in `\Real{6}`:
 
 .. math::
     \wrench[c] = 
@@ -133,7 +133,7 @@ The displacement of a wrench from a frame to another is done through the use of
 the adjoint matrix
 
  .. math::
-    \wrench[c] = \Ad\ft{d}{c}\tp \cdot \wrench[d]
+    \wrench[c] = \Ad_{dc}\tp \cdot \wrench[d]
 
 Acceleration of a coordinate frame
 ==================================
@@ -149,17 +149,17 @@ Newton-Euler equations for a rigid body
         0         & m \Id{}
     \end{bmatrix}
     \begin{bmatrix}
-        \icf[b]{\dot{\rotvel}}\rt{b}{g}(t) \\
-        \icf[b]{\dot{\linvel}}\rt{b}{g}(t)
+        {\dot{\rotvel[b]}}_{b/g}(t) \\
+        {\dot{\linvel[b]}}_{b/g}(t)
     \end{bmatrix}
     +
     \begin{bmatrix}
-        0 & \rotvel[b]\rt{b}{g}(t) \times \In[b] \\
-        0 & \rotvel[b]\rt{b}{g}(t) \times
+        0 & \rotvel[b]_{b/g}(t) \times \In[b] \\
+        0 & \rotvel[b]_{b/g}(t) \times
     \end{bmatrix}
     \begin{bmatrix}
-        \rotvel[b]\rt{b}{g}(t) \\
-        \linvel[b]\rt{b}{g}(t)
+        \rotvel[b]_{b/g}(t) \\
+        \linvel[b]_{b/g}(t)
     \end{bmatrix}
     =
     \begin{bmatrix}

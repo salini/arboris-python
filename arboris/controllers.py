@@ -42,7 +42,12 @@ class WeightController(Controller):
 
 
     def init(self, world):
-        """ Initialize controller and configure for one :class:`arboris.core.World` instance. """
+        """ Initialize controller and configure for one :class:`~arboris.core.World` instance.
+
+        This method is generaly called in :meth:`~arboris.core.simulate`, at
+        the beginning, just before the simulation loop.
+
+        """
         assert isinstance(world, World)
         self._bodies = [x for x in world.ground.iter_descendant_bodies() \
                         if norm(x.mass>0.)]
@@ -52,10 +57,12 @@ class WeightController(Controller):
         self._impedance           = zeros( (self._wndof, self._wndof) )
 
     def update(self, dt=None):
+        """ Compute gravity vector for current state. """
         gforce = zeros(self._wndof)
         for b in self._bodies:
-            g = dot(Hg.iadjoint(b.pose), self._gravity_dtwist)
+            g       = dot(Hg.iadjoint(b.pose), self._gravity_dtwist)
             gforce += dot(b.jacobian.T, dot(b.mass, g))
+
         return (gforce, self._impedance)
 
 
@@ -148,6 +155,12 @@ class ProportionalDerivativeController(Controller):
             self.gvel_des = array(gvel_des).reshape(self._cndof)
 
     def init(self, world):
+        """ Initialize controller and configure for one :class:`~arboris.core.World` instance.
+
+        This method is generaly called in :meth:`~arboris.core.simulate`, at
+        the beginning, just before the simulation loop.
+
+        """
         self._wndof = world.ndof
         dof_map = []
         for j in self.joints:
@@ -155,8 +168,7 @@ class ProportionalDerivativeController(Controller):
         self._dof_map = array(dof_map)
 
     def update(self, dt):
-        """
-        """
+        """ Compute the generalized force that generate a PD-control. """
         gforce = zeros(self._wndof)
         impedance = zeros((self._wndof, self._wndof))
 

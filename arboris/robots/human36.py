@@ -45,6 +45,7 @@ is in the ``IOMatrix`` proc in ``DynamicData.maple``).
 
 .. _`HuMAnS toolbox`:
     http://bipop.inrialpes.fr/software/humans/
+    
     Human Motion Analysis and Simulation toolbox
 
 """
@@ -74,7 +75,7 @@ def anat_lengths_from_height(height):
     >>> print(L['ysternoclavL'])
     0.196
 
-    ** Differences with HuMAnS **
+    **Differences with HuMAnS:**
 
     The data comes from the file ``LagrangianModel/Human36/Human36.c``
     in HuMAnS.
@@ -83,7 +84,7 @@ def anat_lengths_from_height(height):
     with the addition of ``xheelR`` and ``xheelL`` lenghts are not defined
     in ``anatomicalLengths`` but in ``tagMultSize``
 
-    ** Differences with matlab-arboris **
+    **Differences with matlab-arboris:**
 
     In this implementation, the "zshoulder", "zhip" and "xfoot" lengths are
     computed as in HuMAnS, which is different from the way they were

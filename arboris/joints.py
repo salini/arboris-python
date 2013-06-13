@@ -5,17 +5,24 @@ __author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 
 from numpy import array, zeros, eye, sin, cos, dot
 
-import arboris.homogeneousmatrix
-from arboris.core import Joint, LinearConfigurationSpaceJoint
-from arboris.twistvector import exp
+import arboris.homogeneousmatrix  as Hg
+from   arboris.core        import Joint, LinearConfigurationSpaceJoint
+from   arboris.twistvector import exp
 
 class FreeJoint(Joint):
-
-    """Free joint (6-dof)
-    """
+    """ Free joint (6-dof). """
+    
     def __init__(self, gpos=None, gvel=None, name=None):
-        """
-        example:
+        """ A free joint, with no dof constrained.
+
+        :param gpos: initial generalized joint position, a homogeneous matrix
+        :type  gpos: (4,4)-array
+        :param gvel: initial generalized joint velocity, a twist
+        :type  gvel: (6,)-array
+        :param string name: the joint name
+
+        **Example:**
+
         >>> j = FreeJoint()
         >>> j.gpos
         array([[ 1.,  0.,  0.,  0.],
@@ -24,6 +31,7 @@ class FreeJoint(Joint):
                [ 0.,  0.,  0.,  1.]])
         >>> j.gvel
         array([ 0.,  0.,  0.,  0.,  0.,  0.])
+
         """
         Joint.__init__(self, name)
         if gpos is None:
@@ -32,7 +40,6 @@ class FreeJoint(Joint):
             gvel = zeros((6))
         self.gpos = array(gpos).reshape((4, 4))
         self.gvel = array(gvel).reshape((6))
-        
 
     @property
     def ndof(self):
@@ -60,11 +67,19 @@ class FreeJoint(Joint):
 
 
 class FixedJoint(Joint):
+    """ Fixed joint (0-dof). """
 
-    """Fixed joint (0-dof)
-    """
     def __init__(self, name=None):
-        """
+        """ A fixed joint where all dof are constrained.
+
+        :param string name: the joint name
+
+        **Example:**
+
+        >>> j = FreeJoint()
+        >>> print j.gpos
+        []
+
         """
         Joint.__init__(self, name)
 
@@ -93,18 +108,19 @@ class FixedJoint(Joint):
 
 
 class RzRyRxJoint(LinearConfigurationSpaceJoint):
-    """Ball and socket (3-dof) joint implemented with 3 serial hinges
+    """ Ball and socket (3-dof) joint implemented with 3 serial hinges.
 
-    the resulting homogeneous matrix is given by `H_{01} = Rz Ry Rx`
+    The resulting homogeneous matrix is given by `H_{01} = \R_z \R_y \R_x`.
+
     """
+
     @property
     def ndof(self):
         return 3
 
     @property
     def pose(self):
-        return arboris.homogeneousmatrix.rotzyx(
-            self.gpos[0],self.gpos[1],self.gpos[2])
+        return Hg.rotzyx(self.gpos[0],self.gpos[1],self.gpos[2])
 
     @property
     def jacobian(self):
@@ -141,9 +157,10 @@ class RzRyRxJoint(LinearConfigurationSpaceJoint):
 
 
 class RzRyJoint(LinearConfigurationSpaceJoint):
-    """Fingered Ball (2-dof) implemented with 2 serial hinges
+    """ Fingered Ball (2-dof) implemented with 2 serial hinges.
 
-    the resulting homogeneous matrix is given by H = Rz*Ry
+    The resulting homogeneous matrix is given by `\H = \R_z \R_y`.
+
     """
     @property
     def ndof(self):
@@ -151,7 +168,7 @@ class RzRyJoint(LinearConfigurationSpaceJoint):
 
     @property
     def pose(self):
-        return arboris.homogeneousmatrix.rotzy(self.gpos[0], self.gpos[1])
+        return Hg.rotzy(self.gpos[0], self.gpos[1])
 
     @property
     def jacobian(self):
@@ -183,9 +200,10 @@ class RzRyJoint(LinearConfigurationSpaceJoint):
 
 
 class RzRxJoint(LinearConfigurationSpaceJoint):
-    """Fingered Ball (2-dof) implemented with 2 serial hinges
+    """ Fingered Ball (2-dof) implemented with 2 serial hinges.
 
-    the resulting homogeneous matrix is given by H = Rz*Rx
+    The resulting homogeneous matrix is given by `\H = \R_z \R_x`.
+
     """
     @property
     def ndof(self):
@@ -193,7 +211,7 @@ class RzRxJoint(LinearConfigurationSpaceJoint):
 
     @property
     def pose(self):
-        return arboris.homogeneousmatrix.rotzx(self.gpos[0], self.gpos[1])
+        return Hg.rotzx(self.gpos[0], self.gpos[1])
 
     @property
     def jacobian(self):
@@ -222,9 +240,10 @@ class RzRxJoint(LinearConfigurationSpaceJoint):
 
 
 class RyRxJoint(LinearConfigurationSpaceJoint):
-    """Fingered Ball (2-dof) implemented with 2 serial hinges
+    """ Fingered Ball (2-dof) implemented with 2 serial hinges.
 
-    the resulting homogeneous matrix is given by H = Rz*Ry
+    The resulting homogeneous matrix is given by `\H = \R_z \R_y`.
+
     """
     @property
     def ndof(self):
@@ -232,7 +251,7 @@ class RyRxJoint(LinearConfigurationSpaceJoint):
 
     @property
     def pose(self):
-        return arboris.homogeneousmatrix.rotyx(self.gpos[0], self.gpos[1])
+        return Hg.rotyx(self.gpos[0], self.gpos[1])
 
     @property
     def jacobian(self):
@@ -261,9 +280,9 @@ class RyRxJoint(LinearConfigurationSpaceJoint):
 
 
 class RzJoint(LinearConfigurationSpaceJoint):
-    """Hinge (1-dof) with axis in the z-direction
+    """ Hinge (1-dof) with axis in the z-direction.
 
-    example:
+    **Example:**
 
     >>> j = RzJoint(gpos = 3.14/2., gvel = 1.)
     >>> j.gpos
@@ -290,7 +309,7 @@ class RzJoint(LinearConfigurationSpaceJoint):
                [  0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
                   1.00000000e+00]])
         """
-        return arboris.homogeneousmatrix.rotz(self.gpos[0])
+        return Hg.rotz(self.gpos[0])
 
     @property
     def ipose(self):
@@ -307,7 +326,7 @@ class RzJoint(LinearConfigurationSpaceJoint):
                   1.00000000e+00]])
 
         """
-        return arboris.homogeneousmatrix.rotz(-self.gpos[0])
+        return Hg.rotz(-self.gpos[0])
 
     @property
     def jacobian(self):
@@ -339,19 +358,19 @@ class RzJoint(LinearConfigurationSpaceJoint):
         return zeros((6, 1))
 
 class RyJoint(LinearConfigurationSpaceJoint):
-    """Hinge (1-dof) with axis in the y-direction.
-    """
+    """ Hinge (1-dof) with axis in the y-direction. """
+
     @property
     def ndof(self):
         return 1
 
     @property
     def pose(self):
-        return arboris.homogeneousmatrix.roty(self.gpos[0])
+        return Hg.roty(self.gpos[0])
 
     @property
     def ipose(self):
-        return arboris.homogeneousmatrix.roty(-self.gpos[0])
+        return Hg.roty(-self.gpos[0])
 
     @property
     def jacobian(self):
@@ -362,19 +381,19 @@ class RyJoint(LinearConfigurationSpaceJoint):
         return zeros((6, 1))
 
 class RxJoint(LinearConfigurationSpaceJoint):
-    """Hinge (1-dof) with axis in the x-direction
-    """
+    """ Hinge (1-dof) with axis in the x-direction. """
+
     @property
     def ndof(self):
         return 1
 
     @property
     def pose(self):
-        return arboris.homogeneousmatrix.rotx(self.gpos[0])
+        return Hg.rotx(self.gpos[0])
 
     @property
     def ipose(self):
-        return arboris.homogeneousmatrix.rotx(-self.gpos[0])
+        return Hg.rotx(-self.gpos[0])
 
     @property
     def jacobian(self):
@@ -386,9 +405,10 @@ class RxJoint(LinearConfigurationSpaceJoint):
 
 
 class TxTyTzJoint(LinearConfigurationSpaceJoint):
-    """Triple prismatic joint (3-dof).
+    """ Triple prismatic joint (3-dof).
 
-    the resulting homogeneous matrix is given by H = Tx*Ty*Tz.
+    The resulting homogeneous matrix is given by `\H = T_x T_y T_z`.
+
     """
     @property
     def ndof(self):
@@ -396,8 +416,7 @@ class TxTyTzJoint(LinearConfigurationSpaceJoint):
 
     @property
     def pose(self):
-        return arboris.homogeneousmatrix.transl(
-                self.gpos[0], self.gpos[1], self.gpos[2])
+        return Hg.transl(self.gpos[0], self.gpos[1], self.gpos[2])
 
     @property
     def jacobian(self):
@@ -415,19 +434,19 @@ class TxTyTzJoint(LinearConfigurationSpaceJoint):
 
 
 class TzJoint(LinearConfigurationSpaceJoint):
-    """Prismatic (1-dof) with axis in the z-direction
-    """
+    """ Prismatic (1-dof) with axis in the z-direction. """
+
     @property
     def ndof(self):
         return 1
 
     @property
     def pose(self):
-        return arboris.homogeneousmatrix.transl(0., 0., self.gpos[0])
+        return Hg.transl(0., 0., self.gpos[0])
     
     @property
     def ipose(self):
-        return arboris.homogeneousmatrix.transl(0., 0., -self.gpos[0])
+        return Hg.transl(0., 0., -self.gpos[0])
     
     @property
     def jacobian(self):
@@ -440,19 +459,19 @@ class TzJoint(LinearConfigurationSpaceJoint):
 
 
 class TyJoint(LinearConfigurationSpaceJoint):
-    """Prismatic (1-dof) with axis in the y-direction
-    """
+    """ Prismatic (1-dof) with axis in the y-direction. """
+
     @property
     def ndof(self):
         return 1
 
     @property
     def pose(self):
-        return arboris.homogeneousmatrix.transl(0., self.gpos[0], 0.)
+        return Hg.transl(0., self.gpos[0], 0.)
     
     @property
     def ipose(self):
-        return arboris.homogeneousmatrix.transl(0., -self.gpos[0], 0.)
+        return Hg.transl(0., -self.gpos[0], 0.)
     
     @property
     def jacobian(self):
@@ -465,19 +484,19 @@ class TyJoint(LinearConfigurationSpaceJoint):
 
 
 class TxJoint(LinearConfigurationSpaceJoint):
-    """Prismatic (1-dof) with axis in the x-direction
-    """
+    """ Prismatic (1-dof) with axis in the x-direction. """
+
     @property
     def ndof(self):
         return 1
 
     @property
     def pose(self):
-        return arboris.homogeneousmatrix.transl(self.gpos[0], 0., 0.)
+        return Hg.transl(self.gpos[0], 0., 0.)
     
     @property
     def ipose(self):
-        return arboris.homogeneousmatrix.transl(-self.gpos[0], 0., 0.)
+        return Hg.transl(-self.gpos[0], 0., 0.)
     
     @property
     def jacobian(self):

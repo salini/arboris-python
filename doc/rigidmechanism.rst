@@ -9,10 +9,10 @@ Ideal Joints
 
 An ideal joint is a kinematic restriction of the allowed relative twist of two rigid bodies `i` and `j` to a linear subspace of dimension `k`, where the relative motion of the bodies is described by two sets of states, namely
 
-- a matrix `\GPos`, parameterizing the relative configuration as `H_{01} = H_{01}(\GPos)`,
-- a vector `\GVel \in \R{k}`, parameterizing the relative twist as `\twist[1]_{1/0} = X(\GPos) \GVel`
+- a matrix `\GPos`, parameterizing the relative configuration as `\H_{01} = \H_{01}(\GPos)`,
+- a vector `\GVel \in \Real{k}`, parameterizing the relative twist as `\twist[1]_{1/0} = X(\GPos) \GVel`
 
-where `X(\GPos)` depends smoothly on `\GPos` and `\nu = V_\GPos(\dot{\GPos})` with `V_\GPos` invertible and linear in `\dot{\GPos}`. Furthermore, there exists a mapping `F_\GPos : \R{k} \rightarrow \GPosSet`.
+where `X(\GPos)` depends smoothly on `\GPos` and `\nu = V_\GPos(\dot{\GPos})` with `V_\GPos` invertible and linear in `\dot{\GPos}`. Furthermore, there exists a mapping `F_\GPos : \Real{k} \rightarrow \GPosSet`.
 
 Implementation
 ==============
@@ -37,11 +37,11 @@ Let's take the example of an hinge joint, it has 1 dof, and may be parametrized 
   >>> j.gvel
   array([ 2.])
 
-The relative configuration corresponding to this joint is defined by the homogeneous `\HM_{01}` is given by ``pose()``
+The relative configuration corresponding to this joint is defined by the homogeneous `\H_{01}` is given by ``pose()``
 
 .. math::
 
-  \HM_{rn} =
+  \H_{rn} =
   \begin{bmatrix}
   cos(q) & -sin(q) & 0 & 0\\
   sin(q) &  cos(q) & 0 & 0\\
@@ -57,7 +57,7 @@ The relative configuration corresponding to this joint is defined by the homogen
          [ 0.        ,  0.        ,  1.        ,  0.        ],
          [ 0.        ,  0.        ,  0.        ,  1.        ]])
 
-Its inverse, `H_{10} = H_{01}^{-1}` is given by ``ipose``
+Its inverse, `\H_{10} = \H_{01}^{-1}` is given by ``ipose``
 
 .. doctest::
 

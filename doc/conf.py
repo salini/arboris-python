@@ -190,7 +190,7 @@ latex_preamble = r"""
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \newcommand{\tens}[1]           {#1}
-\newcommand{\vect}[1]           {\mbox{\boldmath${#1}$}}
+\renewcommand{\vec}[1]          {\mbox{\boldmath${#1}$}}
 \newcommand{\argmin}[1]         {\underset{#1}{\operatorename{argmin}}}
 \newcommand{\diag}              {\mathop{\mathrm{diag}}}
 \newcommand{\norm}[1]           {\left\lVert #1 \right\rVert}
@@ -199,26 +199,26 @@ latex_preamble = r"""
 
 \newcommand{\dt}                {\delta t}                  %dt
 
-\newcommand{\ft}[2]             {_{#1,#2}}                  %from to: generaly to write: H_(i,j) or Ad_(i,j) (H from i to j)
-\newcommand{\rt}[2]             {_{#1/#2}}                  %first relative to second
+%\newcommand{\ft}[2]             {_{#1,#2}}                  %from to: generaly to write: H_(i,j) or Ad_(i,j) (H from i to j)
+%\newcommand{\rt}[2]             {_{#1/#2}}                  %first relative to second
 \newcommand{\icf}[2][{}]        {\vphantom{#2}^{#1}\!#2}    %in coordinate frame
 
-\newcommand{\pt}[1][p]          {\vect{#1}}                 %point in space
-\newcommand{\ve}[1][u]          {\vect{#1}}                 %vector in space
+\newcommand{\pt}[1][{}]         {\icf[#1]{\vec{p}}}         %point in space
+\newcommand{\ve}[1][{}]         {\icf[#1]{\vec{u}}}         %vector in space
 
-\newcommand{\force}[1][{}]      {\icf[#1]{\vect{f}}}        %one generalized force
+\newcommand{\force}[1][{}]      {\icf[#1]{\vec{f}}}         %one generalized force
 \newcommand{\linforce}[1][{}]   {\force[#1]}                %translational force in wrench
-\newcommand{\rotforce}[1][{}]   {\icf[#1]{\vect{\tau}}}     %rotational force in wrench
-\newcommand{\wrench}[1][{}]     {\icf[#1]{\vect{W}}}        %wrench
+\newcommand{\rotforce}[1][{}]   {\icf[#1]{\vec{\tau}}}      %rotational force in wrench
+\newcommand{\wrench}[1][{}]     {\icf[#1]{\vec{W}}}         %wrench
 
-\newcommand{\vel}[1][{}]        {\icf[#1]{\vect{v}}}        %one generalized velocity
+\newcommand{\vel}[1][{}]        {\icf[#1]{\vec{v}}}         %one generalized velocity
 \newcommand{\linvel}[1][{}]     {\vel[#1]}                  %translational velocity in twist
-\newcommand{\rotvel}[1][{}]     {\icf[#1]{\vect{\omega}}}   %rotational velocity in twist
-\newcommand{\twist}[1][{}]      {\icf[#1]{\vect{V}}}        %twist
-\newcommand{\dtwist}[1][{}]     {\icf[#1]{\dot{\vect{V}}}}  %derivative of twist
+\newcommand{\rotvel}[1][{}]     {\icf[#1]{\vec{\omega}}}    %rotational velocity in twist
+\newcommand{\twist}[1][{}]      {\icf[#1]{\vec{V}}}         %twist
+\newcommand{\dtwist}[1][{}]     {\icf[#1]{\dot{\vec{V}}}}   %derivative of twist
 
-\newcommand{\HM}                {\tens{H}}                  %homogeneous matrix
-\newcommand{\Rot}               {\tens{R}}                  %rotation matrix
+\renewcommand{\H}               {\tens{H}}                  %homogeneous matrix %--> overwrite \H which create hungarian umlaut (not needed here)
+\newcommand{\R}                 {\tens{R}}                  %rotation matrix
 \newcommand{\Ad}                {\tens{Ad}}                 %adjoint matrix
 \newcommand{\dAd}               {\dot{\Ad}}                 %derivative adjoint matrix
 
@@ -226,14 +226,14 @@ latex_preamble = r"""
 \newcommand{\dJ}[1][{}]         {\icf[#1]{\dot{\tens{J}}}}  %derivative jacobian matrix
 
 \newcommand{\Frame}[1][{}]      {\Psi_{#1}}                 %frame
-\newcommand{\R}[1]              {\mathbb{R}^{#1}}           %real space
+\newcommand{\Real}[1]           {\mathbb{R}^{#1}}           %real space
 \newcommand{\Id}[1]             {\tens{I}_{#1}}             %identity
 \newcommand{\In}[1][{}]         {\icf[#1]{\tens{\mathcal{I}}}}  %inertia
 
-\newcommand{\torque}            {\vect{\tau}}               %torque
-\newcommand{\q}                 {\vect{q}}                  %generalized coordinate q
-\newcommand{\dq}                {\dot{\vect{q}}}            %generalized velocity dq
-\newcommand{\ddq}               {\ddot{\vect{q}}}           %generalized acceleration ddq
+\newcommand{\torque}            {\vec{\tau}}                %torque
+\newcommand{\q}                 {\vec{q}}                   %generalized coordinate q
+\newcommand{\dq}                {\dot{\vec{q}}}             %generalized velocity dq
+\newcommand{\ddq}               {\ddot{\vec{q}}}            %generalized acceleration ddq
 
 \newcommand{\GPos}              {Q}
 \newcommand{\GPosSet}           {\bar{\mathcal{Q}}}

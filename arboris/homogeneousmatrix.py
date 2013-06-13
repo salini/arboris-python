@@ -1,10 +1,12 @@
 # coding=utf-8
-"""Functions for working with homogeneous matrices."""
+""" Functions for working with homogeneous matrices. """
 
 __author__ = ("Sébastien BARTHÉLEMY <barthelemy@crans.org>")
 
 from numpy import array, zeros, sin, cos, dot, arctan2
 import numpy
+
+from arboris.twistvector import adjacency
 
 tol = 1e-9
 
@@ -40,7 +42,7 @@ def rotzyx(angle_z, angle_y, angle_x):
     :return: homogeneous matrix of the roll-pitch-yaw orientation
     :rtype: (4,4)-array
     
-    In short, return: \Rot = \Rot_{z} * \Rot_{y} * \Rot_{x}
+    In short, return: \R = \R_{z} * \R_{y} * \R_{x}
 
     **Example:**
 
@@ -51,7 +53,6 @@ def rotzyx(angle_z, angle_y, angle_x):
            [ 0.        ,  0.        ,  0.        ,  1.        ]])
 
     """
-
     sz = sin(angle_z)
     cz = cos(angle_z)
     sy = sin(angle_y)
@@ -73,7 +74,7 @@ def rotzy(angle_z, angle_y):
     :return: homogeneous matrix of the pitch-yaw orientation
     :rtype: (4,4)-array
     
-    In short, return: \Rot = \Rot_{z} * \Rot_{y}
+    In short, return: \R = \R_{z} * \R_{y}
 
     Example:
 
@@ -103,7 +104,7 @@ def rotzx(angle_z, angle_x):
     :return: homogeneous matrix of the roll-yaw orientation
     :rtype: (4,4)-array
     
-    In short, return: \Rot = \Rot_{z} * \Rot_{x}
+    In short, return: \R = \R_{z} * \R_{x}
 
     **Example:**
 
@@ -133,7 +134,7 @@ def rotyx(angle_y, angle_x):
     :return: homogeneous matrix of the roll-pitch orientation
     :rtype: (4,4)-array
     
-    In short, return: \Rot = \Rot_{y} * \Rot_{x}
+    In short, return: \R = \R_{y} * \R_{x}
 
     **Example:**
 
@@ -168,6 +169,7 @@ def rotx(angle):
            [ 0.        ,  0.86615809, -0.4997701 ,  0.        ],
            [ 0.        ,  0.4997701 ,  0.86615809,  0.        ],
            [ 0.        ,  0.        ,  0.        ,  1.        ]])
+
     """
     ca = cos(angle)
     sa = sin(angle)
@@ -192,6 +194,7 @@ def roty(angle):
            [ 0.        ,  1.        ,  0.        ,  0.        ],
            [-0.4997701 ,  0.        ,  0.86615809,  0.        ],
            [ 0.        ,  0.        ,  0.        ,  1.        ]])
+
     """
     ca = cos(angle)
     sa = sin(angle)
@@ -216,6 +219,7 @@ def rotz(angle):
            [ 0.4997701 ,  0.86615809,  0.        ,  0.        ],
            [ 0.        ,  0.        ,  1.        ,  0.        ],
            [ 0.        ,  0.        ,  0.        ,  1.        ]])
+
     """
     ca = cos(angle)
     sa = sin(angle)
@@ -282,8 +286,8 @@ def pdot(H, point):
     :return: the displaced point
     :rtype: (3,)-array
 
-    `\icf[a]{\pt} = \HM\ft{a}{b}  \icf[b]{\pt}`, where `\HM\ft{a}{b}` is the
-    homogeneous matrix from `\Frame{a}` to `\Frame{b}`, and `\icf[b]{\pt}` is
+    `\pt{a} = \H_{ab}  \pt{b}`, where `\H_{ab}` is the
+    homogeneous matrix from `\Frame{a}` to `\Frame{b}`, and `\pt{b}` is
     the point expressed in `\Frame{b}`.
 
     """
@@ -300,8 +304,8 @@ def vdot(H, vec):
     :return: the displaced point
     :rtype: (3,)-array
 
-    `\icf[a]{\ve} = \Rot\ft{a}{b}  \icf[b]{\ve}`, where `\Rot\ft{a}{b}` is the
-    rotation matrix from `\Frame{a}` to `\Frame{b}`, and `\icf[b]{\ve}` is
+    `\ve{a} = \R_{ab}  \ve{b}`, where `\R_{ab}` is the
+    rotation matrix from `\Frame{a}` to `\Frame{b}`, and `\ve{b}` is
     the vector expressed in `\Frame{b}`.
 
     """
@@ -328,6 +332,7 @@ def inv(H):
            [ 0.        ,  0.50045969, -0.86575984,  2.32696044],
            [-0.70682518,  0.61242835,  0.35401931, -2.09933441],
            [ 0.        ,  0.        ,  0.        ,  1.        ]])
+
     """
     assert ishomogeneousmatrix(H)
     R = H[0:3, 0:3]
@@ -367,6 +372,7 @@ def adjoint(H):
              0.61242835],
            [-0.9937305 ,  1.50137907,  4.66458577,  0.35373751, -0.86575984,
              0.35401931]])
+
     """
     assert ishomogeneousmatrix(H)
     R = H[0:3, 0:3]
@@ -390,32 +396,33 @@ def iadjoint(H):
     """
     return adjoint(inv(H))
 
+
 def dAdjoint(Ad, T):
     """ Return the derivative of an Adjoint with respect to time.
 
-    definition from arboris-matlab
+    :param Ad: the Adjoint matrix one wants the derivative.
+    :type  Ad: (6,6)-array
+    :param T:  the corresponding twist
+    :type  T: (6,)-array
+    :return: the derivative of the adjoint matrix
+    :rtype:  (6,6)-array
+
+    **Definition from arboris-matlab:**
+
     if H is defined as follow:
-    x{a} = H * x{b}
-    Ad = adjoint( H )
-    T  = velocity of {b} relative to {a} expressed in {b}
+    
+    .. math::
 
-    :param Ad: adjoint matrix
-    :type Ad: (6,6) array
-    :param T: twist vectors
-    :type T: (6,) array
+        x{a} = H * x{b}
+        Ad = adjoint( H )
+        T  = velocity of {b} relative to {a} expressed in {b}
 
-    :return: ((6,6) array) dAdjoint matrix
     """
-    MT = array([[   0., -T[2],  T[1],    0.,    0.,    0.],
-                [ T[2],    0., -T[0],    0.,    0.,    0.],
-                [-T[1],  T[0],    0.,    0.,    0.,    0.],
-                [   0., -T[5],  T[4],    0., -T[2],  T[1]],
-                [ T[5],    0., -T[3],  T[2],    0., -T[0]],
-                [-T[4],  T[3],    0., -T[1],  T[0],    0.]])
-    return dot(Ad, MT)
+    return dot(Ad, adjacency(T))
+
 
 def rotzyx_angles(H):
-    """ Returns the roll-pitch-yaw angles corresponding to the rotation matrix of `\HM`.
+    """ Returns the roll-pitch-yaw angles corresponding to the rotation matrix of `\H`.
 
     :param H: homogeneous matrix
     :type  H: (4,4)-array

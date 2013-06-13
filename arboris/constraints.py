@@ -14,25 +14,23 @@ from   arboris.joints     import LinearConfigurationSpaceJoint
 from   arboris.collisions import choose_solver
 
 point_contact_proximity = 0.02
-joint_limits_proximity = 0.01
+joint_limits_proximity  = 0.01
 
 class JointLimits(Constraint):
     r"""This class describes and solves joint limits constraints.
 
-    Let's denote `q` and `\GVel` the joint generalized position and velocity,
-    `m` and `M` the joint limits. This class purpose is to enforce the
-    following constraint on `q`
+    Let's denote `q` the joint generalized position, and `m` and `M` the joint
+    limits. This class purpose is to enforce the following constraint on `q`
 
     .. math::
         m \leq q \leq M
 
-    through a generalized force `\GForce`, while ensuring the Signorini
+    through a generalized force `f`, while ensuring the Signorini
     conditions holds
 
     .. math::
-        0 \leq q- m \perp \GForce \geq 0  \\
-        0 \geq q - M \perp \GForce \leq 0
-
+        ( 0 \leq q - m ) \perp ( f \geq 0 )  \\
+        ( 0 \geq q - M ) \perp ( f \leq 0 )
 
     """
 
@@ -71,7 +69,7 @@ class JointLimits(Constraint):
 
     def is_active(self):
         return (self._pos0-self._min<self._proximity).any() or \
-                (self._max-self._pos0<self._proximity).any()
+               (self._max-self._pos0<self._proximity).any()
 
     def solve(self, vel, admittance, dt):
         pred = self._pos0 + dt*(vel - dot(admittance, self._force))
@@ -95,12 +93,13 @@ class JointLimits(Constraint):
         return dforce
 
 class BallAndSocketConstraint(Constraint):
-    r"""
+    r""" Create a ball and socket joint constraint between two frames.
+
     This class describes and solves a ball and socket kinematic constraint
     between two frames which are rigidly fixed to two distinct bodies.
 
     Let's denote 0 and 1 these two frames. The constraint can be expressed
-    as a condition on their relative pose, requiring  than the ball
+    as a condition on their relative pose, requiring that the ball
     and socket centers be co-located:
 
     .. math::
@@ -131,7 +130,7 @@ class BallAndSocketConstraint(Constraint):
         \end{bmatrix}
 
     The constraint jacobian is then given by
-    `( \Ad\ft{0}{1} \; \J[1]\rt{1}{g} - \J[0]\rt{0}{g} )`
+    `( \Ad_{01} \; \J[1]_{1/g} - \J[0]_{0/g} )`
 
     In order to solve the constraint, an adjustement `\Delta f` of the
     constraint force is computed by the ``solve`` method.
@@ -845,13 +844,13 @@ class SoftFingerContact(PointContact):
 
 
 def get_all_contacts(world, contact_class=None, **args):
-    """Init all the possible collisions in world.
+    """ Init all the possible collisions in world.
 
     :param world: the world where the contacts will be looked for.
-    :type world: arboris.core.World
+    :type  world: arboris.core.World
     :param contact_class: a class describing the contacts that will be
          created. Defaults to arboris.constraints.SoftFingerContact
-    :type contact_class: a subclass of arboris.constraints.PointContact
+    :type  contact_class: a subclass of arboris.constraints.PointContact
     :rparam: a list of the new contacts.
     :rtype: list
 

@@ -2,17 +2,17 @@
 
 r""" Functions for working with adjoint matrices.
 
-considering an homogeneous matrix `\HM`, the related adjoint matrix `\Ad` is defined as follows
+considering an homogeneous matrix `\H`, the related adjoint matrix `\Ad` is defined as follows
 
 .. math::
-    \HM = \begin{bmatrix}
-            \Rot    &  \pt  \\
-            0       &  1
+    \H = \begin{bmatrix}
+            \R  &  \pt  \\
+            0   &  1
           \end{bmatrix}
     \hspace{50px}
-    \Ad(\HM) =  \begin{bmatrix}
-                    \Rot                &  0_{3}    \\
-                    \skew{\pt} \Rot     &  \Rot
+    \Ad(\H) =  \begin{bmatrix}
+                    \R                &  0_{3}    \\
+                    \skew{\pt} \R     &  \R
                 \end{bmatrix}
 
 """

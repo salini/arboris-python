@@ -1,5 +1,5 @@
 # coding=utf-8
-"""The core of the simulator.
+""" The core of the simulator.
 
 A world (instance of the :class:`World` class) consists of bodies (instances
 of the :class:`Body` class) interlinked by joints (instances of :class:`Joint`
@@ -41,9 +41,7 @@ def simplearm():
 
 
 class NamedObject(object):
-    """
-    A class for anything named to depend from.
-    """
+    """ A class for anything named to depend from. """
 
     def __init__(self, name=None):
         self.name = name
@@ -59,7 +57,7 @@ class NamedObject(object):
                 hex(id(self)))
 
 class NamedObjectsList(list):
-    """A list of (possibly) NamedObjects.
+    """ A list of (possibly) NamedObjects.
 
     This class behaves like the built-in ``list`` class except that
     objects can be retrieved by name, using a string index or the
@@ -113,7 +111,9 @@ class NamedObjectsList(list):
             return list.__getitem__(self, index)
 
     def as_dict(self):
-        """Returns a dictionary whose keys are the objects names and
+        """ Convert named-list as dict {'name': object}.
+        
+        Returns a dictionary whose keys are the objects names and
         values are the objects themselves. Objects with no name are
         ignored. Duplicate names raise a ``DuplicateName``
         exception.
@@ -155,8 +155,8 @@ def name_all_elements(nlist, check_unicity=False):
 
 
 class Frame(object):
-    """A generic class for frames.
-    """
+    """ A generic class for frames. """
+
     __metaclass__ = ABCMeta
 
     @abstractproperty
@@ -184,7 +184,7 @@ class Frame(object):
         pass
 
 class Joint(RigidMotion, NamedObject):
-    """A generic class for ideal joints.
+    """ A generic class for ideal joints.
 
     An ideal joint is a kinematic restriction of the allowed relative
     twist of two frames, here named frames 0 and 1, to which the joint
@@ -202,9 +202,9 @@ class Joint(RigidMotion, NamedObject):
         NamedObject.__init__(self, name)
         self._frame0 = None
         self._frame1 = None
-        self._dof = None # will be set by World.
-        self.gpos = zeros((0, 0))
-        self.gvel = zeros(0)
+        self._dof    = None # will be set by World.
+        self.gpos    = zeros((0, 0))
+        self.gvel    = zeros(0)
 
     def set_frames(self, frame0, frame1):
         self._frame0 = frame0
@@ -212,12 +212,17 @@ class Joint(RigidMotion, NamedObject):
 
     @abstractproperty
     def ndof(self):
-        """Number of degrees of freedom of the joint.
-        """
+        """ Number of degrees of freedom of the joint. """
         pass
 
     @property
     def dof(self):
+        """ joint dofs index mapping in the world gvel vector.
+
+        :rtype: a ``slice`` (start_index, end_index, 1)
+        :raise: ValueError if World initialize method :meth:`~arboris.core World.init` has not been called
+
+        """
         if self._dof is None:
             raise ValueError("joint dof is None. run world.init() first.")
         else:
@@ -225,8 +230,7 @@ class Joint(RigidMotion, NamedObject):
 
     @property
     def frames(self):
-        """Frames to which the joint is attached.
-        """
+        """ Frames to which the joint is attached. """
         return (self._frame0, self._frame1)
 
     @property
@@ -239,20 +243,22 @@ class Joint(RigidMotion, NamedObject):
 
     @property
     def twist(self):
-        r"""Relative twist `\twist[1]_{1/0}`
-        
-        It is the twist of frame 1 regarding to frame 0 expressed in frame 1
+        r""" Relative twist `\twist[1]_{1/0}`.
+
+        It is the twist of frame 1 regarding to frame 0 expressed in frame 1.
+
         """
         return dot(self.jacobian, self.gvel)
 
     @abstractproperty
     def jacobian(self):
-        r"""Jacobian of the joint relative position.
+        r""" Jacobian of the joint relative position.
 
-        Return the matrix `J` such that `\twist[1]_{1/0} = J \nu`.
-        Or, with numpy ntation, ``j.twist == dot(j.jacobian, j.gvel)``.
+        Return the matrix `\J` such that `\twist[1]_{1/0} = \J \nu`.
+        Or, with numpy notation, ``j.twist == dot(j.jacobian, j.gvel)``.
 
         This matrix generally changes with the joint generalized position.
+
         """
         pass
 
@@ -266,8 +272,8 @@ class Joint(RigidMotion, NamedObject):
 
 
 class LinearConfigurationSpaceJoint(Joint):
-    """Joints whose configuration space is diffeomorph to `\R{ndof}`.
-    """
+    """ Joints whose configuration space is diffeomorph to `\Real{ndof}`. """
+
     def __init__(self, gpos=None, gvel=None, name=None):
         Joint.__init__(self, name)
         if gpos is None:
@@ -311,6 +317,17 @@ class JointsList(NamedObjectsList):
         return self._dof
 
 class Constraint(NamedObject):
+    """ A generic class for kinematic constraint.
+
+    As a joint, it represents a kinematic restriction of the allowed relative
+    twist of two frames. But here, this restriction is not directly taken into
+    account in the model, but it is defined through a force. It generally
+    represents kinematic closure that are not modeled by tree-structure system.
+
+    This class has virtual methods and properties. It should be
+    subclassed by concrete implementations.
+
+    """
     __metaclass__ = ABCMeta
 
     def __init__(self, name=None):
@@ -342,9 +359,10 @@ class Constraint(NamedObject):
 
     @abstractproperty
     def ndol(self):
-        """Number of degrees of "liaison"
+        """ Number of degrees of linkage.
 
         In french: *nombre de degrés de liaison*. This is equal to (6 - ndof).
+
         """
         pass
 
@@ -362,8 +380,8 @@ class Constraint(NamedObject):
 
 
 class Shape(NamedObject):
-    """A generic class for geometric shapes used in collision detection
-    """
+    """ A generic class for geometric shapes used in collision detection. """
+
     def __init__(self, frame, name=None):
         assert isinstance(frame, Frame)
         self.frame = frame
@@ -392,88 +410,85 @@ class World(NamedObject):
 
     def __init__(self, name=None):
         NamedObject.__init__(self, name)
-        self.ground = Body('ground')
+        self.ground        = Body('ground')
         self._current_time = 0.
-        self._up = array((0., 1., 0.))
-        self._controllers = []
-        self._constraints = []
-        self._subframes   = []
-        self._shapes      = []
-        self._ndof = 0
-        self._gvel = array([])
-        self._mass =  array([])# updated by self.update_dynamic()
-        self._gforce =  array([])
-        self._viscosity = array([]) # updated by self.update_dynamic()
-        self._nleffects = array([]) # updated by self.update_dynamic()
-        self._impedance = array([]) # updated by self.update_controller()
-        self._admittance = array([]) # updated by self.update_controller()
+        self._up           = array((0., 1., 0.))
+        self._controllers  = []
+        self._constraints  = []
+        self._subframes    = []
+        self._shapes       = []
+        self._ndof         = 0
+        self._gvel         = array([])
+        self._mass         = array([]) # updated by self.update_dynamic()
+        self._viscosity    = array([]) # updated by self.update_dynamic()
+        self._nleffects    = array([]) # updated by self.update_dynamic()
+        self._impedance    = array([]) # updated by self.update_controller()
+        self._admittance   = array([]) # updated by self.update_controller()
+        self._gforce       = array([])
 
     def iterbodies(self):
-        """Iterate over all bodies, with a depth-first strategy."""
+        """ Iterate over all bodies, with a depth-first strategy. """
         yield self.ground
         for b in self.ground.iter_descendant_bodies():
             yield b
 
     def getbodies(self):
-        """Returns a NamedObjectsList of the world bodies.
-        """
+        """ Returns a NamedObjectsList of the world bodies. """
         return NamedObjectsList(self.iterbodies())
 
     def iterconstraints(self):
-        """Iterate over all constraints."""
+        """ Iterate over all constraints. """
         for obj in self._constraints:
             yield obj
 
     def getconstraints(self):
-        """Returns a NamedObjectsList of the world constraints"""
+        """ Returns a NamedObjectsList of the world constraints. """
         return NamedObjectsList(self._constraints)
 
     def getcontrollers(self):
-        """Returns a NamedObjectsList of the world controllers"""
+        """ Returns a NamedObjectsList of the world controllers."""
         return NamedObjectsList(self._controllers)
 
     def itersubframes(self):
-        """Iterate over all subframes."""
+        """ Iterate over all subframes. """
         for obj in self._subframes:
             yield obj
 
     def itermovingsubframes(self):
-        """Iterate over all subframes."""
+        """ Iterate over all subframes. """
         for obj in self._subframes:
             if isinstance(obj, MovingSubFrame):
                 yield obj
 
     def iterframes(self):
-        """Iterate over all frames (bodies and subframes)."""
+        """ Iterate over all frames (bodies and subframes). """
         for obj in self.iterbodies():
             yield obj
         for obj in self.itersubframes():
             yield obj
 
     def getframes(self):
-        """Returns a NamedObjectsList of the world frames.
-        """
+        """ Returns a NamedObjectsList of the world frames. """
         frames = self.getbodies()
         frames.extend(self._subframes)
         return frames
 
     def itershapes(self):
-        """Iterate over all shapes."""
+        """ Iterate over all shapes. """
         for obj in self._shapes:
             yield obj
 
     def getshapes(self):
-        """Returns a NamedObjectsList of the world shapes.
-        """
+        """ Returns a NamedObjectsList of the world shapes. """
         return NamedObjectsList(self._shapes)
 
     def iterjoints(self):
-        """Iterate over all joints, with a depth-first strategy."""
+        """ Iterate over all joints, with a depth-first strategy. """
         for j in self.ground.iter_descendant_joints():
             yield j
 
     def getjoints(self):
-        """Returns a JointsList of the joints.
+        """ Returns a JointsList of the joints.
 
         **Example:**
 
@@ -490,12 +505,15 @@ class World(NamedObject):
         return JointsList(self.iterjoints())
 
     def add_link(self, frame0, joint, frame1, *args):
-        """Add a link (ie. Joint and Body) to the world.
+        """ Add a link (ie. Joint and Body) to the world.
 
         :param frame0: the frame where the new joint will be attached.
-                       It should belong to a bady which is already in the world.
+                       It should belong to a body which is already in the world.
+        :type  frame0: class:`~arboris.core.Frame`
         :param joint: the joint to be added.
+        :type  joint: class:`~arboris.core.Joint`
         :param frame1: the frame of the body which is to be added to the world.
+        :type  frame1: class:`~arboris.core.Frame`
 
         One can also add several links at a time::
 
@@ -522,7 +540,7 @@ class World(NamedObject):
             self.add_link(*args)
 
     def replace_joint(self, old_joint, *args):
-        """Replace a joint by another joint or by another kinematic chain.
+        """ Replace a joint by another joint or by another kinematic chain.
 
         **Syntax:** ::
 
@@ -566,8 +584,7 @@ class World(NamedObject):
             self.init()
 
     def register(self, obj):
-        """
-        Register an object into the world.
+        """ Register an object into the world.
 
         ``obj`` can be a subframe, a shape or a constraint.
 
@@ -614,7 +631,7 @@ class World(NamedObject):
                              "of type {0}".format(type(obj)))
 
     def parse(self, target):
-        """Parse the world and call hooks on the ``target`` object.
+        """ Parse the world and call hooks on the ``target`` object.
 
         This helper function  walks the world with a depth-first strategy and
         call the ``register`` and ``add_link`` methods of the ``target``
@@ -626,7 +643,7 @@ class World(NamedObject):
 
         """
         def _register_frame_and_children(frame):
-            """register a frame and its children (except joints).
+            """ Register a frame and its children (except joints).
 
             Register the principal frame and its subframes and shapes.
             """
@@ -655,6 +672,7 @@ class World(NamedObject):
                 target.add_link(f0, j, f1)
                 _register_frame_and_children(f1.body)
                 _recurse_over_joints(f1.body.childrenjoints)
+
         registered = set()
         target.init_parse(self.ground, self.up, self.current_time)
         _register_frame_and_children(self.ground)
@@ -662,9 +680,9 @@ class World(NamedObject):
         _register_constraints()
         _register_controllers()
 
+
     def init(self):
-        """ Init the joints-space model of the world.
-        """
+        """ Init the joints-space model of the world. """
         self._ndof = 0
         for j in self.iterjoints():
             old_ndof = self._ndof
@@ -727,11 +745,11 @@ class World(NamedObject):
         return self._admittance.copy()
 
     def update_geometric(self):
-        """Compute the forward geometric model.
+        """ Compute the forward geometric model.
 
         This will recursively update each body pose attribute.
 
-        Example:
+        **Example:**
 
         >>> w = simplearm()
         >>> w.update_geometric()
@@ -740,11 +758,11 @@ class World(NamedObject):
         self.ground.update_geometric(eye(4))
 
     def update_dynamic(self):
-        r"""Compute the forward geometric, kinematic and dynamic models.
+        r""" Compute the forward geometric, kinematic and dynamic models.
 
         Recursively update each body pose, jacobian, djacobian, twist
         and nleffects attributes (thanks to the
-        :meth:`arboris.Body.update_dynamic` method) and then update
+        :meth:`arboris.core.Body.update_dynamic` method) and then update
         the world mass, viscosity and nleffects attributes.
 
         **Example:**
@@ -796,10 +814,7 @@ class World(NamedObject):
     def update_controllers(self, dt):
         r"""
 
-        :param dt:
-        :type dt: float
-        :param t:
-        :type t: float
+        :param float dt: integration time
 
         **Example:**
 
@@ -879,6 +894,11 @@ class World(NamedObject):
 
     def update_constraints(self, dt, maxiters=1000, tol=1e-4):
         r"""
+
+        :param float dt: integration time
+        :param int maxiters: maximum number of iteration to find the proper constraint forces
+        :param float tol: convergence tolerance, corresponding to the norm(gvel_i - gvel_i-1)
+
         In accordance with the integration scheme, we assume the following
         first order model between generalized velocities and generalized
         forces:
@@ -1004,6 +1024,8 @@ class World(NamedObject):
     def integrate(self, dt):
         r"""
 
+        :param float dt: integration time
+
         From the :meth:`update_controllers` and
         :meth:`update_constraints` methods we get the new
         generalized velocity.
@@ -1056,6 +1078,13 @@ class _SubFrame(NamedObject, Frame):
 
     def __init__(self, body, bpose=None, name=None):
         """ Create a frame rigidly fixed to a body.
+
+        :param body: parent body which will support this subframe
+        :type  body: class:`~arboris.core.Body`
+        :param bpose: the homogeneous matrix from the parent body to the subframe
+        :type  bpose: (4,4)-array
+        :param name: the name of the subframe
+        :type  name: string
 
         **Example:**
 
@@ -1156,18 +1185,18 @@ class Body(NamedObject, Frame):
             pass #TODO: check the viscosity matrix
 
         # the object will have a frame, with the same name as the object itself
-        self.parentjoint = None
+        self.parentjoint    = None
         self.childrenjoints = []
-        self.mass = mass
-        self.viscosity = viscosity
-        self._pose = None # updated by update_{geometric,kinematic,dynamic}
-        self._jacobian = None # updated by update_{geometric,kinematic,dynamic}
-        self._djacobian = None # updated by update_dynamic
-        self._twist = None # updated by update_dynamic
-        self._nleffects = None # updated by update_dynamic
+        self.mass           = mass
+        self.viscosity      = viscosity
+        self._pose          = None # updated by update_{geometric,kinematic,dynamic}
+        self._jacobian      = None # updated by update_{geometric,kinematic,dynamic}
+        self._djacobian     = None # updated by update_dynamic
+        self._twist         = None # updated by update_dynamic
+        self._nleffects     = None # updated by update_dynamic
 
     def iter_descendant_bodies(self):
-        """Iterate over all descendant bodies, with a depth-first strategy"""
+        """ Iterate over all descendant bodies, with a depth-first strategy. """
         for b in [j.frame1.body for j in self.childrenjoints]:
             yield b
             for bb in b.iter_descendant_bodies():
@@ -1181,7 +1210,7 @@ class Body(NamedObject, Frame):
                 yield a
 
     def iter_descendant_joints(self):
-        """Iterate over all descendant joints, with a depth-first strategy"""
+        """ Iterate over all descendant joints, with a depth-first strategy. """
         for j in self.childrenjoints:
             yield j
             for jj in j.frame1.body.iter_descendant_joints():
@@ -1223,6 +1252,10 @@ class Body(NamedObject, Frame):
 
     def update_geometric(self, pose):
         r"""
+
+        :param pose: current pose of the body, relative to the ground
+        :type  pose: (4,4)-array
+
         - g: ground body
         - p: parent body
         - c: child body
@@ -1234,6 +1267,7 @@ class Body(NamedObject, Frame):
         .. math::
             H_gc &= H_{gp} \ H_{pc} \\
                  &= H_{gp} \ (H_{pr} \ H_{rn} \ H_{nc})
+
         """
         self._pose = pose
         H_gp = pose
@@ -1246,7 +1280,7 @@ class Body(NamedObject, Frame):
             j.frame1.body.update_geometric(child_pose)
 
     def update_dynamic(self, pose, jac, djac, twist):
-        r"""Compute the body ``pose, jac, djac, twist`` and its children ones.
+        r""" Compute the body ``pose, jac, djac, twist`` and its children ones.
 
         This method (1) sets the body dynamical model (pose, jacobian,
         hessian and twist) to the values given as argument, (2) computes
@@ -1297,10 +1331,10 @@ class Body(NamedObject, Frame):
 
         .. math::
 
-            \twist[c]_{c/g} &= \Ad\ft{c}{p} \; \twist[p]_{p/g} + \twist[c]_{c/p} \\
-            &= \Ad\ft{c}{p} \; \twist[p]_{p/g} + \Ad\ft{c}{n} \; \twist[n]_{n/r} \\
-            &= \Ad\ft{c}{p} \; \J[p]_{p/g} \; \GVel
-               + \Ad\ft{c}{n} \; \J[n]_{n/r} \; \GVel_j \\
+            \twist[c]_{c/g} &= \Ad_{cp} \; \twist[p]_{p/g} + \twist[c]_{c/p} \\
+            &= \Ad_{cp} \; \twist[p]_{p/g} + \Ad_{cn} \; \twist[n]_{n/r} \\
+            &= \Ad_{cp} \; \J[p]_{p/g} \; \GVel
+               + \Ad_{cn} \; \J[n]_{n/r} \; \GVel_j \\
             &= \J[c]_{c/g} \; \GVel
 
         where  `\twist[n]_{n/r}` is given by the joint
@@ -1317,9 +1351,9 @@ class Body(NamedObject, Frame):
         therefore, the child body jacobian is
 
         .. math::
-            \J[c]_{c/g} &= \Ad\ft{c}{p} \; \J[p]_{p/g} +
+            \J[c]_{c/g} &= \Ad_{cp} \; \J[p]_{p/g} +
             \begin{bmatrix}
-            0 & \cdots & 0 & \Ad\ft{c}{n} \; \J[n]_{n/r} & 0 & \cdots & 0
+            0 & \cdots & 0 & \Ad_{cn} \; \J[n]_{n/r} & 0 & \cdots & 0
             \end{bmatrix} \\
 
         where `\J[n]_{n/r}` is given by the joint
@@ -1327,11 +1361,11 @@ class Body(NamedObject, Frame):
         expression leads to the child body acceleration:
 
         .. math::
-            \dtwist[c]_{c/g} &= \dAd\ft{c}{p} \; \J[p]_{p/g} \; \GVel
-            + \Ad\ft{c}{p} \; \dJ[p]_{p/g} \; \GVel
-            + \Ad\ft{c}{p} \; \J[p]_g \; \dGVel
-            + \Ad\ft{c}{n} \; \dJ[n]_{n/r} \; \GVel_j
-            + \Ad\ft{c}{n} \; \J[n]_{m/r} \dGVel_j \\
+            \dtwist[c]_{c/g} &= \dAd_{cp} \; \J[p]_{p/g} \; \GVel
+            + \Ad_{cp} \; \dJ[p]_{p/g} \; \GVel
+            + \Ad_{cp} \; \J[p]_g \; \dGVel
+            + \Ad_{cn} \; \dJ[n]_{n/r} \; \GVel_j
+            + \Ad_{cn} \; \J[n]_{m/r} \dGVel_j \\
             &= \J[c]_{c/g} \; \dGVel + \dJ[c]_{c/g} \; \GVel
 
         the expression of the child body hessian is then obtained by
@@ -1339,31 +1373,31 @@ class Body(NamedObject, Frame):
 
         .. math::
             \dJ[c]_{c/g} \; \GVel
-            &= \dAd\ft{c}{p} \; \J[p]_{p/g} \; \GVel
-            + \Ad\ft{c}{p} \; \dJ[p]_{p/g} \; \GVel
-            + \Ad\ft{c}{n} \; \dJ[n]_{n/r} \; \GVel_j \\
+            &= \dAd_{cp} \; \J[p]_{p/g}  \; \GVel
+            +  \Ad_{cp}  \; \dJ[p]_{p/g} \; \GVel
+            +  \Ad_{cn}  \; \dJ[n]_{n/r} \; \GVel_j \\
 
             \dJ[c]_{c/g}
-            &= \dAd\ft{c}{p} \; \J[p]_{p/g} + \Ad\ft{c}{p} \; \dJ[p]_{p/g} +
+            &= \dAd_{cp} \; \J[p]_{p/g} + \Ad_{cp} \; \dJ[p]_{p/g} +
             \begin{bmatrix}
-            0 & \cdots & 0 & (\Ad\ft{c}{n} \; \dJ[n]_{n/r}) & 0 & \cdots & 0
+            0 & \cdots & 0 & (\Ad_{cn} \; \dJ[n]_{n/r}) & 0 & \cdots & 0
             \end{bmatrix}
 
         with
 
         .. math::
-            \dAd\ft{c}{p} &= \Ad\ft{c}{n} \; \dAd\ft{n}{r} \; \Ad\ft{r}{p}
+            \dAd_{cp} &= \Ad_{cn} \; \dAd_{nr} \; \Ad_{rp}
 
-        and where `\dAd\ft{n}{r}` and `\dJ[n]_{n/r}` are respectively given by
+        and where `\dAd_{nr}` and `\dJ[n]_{n/r}` are respectively given by
         the joint :attr:`~arboris.core.Joint.idadjoint` and
         :attr:`~arboris.core.Joint.djacobian` attributes.
 
         T_ab: velocity of {a} relative to {b} expressed in {a} (body twist)
         """
-        self._pose = pose
-        self._jacobian = jac
+        self._pose      = pose
+        self._jacobian  = jac
         self._djacobian = djac
-        self._twist = twist
+        self._twist     = twist
         wx = array(
             [[             0, -self.twist[2],  self.twist[1]],
              [ self.twist[2],              0, -self.twist[0]],
@@ -1378,10 +1412,10 @@ class Body(NamedObject, Frame):
         self._nleffects[0:3, 3:6] = dot(rx, wx) - dot(wx, rx)
         self._nleffects = dot(self.nleffects, self.mass)
 
-        H_gp = pose
-        J_pg = jac
+        H_gp  = pose
+        J_pg  = jac
         dJ_pg = djac
-        T_pg = twist
+        T_pg  = twist
         for j in self.childrenjoints:
             H_cn = j.frame1.bpose
             H_pr = j.frame0.bpose
@@ -1427,12 +1461,12 @@ class Observer(NamedObject):
 
 
 def simulate(world, timeline, observers=()):
-    """Run a full simulation,
+    """ Run a full simulation.
 
     :param world: the world to be simulated
-    :type world: :class:`~arboris.core.World`
+    :type  world: :class:`~arboris.core.World`
     :param time: a list of distinct times
-    :type time: iterable
+    :type  time: iterable
 
     Example:
 
@@ -1449,11 +1483,13 @@ def simulate(world, timeline, observers=()):
 
     if world.current_time != timeline[0]:
         warnings.warn('world.current_time != timeline[0]: \
-may become a problem if some conditions depend on world.current_time')
+may become a problem if any conditions depend on world.current_time')
     world._current_time = timeline[0]
     world.init()
+
     for obs in observers_list:
         obs.init(world, timeline)
+
     for next_time in timeline[1:]:
         dt = next_time - world.current_time
         world.update_dynamic()
@@ -1462,5 +1498,9 @@ may become a problem if some conditions depend on world.current_time')
         for obs in observers_list:
             obs.update(dt)
         world.integrate(dt)
+
     for obs in observers_list:
         obs.finish()
+
+
+
