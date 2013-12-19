@@ -20,14 +20,14 @@ import os
 class pydaenimCom(Observer):
     """
     """
-    def __init__(self, colladafile, host="127.0.0.1", port=5000, timeout=5, flat=False, name=None):
+    def __init__(self, colladafile, browser=None, host="127.0.0.1", port=5000, timeout=5, flat=False, name=None, **kwargs):
         Observer.__init__(self, name)
         self.flat  = flat
         self.world = None
         
         self.websocket = pydaenim.pydaenimWebSocket(host, port, timeout)
         
-        kwargs = {"host":self.websocket.host, "port":self.websocket.port}
+        kwargs.update({"host":self.websocket.host, "port":self.websocket.port, "browser":browser})
         Timer(0.1, pydaenim.create_pydaenimViewer, (colladafile,), kwargs).start()
         
         self.websocket.listen()
