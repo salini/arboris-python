@@ -83,7 +83,7 @@ def view(world, browser=None, **kwargs):
     elif isinstance(world, basestring):
         collada_path = world
 
-    pydaenim.create_pydaenimViewer(collada_path, browser, **kwargs)
+    pydaenim.create_pydaenimViewer(collada_path, **kwargs)
 
 
 
