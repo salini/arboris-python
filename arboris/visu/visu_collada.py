@@ -43,12 +43,12 @@ def write_collada_scene(world, dae_filename, scale=1, options=None, flat=False, 
         nonflatlist = [j.frames[1] for j in world.getjoints()]
         name_all_elements(nonflatlist, True)
     name_all_elements(world.itermovingsubframes(), True)
-    
+
     if color_generator is None:
         color_generator = ColorGenerator( nb_colors=len(world.getbodies()) )
-    
+
     world.update_geometric()
-    
+
     drawer = Drawer(DaenimColladaDriver(dae_filename, scale, options), flat, color_generator)
     world.parse(drawer)
     drawer.finish()
@@ -115,7 +115,7 @@ class DaenimColladaDriver(pydaenimColladaDriver):
         if self.dae.geometries.get("line_geometry-mesh") is None:
             self.dae.geometries.append(self.shapes_dae.geometries.get("line_geometry-mesh"))
         line_geom = self.dae.geometries.get("line_geometry-mesh")
-        
+
         node = _get_void_node()
         vector = (array(end) - array(start))
         vector_norm = linalg.norm(vector)
@@ -123,7 +123,7 @@ class DaenimColladaDriver(pydaenimColladaDriver):
         n_vector = vector/vector_norm
         H = zaligned(n_vector)
         H[0:3, 3] = start
-        
+
         node = self._add_new_geometry(name, color, line_geom)
         node.transforms.append(collada.scene.ScaleTransform(vector_norm, vector_norm, vector_norm))
         node.transforms.append(collada.scene.MatrixTransform(H.flatten()))
@@ -132,27 +132,27 @@ class DaenimColladaDriver(pydaenimColladaDriver):
 
         return node
 
-    def create_inertia(self, inertia, color, name=""):
-        """Generate a representation of inertia as an ellipsoid."""
-        pydaenimColladaDriver.create_inertia(self, inertia, color)
-        H_body_com  = principalframe(inertia)
-        Mcom        = transport(inertia, H_body_com)
-        mass        = Mcom[5,5]
-        m_o_inertia = Mcom[[0,1,2], [0,1,2]] * self._options['inertia factor']
-        
-        node = _get_void_node()
-        node.transforms.append( collada.scene.MatrixTransform(H_body_com.flatten()) )
-        
-        inertia_node = self.create_ellipsoid(m_o_inertia, color, name+".inertia")
-        node.children.append(inertia_node)
-        
-        for c in inertia_node.children:
-            if isinstance(c, collada.scene.ExtraNode):
-                inertia_node.children.remove(c)
-
-        self._add_osg_description(inertia_node, "inertia")
-
-        return node
+##    def create_inertia(self, inertia, color, name=""):
+##        """Generate a representation of inertia as an ellipsoid."""
+##        pydaenimColladaDriver.create_inertia(self, inertia, color)
+##        H_body_com  = principalframe(inertia)
+##        Mcom        = transport(inertia, H_body_com)
+##        mass        = Mcom[5,5]
+##        m_o_inertia = Mcom[[0,1,2], [0,1,2]] * self._options['inertia factor']
+##
+##        node = _get_void_node()
+##        node.transforms.append( collada.scene.MatrixTransform(H_body_com.flatten()) )
+##
+##        inertia_node = self.create_ellipsoid(m_o_inertia, color, name+".inertia")
+##        node.children.append(inertia_node)
+##
+##        for c in inertia_node.children:
+##            if isinstance(c, collada.scene.ExtraNode):
+##                inertia_node.children.remove(c)
+##
+##        self._add_osg_description(inertia_node, "inertia")
+##
+##        return node
 
 
 
@@ -169,7 +169,7 @@ class DaenimCom(SocketCom):
         """
         """
         SocketCom.__init__(self, host, port, timeout, name)
-        
+
         self.daefile = daefile
 
         if daenim_path is None:
@@ -194,7 +194,7 @@ class DaenimCom(SocketCom):
             SocketCom.init(self, world, timeline)
         except OSError:
             warnings.warn("Cannot find program "+self.app_call[0]+". Please check where the arboris viewer (daenim) is installed on your computer.")
-        
+
         self.world = world
         sleep(.1)
         if self.flat:

@@ -35,12 +35,12 @@ def write_collada_scene(world, dae_filename, scale=1, options=None, flat=False, 
         nonflatlist = [j.frames[1] for j in world.getjoints()]
         name_all_elements(nonflatlist, True)
     name_all_elements(world.itermovingsubframes(), True)
-    
+
     if color_generator is None:
         color_generator = ColorGenerator( nb_colors=len(world.getbodies()) )
-    
+
     world.update_geometric()
-    
+
     drawer = Drawer(pydaenimColladaDriver(dae_filename, scale, options), flat, color_generator)
     world.parse(drawer)
     drawer.finish()
@@ -98,17 +98,17 @@ def write_collada_animation_from_transforms(collada_animation, collada_scene, ti
         """"""
         idName = anim_name +"-"+src_suffix
         src_elem = E.source(id=idName)
-        
+
         idName += "-array"
         count = len(src_data)/16 if param_type=="float4x4" else len(src_data)
-        
+
         if src_type == "float":
             str_src_data = " ".join([str(round(val, precision)) for val in src_data])+" "
             str_src_data = str_src_data.replace(".0 ", " ")
         else:
             str_src_data = " ".join(map(str, src_data))
         src_elem.append( E(src_type+"_array", str_src_data, id=idName, count=str(count)) )
-        
+
         src_elem.append( E.technique_common(
                             E.accessor(
                                 E.param(name=param_name, type=param_type),  #accessor child
@@ -116,17 +116,17 @@ def write_collada_animation_from_transforms(collada_animation, collada_scene, ti
                             )
                          )
                        )
-        
+
         if param_type=="float4x4":
             src_elem.find( tag("technique_common") ).find( tag("accessor") ).set("stride", str(16))
-        
+
         return src_elem
 
     def _create_anim_elem(name, timeline, value):
         """"""
         idName=name+"-animation"
         animElem = E.animation(id=idName)
-        
+
         animElem.append( _create_anim_src_elem(idName, timeline              , "input"        , "float", "TIME", "float") )
         animElem.append( _create_anim_src_elem(idName, ["STEP"]*len(timeline), "interpolation", "Name" , "INTERPOLATION", "name") )
         animElem.append( _create_anim_src_elem(idName, value.flatten()       , "output"       , "float", "TRANSFORM", "float4x4") )
@@ -144,7 +144,7 @@ def write_collada_animation_from_transforms(collada_animation, collada_scene, ti
     if anim_lib is None:
         children = list(dae.xmlnode.getroot())
         dae.xmlnode.getroot().insert( children.index( dae.xmlnode.find( tag("scene"))), E('library_animations'))
-        
+
         anim_lib = dae.xmlnode.find( tag('library_animations') )
 
     for name, val in transforms.items():
@@ -154,29 +154,29 @@ def write_collada_animation_from_transforms(collada_animation, collada_scene, ti
 
 
 
-def add_shapes_to_dae(input_file, added_shapes, output_file=None):
+def add_shapes_to_dae(input_scene, added_shapes, output_scene=None):
     """
     """
-    if output_file is None:
-        output_file = input_file
+    if output_scene is None:
+        output_scene = input_scene
 
-    dae = collada.Collada(input_file)
-    dae_nodes = _get_all_nodes(dae.scene)
+    dae = collada.Collada(input_scene)
+    scene_dae_nodes = _get_all_nodes(dae.scene)
 
     if isinstance(added_shapes, str):
         #it means that this is an entire collada file
         shapes_dae       = collada.Collada(added_shapes)
         shapes_dae_nodes = _get_all_nodes(shapes_dae.scene)
 
-        for node_id, node in dae_nodes.items():
+        for node_id, node in scene_dae_nodes.items():
             if node_id in shapes_dae_nodes:
                 #create node that will contain scale, transform and instance_node
-                instance_node = _get_void_node() 
+                instance_node = _get_void_node()
                 node.children.append(instance_node)
-                
+
                 child_shape_node = collada.scene.Node(_get_good_id_uri(added_shapes+".."+node_id), children = shapes_dae_nodes[node_id].children)
                 child_shape_node.transforms.extend( shapes_dae_nodes[node_id].transforms )
-                
+
                 _save_all_descendant_geometryNode(child_shape_node, dae)
                 instance_node.children.append(collada.scene.NodeNode(child_shape_node))
                 if child_shape_node.id not in dae.nodes:
@@ -187,7 +187,7 @@ def add_shapes_to_dae(input_file, added_shapes, output_file=None):
 
     else:
         for mesh_info in added_shapes:
-        
+
             if isinstance(mesh_info, dict):
                 mesh_data = [mesh_info["frame"], mesh_info["mesh"]]
                 if "transform" in mesh_info:
@@ -197,13 +197,14 @@ def add_shapes_to_dae(input_file, added_shapes, output_file=None):
             else:
                 mesh_data = mesh_info
 
+
             parent_node_id, shape_path = mesh_data[0:2]
             shape_file, sep, shape_id  = shape_path.partition("#")
             shapes_dae       = collada.Collada(shape_file)
             shapes_dae_nodes = _get_all_nodes(shapes_dae.scene)
 
              #check whether parent exist
-            if parent_node_id not in dae_nodes:
+            if parent_node_id not in scene_dae_nodes:
                 print "warning: cannot find node in input file: '", parent_node_id, "'"
 
              #check whether shape exists
@@ -213,19 +214,22 @@ def add_shapes_to_dae(input_file, added_shapes, output_file=None):
             else:
                  #create node that will contain scale, transform and instance_node
                 instance_node = _get_void_node()
-                dae_nodes[parent_node_id].children.append(instance_node)
+                scene_dae_nodes[parent_node_id].children.append(instance_node)
 
                  #it means that user selects all the scene children
                 if shape_id == "":
-                    child_shape_node = collada.scene.Node(shape_id, children = shapes_dae.scene.nodes)
+                    #child_shape_node = collada.scene.Node(shape_id, children = shapes_dae.scene.nodes)
+                    child_shape_node = collada.scene.Node(shape_file+"_mesh", children = shapes_dae.scene.nodes)
 
                 #in this case, the shape_path is on the form: 'shape_file.dae#shape_id'
                 else:
                     child_shape_node = collada.scene.Node(_get_good_id_uri(shape_path), children = shapes_dae_nodes[shape_id].children)
                     child_shape_node.transforms.extend( shapes_dae_nodes[shape_id].transforms )
 
+
                 _save_all_descendant_geometryNode(child_shape_node, dae)
                 instance_node.children.append(collada.scene.NodeNode(child_shape_node))
+
                 if child_shape_node.id not in dae.nodes:
                     dae.nodes.append(child_shape_node)
 
@@ -242,7 +246,7 @@ def add_shapes_to_dae(input_file, added_shapes, output_file=None):
                     instance_node.transforms.append(collada.scene.ScaleTransform(*scale))
 
 
-    _write_pycollada_in_file(dae, output_file)
+    _write_pycollada_in_file(dae, output_scene)
 
 
 
@@ -271,7 +275,7 @@ def _get_all_nodes(root):
             collect[root.id] = root
         for c in root.children:
             collect.update( _get_all_nodes(c) )
-    
+
     return collect
 
 
@@ -295,11 +299,11 @@ def _save_all_descendant_geometryNode(src_node, dest_dae):
                 dest_dae.materials.append(mat_node.target)
             if mat_node.target.effect.id not in dest_dae.effects:
                 dest_dae.effects.append(mat_node.target.effect)
-    
+
     elif isinstance(src_node, collada.scene.Node):
         for child in src_node.children:
             _save_all_descendant_geometryNode(child, dest_dae)
-    
+
     elif isinstance(src_node, collada.scene.Scene):
         for child in src_node.nodes:
             _save_all_descendant_geometryNode(child, dest_dae)
@@ -388,11 +392,11 @@ class pydaenimColladaDriver(DrawerDriver):
     def add_ground(self, up):
         self._set_up_axis(up)
         self.ground_node = collada.scene.Node("ground")
-        
+
         tranform_matrix = collada.scene.MatrixTransform(np.eye(4).flatten())
         tranform_matrix.xmlnode.set("sid", "matrix")
         self.ground_node.transforms.append(tranform_matrix)
-        
+
         self.scene = collada.scene.Scene("myscene", [self.ground_node])
         self.dae.scenes.append(self.scene)
         self.dae.scene = self.scene
@@ -417,7 +421,7 @@ class pydaenimColladaDriver(DrawerDriver):
         if self.dae.geometries.get("sphere_geometry-mesh") is None:
             self.dae.geometries.append(self.shapes_dae.geometries.get("sphere_geometry-mesh"))
         sphere_geom = self.dae.geometries.get("sphere_geometry-mesh")
-        
+
         node = self._add_new_geometry(name, color, sphere_geom)
         node.transforms.append(collada.scene.ScaleTransform(*radii))
         return node
@@ -426,7 +430,7 @@ class pydaenimColladaDriver(DrawerDriver):
         if self.dae.geometries.get("box_geometry-mesh") is None:
             self.dae.geometries.append(self.shapes_dae.geometries.get("box_geometry-mesh"))
         box_geom = self.dae.geometries.get("box_geometry-mesh")
-        
+
         node = self._add_new_geometry(name, color, box_geom)
         node.transforms.append(collada.scene.ScaleTransform(*half_extents))
         return node
@@ -435,7 +439,7 @@ class pydaenimColladaDriver(DrawerDriver):
         if self.dae.geometries.get("cylinder_geometry-mesh") is None:
             self.dae.geometries.append(self.shapes_dae.geometries.get("cylinder_geometry-mesh"))
         cylinder_geom = self.dae.geometries.get("cylinder_geometry-mesh")
-        
+
         node = self._add_new_geometry(name, color, cylinder_geom)
         node.transforms.append(collada.scene.ScaleTransform(radius, radius, length))
         return node
@@ -444,11 +448,11 @@ class pydaenimColladaDriver(DrawerDriver):
         if self.dae.geometries.get("plane_geometry-mesh") is None:
             self.dae.geometries.append(self.shapes_dae.geometries.get("plane_geometry-mesh"))
         plane_geom = self.dae.geometries.get("plane_geometry-mesh")
-        
+
         H = zaligned(coeffs[0:3])
         H[0:3, 3] = coeffs[3] * coeffs[0:3]
         plane_he = self._options["plane half extents"]
-        
+
         node = self._add_new_geometry(name, color, plane_geom)
         node.transforms.append(collada.scene.MatrixTransform(H.flatten()))
         node.transforms.append(collada.scene.ScaleTransform(plane_he[0], plane_he[1], 0.))
